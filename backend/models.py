@@ -136,3 +136,36 @@ class Conversation(BaseModel):
 class ConversationCreate(BaseModel):
     subject: str
     category: str = 'general'
+
+# Expense Models
+class Expense(BaseModel):
+    id: Optional[str] = None
+    family_id: str
+    description: str
+    amount: float
+    category: str  # 'medical', 'education', 'activities', 'clothing', 'other'
+    date: date
+    paid_by_email: str  # Email of parent who paid
+    status: str = 'pending'  # 'pending', 'approved', 'disputed', 'paid'
+    split_ratio: dict  # e.g., {"parent1": 50, "parent2": 50}
+    receipt_url: Optional[str] = None
+    receipt_file_name: Optional[str] = None
+    children_ids: Optional[List[str]] = None  # Which children this expense is for
+    dispute_reason: Optional[str] = None
+    dispute_created_at: Optional[datetime] = None
+    dispute_created_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class ExpenseCreate(BaseModel):
+    description: str
+    amount: float
+    category: str
+    date: date
+    receipt_file_name: Optional[str] = None
+    receipt_content: Optional[str] = None  # Base64 encoded
+    children_ids: Optional[List[str]] = None
+
+class ExpenseUpdate(BaseModel):
+    status: Optional[str] = None  # 'approved', 'disputed', 'paid'
+    dispute_reason: Optional[str] = None

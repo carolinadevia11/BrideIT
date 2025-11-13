@@ -1331,7 +1331,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           </TabsContent>
 
           <TabsContent value="expenses">
-            <ExpenseTracker />
+            <ExpenseTracker familyProfile={familyProfile} />
           </TabsContent>
 
           <TabsContent value="documents">

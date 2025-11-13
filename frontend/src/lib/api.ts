@@ -263,3 +263,45 @@ export const messagingAPI = {
     });
   },
 };
+
+// Expenses API
+export const expensesAPI = {
+  getExpenses: async () => {
+    return fetchWithAuth('/api/v1/expenses');
+  },
+
+  createExpense: async (expenseData: {
+    description: string;
+    amount: number;
+    category: string;
+    date: string;
+    receipt_file_name?: string;
+    receipt_content?: string;
+    children_ids?: string[];
+  }) => {
+    return fetchWithAuth('/api/v1/expenses', {
+      method: 'POST',
+      body: JSON.stringify(expenseData),
+    });
+  },
+
+  updateExpense: async (expenseId: string, updates: {
+    status?: 'approved' | 'disputed' | 'paid';
+    dispute_reason?: string;
+  }) => {
+    return fetchWithAuth(`/api/v1/expenses/${expenseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  deleteExpense: async (expenseId: string) => {
+    return fetchWithAuth(`/api/v1/expenses/${expenseId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getExpenseSummary: async () => {
+    return fetchWithAuth('/api/v1/expenses/summary');
+  },
+};

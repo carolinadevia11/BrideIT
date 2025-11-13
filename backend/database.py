@@ -155,6 +155,7 @@ class InMemoryDB:
         self.change_requests = InMemoryCollection()
         self.conversations = InMemoryCollection()
         self.messages = InMemoryCollection()
+        self.expenses = InMemoryCollection()
 
 
 try:
