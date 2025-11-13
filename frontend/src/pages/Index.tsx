@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, Plus, BookOpen, UserPlus, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -70,9 +70,57 @@ type AdminFamilyRecord = {
 const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startInSettings = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Initialize activeTab from URL params or localStorage, default to 'dashboard'
+  const getInitialTab = () => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && ['dashboard', 'calendar', 'messages', 'expenses', 'documents', 'resources'].includes(urlTab)) {
+      return urlTab;
+    }
+    const storedTab = localStorage.getItem('activeTab');
+    if (storedTab && ['dashboard', 'calendar', 'messages', 'expenses', 'documents', 'resources'].includes(storedTab)) {
+      return storedTab;
+    }
+    return 'dashboard';
+  };
+  
+  const [activeTab, setActiveTabState] = useState<string>(getInitialTab());
   const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Initialize URL with tab if it came from localStorage
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    const initialTab = getInitialTab();
+    // If no tab in URL but we have one from localStorage, update URL
+    if (!urlTab && initialTab !== 'dashboard') {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('tab', initialTab);
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, []); // Only run on mount
+  
+  // Wrapper function to update tab and persist to URL/localStorage
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    // Update URL search params
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', tab);
+    setSearchParams(newSearchParams, { replace: true });
+    // Also store in localStorage as backup
+    localStorage.setItem('activeTab', tab);
+  };
+  
+  // Sync activeTab when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && ['dashboard', 'calendar', 'messages', 'expenses', 'documents', 'resources'].includes(urlTab) && urlTab !== activeTab) {
+      setActiveTabState(urlTab);
+      localStorage.setItem('activeTab', urlTab);
+    }
+  }, [searchParams, activeTab]);
+  
   const [showOnboardingExplanation, setShowOnboardingExplanation] = useState(startOnboarding);
   const [showAccountSetup, setShowAccountSetup] = useState(false);
   const [showBridgettePersonalization, setShowBridgettePersonalization] = useState(false);
@@ -1297,7 +1345,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           </TabsContent>
 
           <TabsContent value="documents">
-            <DocumentManager />
+            <DocumentManager resetTrigger={activeTab} />
           </TabsContent>
 
           <TabsContent value="resources">

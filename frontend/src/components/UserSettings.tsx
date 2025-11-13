@@ -165,13 +165,21 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
     const matchedParent = parents.find((parent) => parent.email?.toLowerCase() === activeEmail);
 
     if (matchedParent) {
+      // Use current settings as fallback, but don't re-run when they change
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentPhone = settings.profile.phone;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentTimezone = settings.profile.timezone;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentBio = settings.profile.bio;
+
       applyProfileToSettings({
         firstName: matchedParent.firstName,
         lastName: matchedParent.lastName,
         email: matchedParent.email,
-        phone: (matchedParent as any).phone || settings.profile.phone,
-        timezone: (matchedParent as any).timezone || settings.profile.timezone,
-        bio: (matchedParent as any).bio || settings.profile.bio,
+        phone: ('phone' in matchedParent ? matchedParent.phone : undefined) || currentPhone,
+        timezone: ('timezone' in matchedParent ? matchedParent.timezone : undefined) || currentTimezone,
+        bio: ('bio' in matchedParent ? matchedParent.bio : undefined) || currentBio,
       });
     }
   }, [familyProfile, activeEmail]);
@@ -182,7 +190,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
     '?'
   );
 
-  const updateSetting = (category: string, field: string, value: any) => {
+  const updateSetting = (category: string, field: string, value: string | boolean) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -213,10 +221,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
     }
   };
 
-  const updateNestedSetting = (category: string, subcategory: string, field: string, value: any) => {
+  const updateNestedSetting = (category: string, subcategory: string, field: string, value: string | boolean) => {
     setSettings(prev => {
-      const categoryData = prev[category as keyof typeof prev] as any;
-      const subcategoryData = categoryData[subcategory] as any;
+      const categoryData = prev[category as keyof typeof prev] as Record<string, unknown>;
+      const subcategoryData = categoryData[subcategory] as Record<string, unknown>;
       
       return {
         ...prev,

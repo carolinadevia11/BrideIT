@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { authAPI } from '@/lib/api';
 import { BookOpen, Play, Users, Search, Filter, Star, Clock, ArrowRight, Heart, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, User, Scale, Baby, Briefcase, Brain, Phone, Mail, MapPin, Calendar, Shield, Award, CheckCircle, Bookmark, BookmarkCheck, AlertTriangle, HeartHandshake, UserCheck, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +79,20 @@ const EducationalResources: React.FC = () => {
   const [activeTab, setActiveTab] = useState('articles');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await authAPI.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
   const [showProfessionalDetail, setShowProfessionalDetail] = useState(false);
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('all');
@@ -650,7 +665,7 @@ const EducationalResources: React.FC = () => {
             <BridgetteAvatar size="md" expression="encouraging" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-800">
-                Hey Sarah, I'm here to help. Ask anything!
+                Hey {currentUser?.firstName || 'there'}, I'm here to help. Ask anything!
               </p>
               <p className="text-xs text-gray-600 mt-1">
                 I've curated these evidence-based resources from trusted experts! Need help finding a therapist or mediator? I can help you find the perfect professional for your situation! 📚👥

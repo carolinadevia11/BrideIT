@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle } from 'lucide-react';
-import { calendarAPI } from '@/lib/api';
+import { calendarAPI, authAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +69,7 @@ interface CalendarViewProps {
 const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile }) => {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentUser, setCurrentUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
   const [showChangeRequest, setShowChangeRequest] = useState(false);
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -137,6 +138,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile }) => {
   ]);
 
   const [emailHistory, setEmailHistory] = useState<EmailNotification[]>([]);
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await authAPI.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Load events when month changes
   useEffect(() => {
@@ -866,7 +880,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile }) => {
             <BridgetteAvatar size="md" expression={bridgetteInfo.expression} />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-800">
-                Hey Sarah, I'm here to help. Ask anything!
+                Hey {currentUser?.firstName || 'there'}, I'm here to help. Ask anything!
               </p>
               <p className={`text-xs mt-1 font-medium ${bridgetteInfo.isAlert ? 'text-red-700' : 'text-gray-600'}`}>
                 {bridgetteInfo.message}

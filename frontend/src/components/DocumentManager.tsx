@@ -52,7 +52,11 @@ interface CurrentUser {
   email: string;
 }
 
-const DocumentManager: React.FC = () => {
+interface DocumentManagerProps {
+  resetTrigger?: string;
+}
+
+const DocumentManager: React.FC<DocumentManagerProps> = ({ resetTrigger }) => {
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);
@@ -211,6 +215,16 @@ const DocumentManager: React.FC = () => {
       fetchDocuments();
     }
   }, [currentFolder, fetchDocuments]);
+
+  // Reset view when Documents tab is clicked (resetTrigger changes to 'documents')
+  useEffect(() => {
+    if (resetTrigger === 'documents') {
+      setCurrentFolder(null);
+      setShowUpload(false);
+      setShowCreateFolder(false);
+      setSearchTerm('');
+    }
+  }, [resetTrigger]);
 
   const getCurrentFolderDocuments = () => {
     if (!currentFolder) return documents;
