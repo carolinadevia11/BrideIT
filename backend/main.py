@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, family, calendar, admin, messaging, expenses
+from routers import auth, family, calendar, admin, messaging, expenses, activity
 from database import db
 
 app = FastAPI()
@@ -32,6 +32,7 @@ app.include_router(calendar.router)
 app.include_router(admin.router)
 app.include_router(messaging.router)
 app.include_router(expenses.router)
+app.include_router(activity.router)
 
 @app.get("/")
 def read_root():

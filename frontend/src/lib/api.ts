@@ -305,3 +305,10 @@ export const expensesAPI = {
     return fetchWithAuth('/api/v1/expenses/summary');
   },
 };
+
+// Activity API
+export const activityAPI = {
+  getRecentActivity: async () => {
+    return fetchWithAuth('/api/v1/activity');
+  },
+};

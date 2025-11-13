@@ -21,6 +21,7 @@ import ContractUpload from '@/components/ContractUpload';
 import UserSettings from '@/components/UserSettings';
 import FamilyOnboarding from '@/components/FamilyOnboarding';
 import ChildManagement from '@/components/ChildManagement';
+import RecentActivity from '@/components/RecentActivity';
 import { FamilyProfile, Child } from '@/types/family';
 import { authAPI, familyAPI, childrenAPI, adminAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -1256,50 +1257,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               </div>
             </div>
 
-            <Card className="border-2 border-bridge-blue">
-              <CardHeader>
-                <CardTitle className="flex items-center text-bridge-black">
-                  <Users className="w-5 h-5 mr-2 text-bridge-blue" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border-l-4 border-bridge-green">
-                    <div className="w-2 h-2 bg-bridge-green rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-bridge-black">
-                        Mike confirmed pickup for Saturday at 10am
-                      </p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border-l-4 border-bridge-red">
-                    <div className="w-2 h-2 bg-bridge-red rounded-full animate-pulse"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-bridge-black">
-                        <span className="text-bridge-red font-semibold">PENDING:</span> Soccer cleats expense needs approval ($85.99)
-                      </p>
-                      <p className="text-xs text-gray-500">Yesterday</p>
-                    </div>
-                    <Button size="sm" className="bg-bridge-red hover:bg-red-600 text-white">
-                      Review
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border-l-4 border-bridge-blue">
-                    <div className="w-2 h-2 bg-bridge-blue rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-bridge-black">
-                        Calendar updated: Emma's dentist appointment
-                      </p>
-                      <p className="text-xs text-gray-500">2 days ago</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RecentActivity
+              onNavigateToExpenses={() => setActiveTab('expenses')}
+              onNavigateToCalendar={() => setActiveTab('calendar')}
+              onNavigateToMessages={() => setActiveTab('messages')}
+            />
 
             <Card className="border-2 border-bridge-blue bg-blue-50">
               <CardContent className="p-6">
