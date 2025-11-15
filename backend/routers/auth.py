@@ -15,12 +15,26 @@ router = APIRouter()
 SECRET_KEY = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "12960"))  # default 3 days
+BCRYPT_MAX_BYTES = 72
 
 pwd_context = CryptContext(
     schemes=["bcrypt_sha256", "bcrypt"],
     default="bcrypt_sha256",
     deprecated="auto",
 )
+
+
+def _truncate_utf8(password: str, limit: int) -> str:
+    """Trim a password to fit into ``limit`` bytes without breaking utf-8."""
+    encoded = password.encode("utf-8")
+    if len(encoded) <= limit:
+        return password
+    truncated = encoded[:limit]
+    while True:
+        try:
+            return truncated.decode("utf-8")
+        except UnicodeDecodeError:
+            truncated = truncated[:-1]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class Token(BaseModel):
@@ -56,14 +70,36 @@ async def create_user(user_data: User):
 @router.post("/api/v1/auth/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = db.users.find_one({"email": form_data.username})
-    if not user or not pwd_context.verify(form_data.password, user["password"]):
+    if not user:
         raise HTTPException(
             status_code=401,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    original_password = form_data.password
+    password_to_verify = original_password
+    hash_scheme = pwd_context.identify(user["password"])
+    if hash_scheme == "bcrypt":
+        password_to_verify = _truncate_utf8(password_to_verify, BCRYPT_MAX_BYTES)
+
+    try:
+        verified = pwd_context.verify(password_to_verify, user["password"])
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to process password; please reset it and try again.",
+        ) from exc
+
+    if not verified:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if pwd_context.needs_update(user["password"]):
-        updated_hash = pwd_context.hash(form_data.password)
+        updated_hash = pwd_context.hash(original_password)
         db.users.update_one({"_id": user["_id"]}, {"$set": {"password": updated_hash}})
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
