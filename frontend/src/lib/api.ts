@@ -400,3 +400,33 @@ export const documentsAPI = {
     return URL.createObjectURL(blob);
   },
 };
+
+// Support Coach API
+export const supportCoachAPI = {
+  startSession: async (parentName?: string) => {
+    const params = new URLSearchParams();
+    if (parentName) {
+      params.set('parent_name', parentName);
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchWithAuth(`/api/v1/support/session${query}`);
+  },
+
+  sendMessage: async (payload: {
+    message: string;
+    parentName?: string;
+    goal?: string;
+    intensity?: string;
+  }) => {
+    const body = {
+      message: payload.message,
+      ...(payload.parentName ? { parent_name: payload.parentName } : {}),
+      ...(payload.goal ? { goal: payload.goal } : {}),
+      ...(payload.intensity ? { intensity: payload.intensity } : {}),
+    };
+    return fetchWithAuth('/api/v1/support/chat', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+};

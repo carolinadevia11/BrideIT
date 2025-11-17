@@ -72,7 +72,12 @@ interface EmergencyResource {
   website?: string;
 }
 
-const EducationalResources: React.FC = () => {
+interface EducationalResourcesProps {
+  currentUserName?: string;
+}
+
+const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUserName }) => {
+  const greetingName = currentUserName || 'there';
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('articles');
@@ -650,7 +655,7 @@ const EducationalResources: React.FC = () => {
             <BridgetteAvatar size="md" expression="encouraging" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-800">
-                Hey Sarah, I'm here to help. Ask anything!
+                Hey {greetingName}, I'm here to help. Ask anything!
               </p>
               <p className="text-xs text-gray-600 mt-1">
                 I've curated these evidence-based resources from trusted experts! Need help finding a therapist or mediator? I can help you find the perfect professional for your situation! 📚👥

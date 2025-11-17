@@ -23,6 +23,17 @@ import BridgetteAvatar from './BridgetteAvatar';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+const US_TIME_ZONES = [
+  { value: 'America/New_York', label: 'Eastern (ET)' },
+  { value: 'America/Chicago', label: 'Central (CT)' },
+  { value: 'America/Denver', label: 'Mountain (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific (PT)' },
+  { value: 'America/Phoenix', label: 'Arizona (MT - no DST)' },
+  { value: 'America/Anchorage', label: 'Alaska (AKT)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii (HST)' },
+  { value: 'Europe/Berlin', label: 'Central Europe (CET)' },
+];
+
 interface CalendarEvent {
   id: string;
   date: number;
@@ -31,6 +42,7 @@ interface CalendarEvent {
   title: string;
   parent?: 'mom' | 'dad' | 'both';
   isSwappable?: boolean;
+  hasTime?: boolean;
 }
 
 interface ChangeRequest {
@@ -81,9 +93,14 @@ interface CalendarViewProps {
     firstName?: string;
     lastName?: string;
   };
+  onNavigateToMessages?: () => void;
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({
+  familyProfile,
+  currentUser,
+  onNavigateToMessages,
+}) => {
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showChangeRequest, setShowChangeRequest] = useState(false);
@@ -105,6 +122,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
   const [newEventDate, setNewEventDate] = useState(() =>
     new Date().toISOString().slice(0, 10)
   );
+  const [newEventTime, setNewEventTime] = useState('');
   const [newEventType, setNewEventType] =
     useState<CalendarEvent["type"]>("custody");
   const [newEventParent, setNewEventParent] = useState<"mom" | "dad" | "both">(
@@ -116,6 +134,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
+  const [selectedTimeZone, setSelectedTimeZone] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('calendarTimeZone') || 'America/New_York';
+    }
+    return 'America/New_York';
+  });
 
   const getParentRoleForEmail = (email?: string | null): 'mom' | 'dad' => {
     if (!email || !familyProfile) return 'mom';
@@ -148,6 +172,55 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
     return `${first} ${last}`.trim();
   };
 
+  const getParentEmailAddress = (role: 'mom' | 'dad'): string | undefined => {
+    if (!familyProfile) return undefined;
+    const parent = role === 'mom' ? familyProfile.parent1 : familyProfile.parent2;
+    return parent?.email || undefined;
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('calendarTimeZone', selectedTimeZone);
+    }
+  }, [selectedTimeZone]);
+
+  const formatDateTime = (value?: Date | string | null): string => {
+    if (!value) return '—';
+    const dateObj = typeof value === 'string' ? new Date(value) : value;
+    if (Number.isNaN(dateObj.getTime())) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: selectedTimeZone,
+      timeZoneName: 'short',
+    }).format(dateObj);
+  };
+
+  const selectedTimeZoneLabel =
+    US_TIME_ZONES.find((tz) => tz.value === selectedTimeZone)?.label || 'Eastern (ET)';
+
+  const formatTimeOnly = (value?: Date): string => {
+    if (!value) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: selectedTimeZone,
+    }).format(value);
+  };
+
+  const buildRecipientEmails = (): string[] => {
+    const recipients = [
+      getParentEmailAddress('mom'),
+      getParentEmailAddress('dad'),
+    ].filter((email): email is string => Boolean(email));
+
+    if (!recipients.length && currentUser?.email) {
+      recipients.push(currentUser.email);
+    }
+
+    return recipients;
+  };
+
   const buildApiConsequences = (
     requestType: ChangeRequest['type'],
     originalEvent: CalendarEvent,
@@ -172,6 +245,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
     return consequences;
   };
 
+  const hasSpecificTime = (dateObj: Date): boolean => {
+    return !(
+      dateObj.getHours() === 0 &&
+      dateObj.getMinutes() === 0 &&
+      dateObj.getSeconds() === 0
+    );
+  };
+
   const buildCalendarEventFromSnapshot = (
     id: string,
     title: string,
@@ -188,6 +269,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
       isSwappable: true,
       date: dateObj.getDate(),
       fullDate: dateObj,
+      hasTime: hasSpecificTime(dateObj),
     };
   };
 
@@ -268,6 +350,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
           title: event.title,
           parent: event.parent as 'mom' | 'dad' | 'both' | undefined,
           isSwappable: event.isSwappable ?? false,
+          hasTime: hasSpecificTime(eventDate),
         };
       });
       
@@ -485,6 +568,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
 
     const currentMonthName = monthNames[currentMonth.getMonth()];
     const currentYear = currentMonth.getFullYear();
+    const parent1Name = getParentDisplayName('mom');
+    const parent2Name = getParentDisplayName('dad');
+    const parent1Signature = parent1Name.toUpperCase();
+    const parent2Signature = parent2Name.toUpperCase();
+    const recipientList = buildRecipientEmails();
+    const fallbackRecipients = ['notifications@bridge.local'];
     
     const requestedByName = getParentDisplayName(request.requestedBy);
     const approvedByName = request.approvedBy
@@ -568,9 +657,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
         <div class="section">
             <h3>👥 APPROVAL DETAILS</h3>
             <strong>Requested by:</strong> ${requestedByName}<br/>
-            <strong>Request Date:</strong> ${request.timestamp.toLocaleString()}<br/>
+            <strong>Request Date:</strong> ${formatDateTime(request.timestamp)}<br/>
             <strong>Approved by:</strong> ${approvedByName}<br/>
-            <strong>Approval Date:</strong> ${request.approvedAt?.toLocaleString()}<br/>
+            <strong>Approval Date:</strong> ${formatDateTime(request.approvedAt)}<br/>
             <strong>Change Type:</strong> ${request.type.toUpperCase()}
         </div>
 
@@ -628,16 +717,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
             <h3>✅ MUTUAL AGREEMENT CONFIRMATION</h3>
             
             <div class="signature-box">
-                <strong>PARENT 1 - SARAH JOHNSON</strong><br/>
+                <strong>PARENT 1 - ${parent1Signature}</strong><br/>
                 Status: ${request.requestedBy === 'mom' ? 'REQUESTED' : 'APPROVED'}<br/>
-                Date: ${request.requestedBy === 'mom' ? request.timestamp.toLocaleString() : request.approvedAt?.toLocaleString()}<br/>
+                Date: ${request.requestedBy === 'mom' ? formatDateTime(request.timestamp) : formatDateTime(request.approvedAt)}<br/>
                 Digital Signature: ✓ Confirmed via Bridge Platform
             </div>
 
             <div class="signature-box">
-                <strong>PARENT 2 - MICHAEL JOHNSON</strong><br/>
+                <strong>PARENT 2 - ${parent2Signature}</strong><br/>
                 Status: ${request.requestedBy === 'dad' ? 'REQUESTED' : 'APPROVED'}<br/>
-                Date: ${request.requestedBy === 'dad' ? request.timestamp.toLocaleString() : request.approvedAt?.toLocaleString()}<br/>
+                Date: ${request.requestedBy === 'dad' ? formatDateTime(request.timestamp) : formatDateTime(request.approvedAt)}<br/>
                 Digital Signature: ✓ Confirmed via Bridge Platform
             </div>
         </div>
@@ -665,7 +754,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
     <div class="footer">
         <p><strong>Bridge Co-Parenting Platform</strong> | Fair & Balanced Co-Parenting</p>
         <p>This is an automated message generated by the Bridge system.</p>
-        <p class="timestamp">Document ID: BCH-${request.id} | Generated: ${new Date().toLocaleString()}</p>
+            <p class="timestamp">Document ID: BCH-${request.id} | Generated: ${formatDateTime(new Date())}</p>
+            <p class="timestamp">All timestamps shown in ${selectedTimeZoneLabel}.</p>
         <p>⚖️ Bridgette AI Assistant helped facilitate this agreement</p>
     </div>
 </body>
@@ -674,7 +764,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
 
     return {
       id: Date.now().toString(),
-      to: ['sarah.johnson@email.com', 'michael.johnson@email.com'],
+      to: recipientList.length ? recipientList : fallbackRecipients,
       subject: `🗓️ APPROVED: Schedule Change Documentation - ${currentMonthName} ${currentYear}`,
       content: emailContent,
       timestamp: new Date(),
@@ -748,6 +838,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
     setNewEventType("custody");
     setNewEventParent("both");
     setNewEventSwappable(true);
+    setNewEventTime('');
     setShowCreateEvent(true);
   };
 
@@ -797,7 +888,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
       return;
     }
 
-    const parsedDate = new Date(newEventDate);
+    const dateString = newEventTime ? `${newEventDate}T${newEventTime}` : `${newEventDate}T00:00`;
+    const parsedDate = new Date(dateString);
     if (Number.isNaN(parsedDate.getTime())) {
       toast({
         title: "Invalid date",
@@ -1087,6 +1179,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  const greetingName =
+    currentUser?.firstName ||
+    familyProfile?.parent1?.firstName ||
+    'there';
+
   return (
     <div className="space-y-6">
       {/* Enhanced Bridgette Helper with Alert System */}
@@ -1096,7 +1193,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
             <BridgetteAvatar size="md" expression={bridgetteInfo.expression} />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-800">
-                Hey Sarah, I'm here to help. Ask anything!
+                Hey {greetingName}, I'm here to help. Ask anything!
               </p>
               <p className={`text-xs mt-1 font-medium ${bridgetteInfo.isAlert ? 'text-red-700' : 'text-gray-600'}`}>
                 {bridgetteInfo.message}
@@ -1154,57 +1251,78 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
 
       <div className="bg-white rounded-2xl shadow-lg p-6">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
               {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </h2>
             <p className="text-gray-500">Shared Family Calendar</p>
+            <p className="mt-2 text-xs text-gray-500 flex items-center gap-2">
+              <Clock className="w-3 h-3" />
+              Times shown in {selectedTimeZoneLabel}
+            </p>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateMonth('prev')}
-              className="p-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateMonth('next')}
-              className="p-2"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-            <Button size="sm" className="ml-4" onClick={openCreateEventModal}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Event
-            </Button>
-            {pendingRequestsCount > 0 && (
-              <Button 
-                size="sm" 
+
+          <div className="flex flex-col w-full gap-3 lg:w-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+              <Select value={selectedTimeZone} onValueChange={setSelectedTimeZone}>
+                <SelectTrigger className="w-full sm:w-[240px]">
+                  <SelectValue placeholder="Select time zone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_TIME_ZONES.map((zone) => (
+                    <SelectItem key={zone.value} value={zone.value}>
+                      {zone.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
                 variant="outline"
-                className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                onClick={() => setShowPendingRequests(true)}
+                size="sm"
+                onClick={() => navigateMonth('prev')}
+                className="p-2"
               >
-                <Clock className="w-4 h-4 mr-2" />
-                Requests ({pendingRequestsCount})
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-            )}
-            {emailHistory.length > 0 && (
-              <Button 
-                size="sm" 
+              <Button
                 variant="outline"
-                className="border-green-300 text-green-600 hover:bg-green-50"
-                onClick={() => setShowEmailPreview(true)}
+                size="sm"
+                onClick={() => navigateMonth('next')}
+                className="p-2"
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Emails ({emailHistory.length})
+                <ChevronRight className="w-4 h-4" />
               </Button>
-            )}
+              <Button size="sm" onClick={openCreateEventModal}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Event
+              </Button>
+              {pendingRequestsCount > 0 && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                  onClick={() => setShowPendingRequests(true)}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Requests ({pendingRequestsCount})
+                </Button>
+              )}
+              {emailHistory.length > 0 && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="border-green-300 text-green-600 hover:bg-green-50"
+                  onClick={() => setShowEmailPreview(true)}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Emails ({emailHistory.length})
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1257,6 +1375,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                       } ${pendingRequests.some(r => r.originalEvent.id === event.id) ? 'ring-1 ring-orange-300' : ''}`}
                     >
                       {event.title}
+                      {event.hasTime && (
+                        <span className="block text-[10px] text-blue-900 mt-0.5">
+                          {formatTimeOnly(event.fullDate)}
+                        </span>
+                      )}
                       {event.isSwappable && (
                         <ArrowRightLeft className="w-2 h-2 inline ml-1" />
                       )}
@@ -1332,6 +1455,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                   type="date"
                   value={newEventDate}
                   onChange={(e) => setNewEventDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Time (optional)</Label>
+                <Input
+                  type="time"
+                  value={newEventTime}
+                  onChange={(e) => setNewEventTime(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -1427,6 +1558,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                   </Badge>
                   <span className="text-sm text-gray-600">
                     {monthNames[currentMonth.getMonth()]} {selectedEvent.date}
+                    {selectedEvent.hasTime && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        {formatTimeOnly(selectedEvent.fullDate)}
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
@@ -1665,7 +1801,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                   </div>
 
                   <p className="text-xs text-gray-500 text-center">
-                    Requested {request.timestamp.toLocaleString()}
+                  Requested {formatDateTime(request.timestamp)}
                   </p>
                 </CardContent>
               </Card>
@@ -1755,7 +1891,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                         <ThumbsUp className="w-4 h-4 mr-2" />
                         {alternative.actionText}
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (onNavigateToMessages) {
+                            onNavigateToMessages();
+                          }
+                          setShowBridgetteAlternatives(false);
+                        }}
+                      >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Discuss with Co-Parent
                       </Button>
@@ -1822,7 +1967,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ familyProfile, currentUser 
                 <div className="text-sm text-green-700 space-y-1">
                   <p><strong>To:</strong> {generatedEmail.to.join(', ')}</p>
                   <p><strong>Subject:</strong> {generatedEmail.subject}</p>
-                  <p><strong>Sent:</strong> {generatedEmail.timestamp.toLocaleString()}</p>
+                  <p><strong>Sent:</strong> {formatDateTime(generatedEmail.timestamp)}</p>
                 </div>
               </div>
 

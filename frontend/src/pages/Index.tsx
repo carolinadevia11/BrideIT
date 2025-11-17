@@ -11,6 +11,7 @@ import MessagingInterface from '@/components/MessagingInterface';
 import ExpenseTracker from '@/components/ExpenseTracker';
 import DocumentManager from '@/components/DocumentManager';
 import EducationalResources from '@/components/EducationalResources';
+import SupportChatbot from '@/components/SupportChatbot';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import OnboardingExplanation from '@/components/OnboardingExplanation';
 import AccountSetup from '@/components/AccountSetup';
@@ -24,7 +25,7 @@ import ChildManagement from '@/components/ChildManagement';
 import RecentActivity from '@/components/RecentActivity';
 import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
-import { authAPI, familyAPI, childrenAPI, adminAPI } from '@/lib/api';
+import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface IndexProps {
@@ -107,6 +108,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [showFamilyOnboarding, setShowFamilyOnboarding] = useState(false);
   const [showSettings, setShowSettings] = useState(startInSettings);
   const [showChildManagement, setShowChildManagement] = useState(false);
+  const [showSupportChatbot, setShowSupportChatbot] = useState(false);
   const [isFirstTime, setIsFirstTime] = useState(false);
   const [familyProfile, setFamilyProfile] = useState<FamilyProfile | null>(null);
   const [familyCodeMode, setFamilyCodeMode] = useState<'create' | 'join'>('create');
@@ -122,6 +124,15 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   } | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const unreadMessagesCount = 0;
+  type UpcomingEventDetail = { id: string; title: string; dateLabel: string };
+  type PendingExpenseDetail = { id: string; description: string; amount?: number; status?: string };
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    upcomingEvents: 0,
+    pendingExpenses: 0,
+    upcomingEventDetails: [] as UpcomingEventDetail[],
+    pendingExpenseDetails: [] as PendingExpenseDetail[],
+  });
+  const [dashboardMetricsLoaded, setDashboardMetricsLoaded] = useState(false);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [adminPendingFamilies, setAdminPendingFamilies] = useState<AdminFamilyRecord[]>([]);
   const [adminRecentFamilies, setAdminRecentFamilies] = useState<AdminFamilyRecord[]>([]);
@@ -371,6 +382,78 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   }, [toast]);
 
   useEffect(() => {
+    const loadDashboardMetrics = async () => {
+      if (!familyProfile || currentUser?.role === 'admin') {
+        setDashboardMetricsLoaded(false);
+        return;
+      }
+
+      try {
+        const now = new Date();
+        const [eventsResponse, expensesResponse] = await Promise.all([
+          calendarAPI.getEvents(now.getFullYear(), now.getMonth() + 1),
+          expensesAPI.getExpenses(),
+        ]);
+
+        const upcomingEventArray = Array.isArray(eventsResponse)
+          ? eventsResponse
+              .map((event: { id?: string; date?: string; title?: string }) => {
+                const eventDate = event?.date ? new Date(event.date) : null;
+                if (!eventDate || Number.isNaN(eventDate.getTime()) || eventDate < now) {
+                  return null;
+                }
+                return {
+                  id: event.id ?? crypto.randomUUID(),
+                  title: event.title || 'Schedule event',
+                  dateLabel: eventDate.toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                  }),
+                  eventDate,
+                };
+              })
+              .filter((item): item is UpcomingEventDetail & { eventDate: Date } => Boolean(item))
+              .sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime())
+          : [];
+
+        const upcomingEvents = upcomingEventArray.length;
+
+        const pendingExpenseArray = Array.isArray(expensesResponse)
+          ? expensesResponse.filter((expense: { status?: string }) => {
+              const status = (expense?.status || '').toLowerCase();
+              if (!status) return true;
+              return !['paid', 'reimbursed', 'settled'].includes(status);
+            })
+          : [];
+
+        const pendingExpenses = pendingExpenseArray.length;
+
+        setDashboardMetrics({
+          upcomingEvents,
+          pendingExpenses,
+          upcomingEventDetails: upcomingEventArray.slice(0, 3).map(({ id, title, dateLabel }) => ({
+            id,
+            title,
+            dateLabel,
+          })),
+          pendingExpenseDetails: pendingExpenseArray.slice(0, 3).map((expense: { id?: string; description?: string; amount?: number; status?: string }) => ({
+            id: expense.id ?? crypto.randomUUID(),
+            description: expense.description || 'Expense awaiting review',
+            amount: expense.amount,
+            status: expense.status,
+          })),
+        });
+        setDashboardMetricsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load dashboard metrics:', error);
+        setDashboardMetricsLoaded(false);
+      }
+    };
+
+    loadDashboardMetrics();
+  }, [familyProfile, currentUser]);
+
+  useEffect(() => {
     if (startInSettings) {
       setShowSettings(true);
     }
@@ -385,6 +468,16 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       navigate('/', { replace: true });
     }
   }, [showSettings, location.pathname, navigate]);
+
+  const eventsCopy = dashboardMetricsLoaded
+    ? `${dashboardMetrics.upcomingEvents} upcoming event${dashboardMetrics.upcomingEvents === 1 ? '' : 's'}`
+    : 'upcoming events';
+
+  const expensesCopy = dashboardMetricsLoaded
+    ? `${dashboardMetrics.pendingExpenses} expense${dashboardMetrics.pendingExpenses === 1 ? '' : 's'}`
+    : 'expenses';
+
+  const expensesVerb = dashboardMetricsLoaded && dashboardMetrics.pendingExpenses === 1 ? "there's" : "there are";
 
   // Show onboarding explanation (check this first as it's a direct user action)
   if (showOnboardingExplanation) {
@@ -1118,9 +1211,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                       Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
                     </h2>
                     <p className="text-bridge-black mb-4">
-                      Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have 
-                      2 upcoming events on your calendar and there's 1 expense that needs your review. 
-                      Don't worry - I'm here to help keep everything organized and balanced! 
+                      Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
+                      {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
+                      {" "}Don't worry - I'm here to help keep everything organized and balanced!
                     </p>
                     {familyProfile && familyProfile.children.length > 0 && (
                       <div className="bg-white/20 rounded-lg p-3 mb-4">
@@ -1141,8 +1234,34 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                         📋 Quick items for your attention:
                       </p>
                       <ul className="text-bridge-black text-sm space-y-1">
-                        <li>• Soccer cleats expense pending approval ($85.99)</li>
-                        <li>• Document review needed for custody agreement</li>
+                        {dashboardMetricsLoaded ? (
+                          <>
+                            {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
+                              dashboardMetrics.pendingExpenseDetails.map((expense) => (
+                                <li key={expense.id}>
+                                  • {expense.description}
+                                  {typeof expense.amount === 'number' && (
+                                    <> (${expense.amount.toFixed(2)})</>
+                                  )}
+                                  {expense.status && (
+                                    <> – status: {expense.status.replace(/_/g, ' ')}</>
+                                  )}
+                                </li>
+                              ))
+                            ) : (
+                              <li>• No expenses need your review right now 🎉</li>
+                            )}
+                            {dashboardMetrics.upcomingEventDetails.length > 0 && (
+                              <li key="upcoming-event">
+                                • Next event:{' '}
+                                {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
+                                {dashboardMetrics.upcomingEventDetails[0].dateLabel}
+                              </li>
+                            )}
+                          </>
+                        ) : (
+                          <li>• Gathering your latest activity...</li>
+                        )}
                       </ul>
                     </div>
                     <Button 
@@ -1267,7 +1386,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           </TabsContent>
 
           <TabsContent value="calendar">
-            <CalendarView familyProfile={familyProfile} currentUser={currentUser || undefined} />
+            <CalendarView
+              familyProfile={familyProfile}
+              currentUser={currentUser || undefined}
+              onNavigateToMessages={() => changeTab('messages')}
+            />
           </TabsContent>
 
           <TabsContent value="messages">
@@ -1283,18 +1406,24 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           </TabsContent>
 
           <TabsContent value="resources">
-            <EducationalResources />
+            <EducationalResources currentUserName={currentUser?.firstName} />
           </TabsContent>
         </Tabs>
         <div className="fixed bottom-6 right-6 hidden md:block">
           <Button 
             className="rounded-full w-16 h-16 bg-bridge-blue hover:bg-blue-600 shadow-lg border-2 border-gray-300"
-            onClick={() => {/* Open chat */}}
+            onClick={() => setShowSupportChatbot(true)}
+            title="Talk to the Bridge Support Coach"
           >
             <HelpCircle className="w-6 h-6 text-white" />
           </Button>
         </div>
       </div>
+      <SupportChatbot
+        isOpen={showSupportChatbot}
+        onClose={() => setShowSupportChatbot(false)}
+        parentName={currentUser?.firstName}
+      />
       </>
     </DashboardShell>
   );
