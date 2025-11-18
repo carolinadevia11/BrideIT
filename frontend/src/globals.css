@@ -23,13 +23,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    /* Primary Colors - Maps to theme.primary (#084dbd) */
-    --primary: 217 92% 39%;            /* Update: theme.primary.DEFAULT */
+    /* Primary Colors - Maps to theme.primary (#002f6c) */
+    --primary: 214 100% 21%;           /* Update: theme.primary.DEFAULT */
     --primary-foreground: 0 0% 100%;  /* Update: theme.primary.foreground */
 
-    /* Secondary Colors - Maps to theme.secondary (#FFBF00) */
-    --secondary: 45 100% 50%;         /* Update: theme.secondary.DEFAULT */
-    --secondary-foreground: 0 0% 0%;  /* Update: theme.secondary.foreground */
+    /* Secondary Colors - Maps to theme.secondary (#ffc800) */
+    --secondary: 47 100% 50%;         /* Update: theme.secondary.DEFAULT */
+    --secondary-foreground: 0 0% 0%;   /* Update: theme.secondary.foreground */
 
     /* Muted Colors - Maps to theme.neutral.muted */
     --muted: 0 0% 96%;                /* Update: theme.neutral.muted */
@@ -46,24 +46,24 @@
     /* Border & Input - Maps to theme.neutral */
     --border: 0 0% 90%;               /* Update: theme.neutral.border */
     --input: 0 0% 90%;                 /* Update: theme.neutral.input */
-    --ring: 217 92% 39%;               /* Update: theme.primary.DEFAULT */
+    --ring: 214 100% 21%;              /* Update: theme.primary.DEFAULT */
 
     --radius: 0.5rem;
 
     /* Sidebar Colors */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 217 92% 39%;    /* Update: theme.primary.DEFAULT */
+    --sidebar-primary: 214 100% 21%;   /* Update: theme.primary.DEFAULT */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 95%;
     --sidebar-accent-foreground: 0 0% 20%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 217 92% 39%;       /* Update: theme.primary.DEFAULT */
+    --sidebar-ring: 214 100% 21%;      /* Update: theme.primary.DEFAULT */
 
     /* Bridge Brand Colors - Maps to theme.bridge */
     --bridge-red: 0 84% 60%;           /* Update: theme.bridge.red */
-    --bridge-yellow: 45 100% 50%;      /* Update: theme.bridge.yellow (#FFBF00) */
-    --bridge-blue: 217 92% 39%;        /* Update: theme.bridge.blue (#084dbd) */
+    --bridge-yellow: 47 100% 50%;      /* Update: theme.bridge.yellow (#ffc800) */
+    --bridge-blue: 214 100% 21%;       /* Update: theme.bridge.blue (#002f6c) */
     --bridge-green: 160 80% 50%;      /* Update: theme.bridge.green (Light Parrot) */
     --bridge-black: 0 0% 0%;           /* Update: theme.bridge.black */
   }
@@ -78,10 +78,10 @@
     --popover: 0 0% 8%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 217 92% 45%;
+    --primary: 214 100% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 100% 45%;
+    --secondary: 47 100% 45%;
     --secondary-foreground: 0 0% 0%;
 
     --muted: 0 0% 15%;
@@ -95,16 +95,16 @@
 
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 217 92% 45%;
+    --ring: 214 100% 35%;
 
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 217 92% 45%;
+    --sidebar-primary: 214 100% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 15%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 217 92% 45%;
+    --sidebar-ring: 214 100% 35%;
   }
 }
 

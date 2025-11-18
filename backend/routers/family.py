@@ -3,6 +3,7 @@ from typing import List
 import uuid
 import random
 import string
+import os
 from datetime import datetime, date
 import base64
 import re
@@ -271,37 +272,90 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
     if not user_family:
         raise HTTPException(status_code=404, detail="Family profile not found")
     
-    # Decode base64 content
     try:
-        file_content = base64.b64decode(contract.fileContent).decode('utf-8', errors='ignore')
+        # Decode base64 content to bytes (not text - PDFs/DOCs are binary)
+        file_bytes = base64.b64decode(contract.fileContent)
+        
+        # Try to use the new DocumentParser service
+        try:
+            from services.document_parser import DocumentParser
+            parser = DocumentParser(
+                ai_provider=os.getenv("AI_PROVIDER", "openai"),
+                api_key=os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+            )
+            
+            # Parse document (extracts text and uses AI)
+            parsed_info = await parser.parse_document(file_bytes, contract.fileType)
+            
+            # Map parsed data to expected format
+            custody_schedule = parsed_info.get("custodySchedule", "Extracted from agreement")
+            holiday_schedule = parsed_info.get("holidaySchedule", "As specified in agreement")
+            decision_making = parsed_info.get("decisionMaking", "Joint legal custody")
+            expense_split = parsed_info.get("expenseSplit", {"ratio": "50-50", "parent1": 50, "parent2": 50})
+            
+        except (ImportError, ValueError) as e:
+            # Fallback to old pattern matching if new parser not available or PDF support missing
+            error_msg = str(e)
+            
+            # If it's a PDF/DOC file and libraries aren't available, provide helpful error
+            if contract.fileType.lower() not in ['txt', 'text']:
+                if "PDF support not available" in error_msg or "DOCX support not available" in error_msg:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_msg
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"PDF/DOC parsing requires additional libraries. Install: pip install pdfplumber python-docx openai. Error: {error_msg}"
+                    )
+            
+            # For TXT files, fallback to old pattern matching
+            if contract.fileType.lower() in ['txt', 'text']:
+                file_content = file_bytes.decode('utf-8', errors='ignore')
+                parsed_info = parse_contract_with_ai(file_content, contract.fileType)
+                custody_schedule = parsed_info["custodySchedule"]
+                holiday_schedule = parsed_info["holidaySchedule"]
+                decision_making = parsed_info["decisionMaking"]
+                expense_split = parsed_info["expenseSplit"]
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"PDF/DOC parsing requires additional libraries. Install: pip install pdfplumber python-docx openai. Error: {error_msg}"
+                )
+        
+        # Create custody agreement object (store original file for download)
+        custody_agreement = CustodyAgreement(
+            uploadDate=datetime.utcnow(),
+            fileName=contract.fileName,
+            fileType=contract.fileType,
+            fileContent=contract.fileContent,  # Store base64 for download
+            custodySchedule=custody_schedule,
+            holidaySchedule=holiday_schedule,
+            decisionMaking=decision_making,
+            expenseSplit=expense_split,
+            parsedData=parsed_info.get("parsedData", parsed_info)
+        )
+        
+        # Update family with custody agreement
+        db.families.update_one(
+            {"_id": user_family["_id"]},
+            {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
+        )
+        
+        return {
+            "message": "Contract uploaded and parsed successfully",
+            "custodyAgreement": custody_agreement,
+            "aiAnalysis": parsed_info.get("parsedData", parsed_info)
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid file content: {str(e)}")
-    
-    # Parse the contract with AI
-    parsed_info = parse_contract_with_ai(file_content, contract.fileType)
-    
-    # Create custody agreement object
-    custody_agreement = CustodyAgreement(
-        uploadDate=datetime.utcnow(),
-        fileName=contract.fileName,
-        custodySchedule=parsed_info["custodySchedule"],
-        holidaySchedule=parsed_info["holidaySchedule"],
-        decisionMaking=parsed_info["decisionMaking"],
-        expenseSplit=parsed_info["expenseSplit"],
-        parsedData=parsed_info["parsedData"]
-    )
-    
-    # Update family with custody agreement
-    db.families.update_one(
-        {"_id": user_family["_id"]},
-        {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
-    )
-    
-    return {
-        "message": "Contract uploaded and parsed successfully",
-        "custodyAgreement": custody_agreement,
-        "aiAnalysis": parsed_info["parsedData"]
-    }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error parsing document: {str(e)}"
+        )
 
 @router.get("/api/v1/family/contract")
 async def get_contract(current_user: User = Depends(get_current_user)):
@@ -316,6 +370,65 @@ async def get_contract(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="No custody agreement found")
     
     return custody_agreement
+
+@router.get("/api/v1/family/contract/download")
+async def download_contract(current_user: User = Depends(get_current_user)):
+    """Download the original custody agreement file."""
+    from fastapi.responses import Response
+    
+    user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
+    
+    if not user_family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+    
+    custody_agreement = user_family.get("custodyAgreement")
+    if not custody_agreement:
+        raise HTTPException(status_code=404, detail="No custody agreement found")
+    
+    file_content = custody_agreement.get("fileContent")
+    if not file_content:
+        raise HTTPException(status_code=404, detail="Original file not available")
+    
+    # Decode base64 to bytes
+    file_bytes = base64.b64decode(file_content)
+    file_name = custody_agreement.get("fileName", "custody_agreement")
+    file_type = custody_agreement.get("fileType", "pdf")
+    
+    # Clean filename - remove trailing underscores and ensure proper extension
+    file_name = file_name.rstrip('_').strip()
+    
+    # Ensure filename has correct extension
+    if not file_name.lower().endswith(('.pdf', '.doc', '.docx', '.txt')):
+        # Add extension if missing
+        extension_map = {
+            "pdf": ".pdf",
+            "doc": ".doc",
+            "docx": ".docx",
+            "txt": ".txt"
+        }
+        ext = extension_map.get(file_type.lower(), ".pdf")
+        if not file_name.endswith(ext):
+            file_name = file_name.rsplit('.', 1)[0] + ext
+    
+    # Determine MIME type
+    mime_types = {
+        "pdf": "application/pdf",
+        "doc": "application/msword",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "txt": "text/plain"
+    }
+    media_type = mime_types.get(file_type.lower(), "application/octet-stream")
+    
+    # For PDFs, use 'inline' to open in browser; for others, use 'attachment' to download
+    disposition = "inline" if file_type.lower() == "pdf" else "attachment"
+    
+    return Response(
+        content=file_bytes,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{file_name}"'
+        }
+    )
 
 @router.delete("/api/v1/family")
 async def delete_family(current_user: User = Depends(get_current_user)):

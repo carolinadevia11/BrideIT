@@ -113,6 +113,55 @@ export const familyAPI = {
   getContract: async () => {
     return fetchWithAuth('/api/v1/family/contract');
   },
+
+  downloadContract: async () => {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/api/v1/family/contract/download`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Download failed' }));
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'custody_agreement.pdf';
+    
+    if (contentDisposition) {
+      // Improved regex to handle quoted and unquoted filenames, and remove trailing underscores
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch) {
+        filename = filenameMatch[1].replace(/['"]/g, '').trim();
+        // Remove trailing underscores
+        filename = filename.replace(/_+$/, '');
+      }
+    }
+
+    // Check if it's a PDF - open in new tab instead of downloading
+    const contentType = response.headers.get('Content-Type');
+    if (contentType?.includes('application/pdf')) {
+      // Open PDF in new tab
+      window.open(url, '_blank');
+      // Clean up after a delay to allow the browser to load the PDF
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } else {
+      // Download other file types
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }
+  },
 };
 
 // Children API

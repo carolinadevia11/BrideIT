@@ -170,12 +170,6 @@ const DashboardShell = ({
                     Message partner
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton className="text-slate-600 hover:text-slate-900 data-[active=true]:bg-slate-100 data-[active=true]:text-slate-900">
-                    <CircleHelp className="h-4 w-4" />
-                    Need help?
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
@@ -250,7 +244,10 @@ const DashboardShell = ({
               <Bell className="h-4 w-4" />
               <span className="sr-only">Notifications</span>
             </Button>
-            <Avatar className="h-9 w-9 border border-slate-100">
+            <Avatar 
+              className="h-9 w-9 border border-slate-100 cursor-pointer hover:ring-2 hover:ring-slate-300 transition-all"
+              onClick={onOpenSettings}
+            >
               <AvatarFallback className="bg-slate-900 text-white text-sm">
                 {initials.toUpperCase()}
               </AvatarFallback>

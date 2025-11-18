@@ -11,20 +11,20 @@
  */
 
 export const theme = {
-  // Primary Brand Colors - #084dbd (Dark Blue)
+  // Primary Brand Colors - #002f6c (Dark Blue)
   primary: {
-    DEFAULT: "217 92% 39%",      // Main brand color (#084dbd)
+    DEFAULT: "214 100% 21%",     // Main brand color (#002f6c)
     foreground: "0 0% 100%",     // Text on primary (white)
-    light: "217 92% 95%",        // Light variant
-    dark: "217 92% 25%",         // Dark variant
+    light: "214 100% 95%",        // Light variant
+    dark: "214 100% 15%",         // Dark variant
   },
 
-  // Secondary Colors - #FFBF00 (Bright Yellow/Gold)
+  // Secondary Colors - #ffc800 (Bright Yellow)
   secondary: {
-    DEFAULT: "45 100% 50%",      // Secondary brand color (#FFBF00)
+    DEFAULT: "47 100% 50%",      // Secondary brand color (#ffc800)
     foreground: "0 0% 0%",       // Text on secondary (black)
-    light: "45 100% 95%",        // Light variant
-    dark: "45 100% 40%",         // Dark variant
+    light: "47 100% 95%",         // Light variant
+    dark: "47 100% 40%",          // Dark variant
   },
 
   // Accent Colors - Light Parrot (Teal/Green)
@@ -67,16 +67,16 @@ export const theme = {
   // Calendar Event Type Colors (using brand colors where appropriate)
   eventTypes: {
     custody: {
-      DEFAULT: "217 92% 39%",   // Primary Blue (#084dbd)
-      light: "217 92% 95%",
-      text: "217 92% 25%",
-      border: "217 92% 80%",
+      DEFAULT: "214 100% 21%",   // Primary Blue (#002f6c)
+      light: "214 100% 95%",
+      text: "214 100% 15%",
+      border: "214 100% 70%",
     },
     holiday: {
-      DEFAULT: "45 100% 50%",    // Secondary Yellow/Gold (#FFBF00)
-      light: "45 100% 95%",
-      text: "45 100% 30%",
-      border: "45 100% 80%",
+      DEFAULT: "47 100% 50%",    // Secondary Yellow (#ffc800)
+      light: "47 100% 95%",
+      text: "47 100% 30%",
+      border: "47 100% 80%",
     },
     school: {
       DEFAULT: "160 80% 50%",    // Light Parrot/Teal
@@ -101,10 +101,10 @@ export const theme = {
   // Status Colors
   status: {
     pending: {
-      DEFAULT: "45 100% 50%",    // Secondary Yellow/Gold (#FFBF00)
-      light: "45 100% 95%",
-      text: "45 100% 30%",
-      border: "45 100% 80%",
+      DEFAULT: "47 100% 50%",    // Secondary Yellow (#ffc800)
+      light: "47 100% 95%",
+      text: "47 100% 30%",
+      border: "47 100% 80%",
     },
     approved: {
       DEFAULT: "160 80% 50%",    // Light Parrot/Teal
@@ -119,10 +119,10 @@ export const theme = {
       border: "0 84% 80%",
     },
     paid: {
-      DEFAULT: "217 92% 39%",     // Primary Blue (#084dbd)
-      light: "217 92% 95%",
-      text: "217 92% 25%",
-      border: "217 92% 80%",
+      DEFAULT: "214 100% 21%",    // Primary Blue (#002f6c)
+      light: "214 100% 95%",
+      text: "214 100% 15%",
+      border: "214 100% 70%",
     },
   },
 
@@ -157,10 +157,10 @@ export const theme = {
   // Bridge Brand Colors
   bridge: {
     red: "0 84% 60%",              // Error/Alert red
-    yellow: "45 100% 50%",         // Secondary (#FFBF00)
-    blue: "217 92% 39%",           // Primary (#084dbd)
+    yellow: "47 100% 50%",         // Secondary (#ffc800)
+    blue: "214 100% 21%",          // Primary (#002f6c)
     green: "160 80% 50%",          // Light Parrot/Teal
-    black: "0 0% 0%",             // Black
+    black: "0 0% 0%",              // Black
   },
 } as const;
 

@@ -22,6 +22,8 @@ class Child(BaseModel):
 class CustodyAgreement(BaseModel):
     uploadDate: Optional[datetime] = None
     fileName: Optional[str] = None
+    fileType: Optional[str] = None  # File extension (pdf, docx, etc.)
+    fileContent: Optional[str] = None  # Base64 encoded file content for download
     parsedData: Optional[dict] = None  # AI-parsed key terms
     custodySchedule: Optional[str] = None
     holidaySchedule: Optional[str] = None

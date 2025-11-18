@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign } from 'lucide-react';
-import { calendarAPI, expensesAPI, documentsAPI } from '@/lib/api';
+import { calendarAPI, expensesAPI, documentsAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -173,6 +173,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [documentsByDay, setDocumentsByDay] = useState<Record<string, DayDocument[]>>({});
   const [showExpenses, setShowExpenses] = useState<boolean>(false);
   const [showDocuments, setShowDocuments] = useState<boolean>(false);
+  const [custodyAgreement, setCustodyAgreement] = useState<any>(null);
   const [selectedTimeZone, setSelectedTimeZone] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('calendarTimeZone') || 'America/New_York';
@@ -956,6 +957,115 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     );
   };
 
+  /**
+   * Load custody agreement from backend
+   */
+  useEffect(() => {
+    const loadCustodyAgreement = async () => {
+      if (!familyProfile) return;
+      
+      try {
+        const agreement = await familyAPI.getContract();
+        setCustodyAgreement(agreement);
+      } catch (error: unknown) {
+        // 404 means no agreement uploaded yet, which is fine
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage?.includes('404') || errorMessage?.includes('not found')) {
+          setCustodyAgreement(null);
+        } else {
+          console.error('Error loading custody agreement:', error);
+        }
+      }
+    };
+
+    loadCustodyAgreement();
+  }, [familyProfile]);
+
+  /**
+   * Determine which parent has custody on a given day based on custody agreement
+   * Supports various schedule types: week-on/week-off, 2-2-3, custom schedules
+   */
+  const getCustodyParentForDay = (day: number): 'mom' | 'dad' | 'both' | null => {
+    if (!familyProfile) {
+      return null;
+    }
+
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const custodySchedule = custodyAgreement?.custodySchedule?.toLowerCase() || '';
+    const arrangement = familyProfile.custodyArrangement;
+
+    // If we have a custody agreement with a schedule, parse it
+    if (custodyAgreement && custodySchedule) {
+      // Parse different schedule types
+      
+      // Week-on/week-off or alternating weeks
+      if (custodySchedule.includes('week-on') || custodySchedule.includes('week off') || 
+          custodySchedule.includes('alternat') || custodySchedule.includes('week-on/week-off')) {
+        const yearStart = new Date(date.getFullYear(), 0, 1);
+        const daysSinceYearStart = Math.floor((date.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        const weekNumber = Math.floor(daysSinceYearStart / 7);
+        // Alternate weeks: even weeks = Parent 1 (mom), odd weeks = Parent 2 (dad)
+        return weekNumber % 2 === 0 ? 'mom' : 'dad';
+      }
+      
+      // 2-2-3 schedule (14-day cycle)
+      // Week 1: Parent 1 (Mon-Tue), Parent 2 (Wed-Thu), Both (Fri-Sun)
+      // Week 2: Parent 2 (Mon-Tue), Parent 1 (Wed-Thu), Both (Fri-Sun)
+      if (custodySchedule.includes('2-2-3') || custodySchedule.includes('two-two-three')) {
+        const yearStart = new Date(date.getFullYear(), 0, 1);
+        const daysSinceYearStart = Math.floor((date.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const weekNumber = Math.floor(daysSinceYearStart / 7);
+        const isEvenWeek = weekNumber % 2 === 0;
+        
+        // Weekend (Fri-Sun) is always both parents
+        if (dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 5) {
+          return 'both';
+        }
+        
+        // Weekdays: Mon-Tue and Wed-Thu alternate by week
+        if (dayOfWeek === 1 || dayOfWeek === 2) {
+          // Monday-Tuesday
+          return isEvenWeek ? 'mom' : 'dad';
+        } else if (dayOfWeek === 3 || dayOfWeek === 4) {
+          // Wednesday-Thursday
+          return isEvenWeek ? 'dad' : 'mom';
+        }
+      }
+      
+      // Every other week (similar to week-on/week-off)
+      if (custodySchedule.includes('every other week') || custodySchedule.includes('every other')) {
+        const yearStart = new Date(date.getFullYear(), 0, 1);
+        const daysSinceYearStart = Math.floor((date.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        const weekNumber = Math.floor(daysSinceYearStart / 7);
+        return weekNumber % 2 === 0 ? 'mom' : 'dad';
+      }
+      
+      // Default: fall back to week-on/week-off for 50/50
+      if (arrangement === '50-50') {
+        const yearStart = new Date(date.getFullYear(), 0, 1);
+        const daysSinceYearStart = Math.floor((date.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        const weekNumber = Math.floor(daysSinceYearStart / 7);
+        return weekNumber % 2 === 0 ? 'mom' : 'dad';
+      }
+    }
+
+    // Fallback: use arrangement type if no agreement
+    if (arrangement === '50-50') {
+      const yearStart = new Date(date.getFullYear(), 0, 1);
+      const daysSinceYearStart = Math.floor((date.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+      const weekNumber = Math.floor(daysSinceYearStart / 7);
+      return weekNumber % 2 === 0 ? 'mom' : 'dad';
+    }
+    
+    // Primary-secondary: Parent 1 has primary custody
+    if (arrangement === 'primary-secondary') {
+      return 'mom'; // Parent 1 is primary
+    }
+
+    return null;
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
@@ -1510,6 +1620,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             const dayKey = getDayKey(dayDate);
             const dayExpensesForDate = expensesByDay[dayKey] || [];
             const dayDocumentsForDate = documentsByDay[dayKey] || [];
+            
+            // Determine custody parent based on agreement schedule
+            const custodyParent = getCustodyParentForDay(day);
+            
+            // Check if there's a custody event for this day that overrides the schedule
+            const custodyEvent = dayEvents.find(e => e.type === 'custody');
+            const effectiveCustodyParent = custodyEvent?.parent || custodyParent;
 
             // Calculate total items to show (max 3 items per day)
             const maxItemsToShow = 3;
@@ -1547,12 +1664,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             const remainingDocuments = showDocuments ? Math.max(0, dayDocumentsForDate.length - shownDocuments) : 0;
             const totalRemaining = remainingEvents + remainingExpenses + remainingDocuments;
 
+            // Determine background color based on custody parent from agreement
+            let dayBackgroundClass = 'border-gray-200';
+            if (effectiveCustodyParent && (familyProfile?.custodyArrangement === '50-50' || familyProfile?.custodyArrangement === 'primary-secondary' || custodyAgreement)) {
+              if (effectiveCustodyParent === 'mom') {
+                dayBackgroundClass = 'bg-[hsl(214,100%,98%)] border-[hsl(214,100%,70%)]'; // Light blue for Parent 1 (#002f6c)
+              } else if (effectiveCustodyParent === 'dad') {
+                dayBackgroundClass = 'bg-[hsl(47,100%,98%)] border-[hsl(47,100%,70%)]'; // Light yellow for Parent 2 (#ffc800)
+              } else if (effectiveCustodyParent === 'both') {
+                dayBackgroundClass = 'bg-[hsl(160,80%,98%)] border-[hsl(160,80%,70%)]'; // Light teal for both
+              }
+            }
+            
+            // Override with today's highlight if applicable
+            if (isToday) {
+              dayBackgroundClass = 'bg-[hsl(214,100%,95%)] border-[hsl(214,100%,80%)]';
+            }
+
             return (
               <div
                 key={day}
-                className={`min-h-[120px] p-1.5 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex flex-col ${
-                  isToday ? 'bg-[hsl(217,92%,95%)] border-[hsl(217,92%,80%)]' : 'border-gray-200'
-                } ${pendingRequests.length > 0 ? 'ring-2 ring-[hsl(45,100%,80%)]' : ''}`}
+                className={`min-h-[120px] p-1.5 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex flex-col ${dayBackgroundClass} ${
+                  pendingRequests.length > 0 ? 'ring-2 ring-[hsl(45,100%,80%)]' : ''
+                }`}
                 onClick={() =>
                   openCreateEventModal(
                     new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
@@ -1647,38 +1781,68 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
 
       {/* Legend */}
-        <div className="mt-6 flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[hsl(217,92%,80%)] rounded mr-2"></div>
-            <span>Custody Days</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[hsl(160,80%,80%)] rounded mr-2"></div>
-            <span>School Events</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[hsl(340,100%,80%)] rounded mr-2"></div>
-            <span>Medical</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[hsl(45,100%,80%)] rounded mr-2"></div>
-            <span>Holidays</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-[hsl(30,100%,80%)] rounded mr-2"></div>
-            <span>Activities</span>
-          </div>
-          <div className="flex items-center">
-            <ArrowRightLeft className="w-3 h-3 text-gray-500 mr-2" />
-            <span>Swappable</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="w-3 h-3 text-orange-500 mr-2" />
-            <span>Pending Changes</span>
-          </div>
-          <div className="flex items-center">
-            <Mail className="w-3 h-3 text-green-500 mr-2" />
-            <span>Email Sent</span>
+        <div className="mt-6 space-y-3">
+          {/* Custody Schedule Legend */}
+          {(familyProfile?.custodyArrangement === '50-50' || familyProfile?.custodyArrangement === 'primary-secondary' || custodyAgreement) && (
+            <div className="flex flex-wrap gap-4 text-sm p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="font-semibold text-gray-700 w-full mb-2">
+                Custody Schedule
+                {custodyAgreement?.custodySchedule && (
+                  <span className="text-xs font-normal text-gray-500 ml-2">
+                    ({custodyAgreement.custodySchedule})
+                  </span>
+                )}
+                :
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-[hsl(214,100%,98%)] border-2 border-[hsl(214,100%,70%)] rounded mr-2"></div>
+                <span>{getParentDisplayName('mom')} Days</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-[hsl(47,100%,98%)] border-2 border-[hsl(47,100%,70%)] rounded mr-2"></div>
+                <span>{getParentDisplayName('dad')} Days</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-[hsl(160,80%,98%)] border-2 border-[hsl(160,80%,70%)] rounded mr-2"></div>
+                <span>Both Parents</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Event Type Legend */}
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[hsl(217,92%,80%)] rounded mr-2"></div>
+              <span>Custody Events</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[hsl(160,80%,80%)] rounded mr-2"></div>
+              <span>School Events</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[hsl(340,100%,80%)] rounded mr-2"></div>
+              <span>Medical</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[hsl(45,100%,80%)] rounded mr-2"></div>
+              <span>Holidays</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[hsl(30,100%,80%)] rounded mr-2"></div>
+              <span>Activities</span>
+            </div>
+            <div className="flex items-center">
+              <ArrowRightLeft className="w-3 h-3 text-gray-500 mr-2" />
+              <span>Swappable</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="w-3 h-3 text-orange-500 mr-2" />
+              <span>Pending Changes</span>
+            </div>
+            <div className="flex items-center">
+              <Mail className="w-3 h-3 text-green-500 mr-2" />
+              <span>Email Sent</span>
+            </div>
           </div>
         </div>
       </div>

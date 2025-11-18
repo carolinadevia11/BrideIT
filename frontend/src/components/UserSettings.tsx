@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { User, Bell, Shield, Palette, Globe, Heart, Save, Edit, Camera, MessageSquare, BookOpen, Languages, ArrowLeft, Users } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { User, Bell, Shield, Palette, Globe, Heart, Save, Edit, Camera, MessageSquare, BookOpen, Languages, ArrowLeft, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +9,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import AnimatedBridgette from './AnimatedBridgette';
 import { FamilyProfile } from '@/types/family';
-import { authAPI } from '@/lib/api';
+import { authAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 type UserProfileInfo = {
@@ -94,6 +97,15 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
 
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Custody Agreement state
+  const [custodyAgreement, setCustodyAgreement] = useState<any>(null);
+  const [loadingAgreement, setLoadingAgreement] = useState(false);
+  const [showUploadAgreement, setShowUploadAgreement] = useState(false);
+  const [agreementFile, setAgreementFile] = useState<File | null>(null);
+  const [uploadingAgreement, setUploadingAgreement] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const applyProfileToSettings = (profile: UserProfileInfo) => {
     setSettings(prev => ({
@@ -151,6 +163,30 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
       isMounted = false;
     };
   }, [initialProfile]);
+
+  // Load custody agreement
+  useEffect(() => {
+    const loadAgreement = async () => {
+      if (!familyProfile) return;
+      
+      try {
+        setLoadingAgreement(true);
+        const agreement = await familyAPI.getContract();
+        setCustodyAgreement(agreement);
+      } catch (error: any) {
+        // 404 means no agreement uploaded yet, which is fine
+        if (error.message?.includes('404') || error.message?.includes('not found')) {
+          setCustodyAgreement(null);
+        } else {
+          console.error('Error loading custody agreement:', error);
+        }
+      } finally {
+        setLoadingAgreement(false);
+      }
+    };
+
+    loadAgreement();
+  }, [familyProfile]);
 
   const activeEmail = (initialProfile?.email || settings.profile.email || '').toLowerCase();
 
@@ -272,6 +308,145 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
         title: 'Unable to copy code',
         description: 'Please highlight the code and copy it manually.',
         variant: 'destructive',
+      });
+    }
+  };
+
+  // Custody Agreement handlers
+  const handleAgreementFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      // Check file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      if (!allowedTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(pdf|doc|docx|txt)$/i)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF, DOC, DOCX, or TXT file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAgreementFile(selectedFile);
+    }
+  };
+
+  const handleUploadAgreement = async () => {
+    if (!agreementFile) return;
+
+    setUploadingAgreement(true);
+    setUploadProgress(0);
+
+    try {
+      // Read file as base64
+      const reader = new FileReader();
+      
+      reader.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 50;
+          setUploadProgress(progress);
+        }
+      };
+
+      reader.onload = async (event) => {
+        const base64Content = event.target?.result as string;
+        const base64Data = base64Content.split(',')[1]; // Remove data:...;base64, prefix
+
+        setUploadProgress(50);
+
+        // Simulate parsing progress
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 5, 95));
+        }, 200);
+
+        try {
+          const response = await familyAPI.uploadContract({
+            fileName: agreementFile.name,
+            fileContent: base64Data,
+            fileType: agreementFile.name.split('.').pop() || 'pdf'
+          });
+
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+
+          setCustodyAgreement(response.custodyAgreement || response);
+          setShowUploadAgreement(false);
+          setAgreementFile(null);
+          setUploadProgress(0);
+          
+          toast({
+            title: "Success!",
+            description: "Custody agreement uploaded and parsed successfully",
+          });
+
+          setBridgetteExpression('celebrating');
+          setBridgetteMessage("🎉 Great! I've analyzed your custody agreement and updated your family settings!");
+        } catch (error) {
+          clearInterval(progressInterval);
+          console.error('Error uploading agreement:', error);
+          toast({
+            title: "Error",
+            description: error instanceof Error ? error.message : "Failed to upload agreement",
+            variant: "destructive",
+          });
+        } finally {
+          setUploadingAgreement(false);
+        }
+      };
+
+      reader.onerror = () => {
+        setUploadingAgreement(false);
+        toast({
+          title: "Error",
+          description: "Failed to read file",
+          variant: "destructive",
+        });
+      };
+
+      reader.readAsDataURL(agreementFile);
+    } catch (error) {
+      setUploadingAgreement(false);
+      console.error('Error processing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const clearAgreementFile = () => {
+    setAgreementFile(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleViewDocument = async () => {
+    try {
+      const isPdf = custodyAgreement?.fileType?.toLowerCase() === 'pdf';
+      await familyAPI.downloadContract();
+      toast({
+        title: isPdf ? "Opening document" : "Download started",
+        description: isPdf ? "Your custody agreement is opening in a new tab." : "Your custody agreement is being downloaded.",
+      });
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to open document",
+        variant: "destructive",
       });
     }
   };
@@ -797,6 +972,231 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
                         ) : (
                           <div className="rounded-lg border border-dashed border-green-200 bg-white/70 p-6 text-center text-sm text-green-800">
                             Complete your family onboarding to generate a Family Code.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Custody Agreement Section */}
+                    <Card className="border-2 border-blue-200 bg-blue-50 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-blue-800">
+                          <FileText className="w-5 h-5" />
+                          Custody Agreement
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {loadingAgreement ? (
+                          <div className="text-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                            <p className="text-sm text-gray-600 mt-2">Loading agreement...</p>
+                          </div>
+                        ) : custodyAgreement ? (
+                          <>
+                            <div className="bg-white rounded-lg p-4 border border-blue-200">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center space-x-3">
+                                  <CheckCircle className="w-6 h-6 text-green-600" />
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">Agreement Uploaded</h4>
+                                    <p className="text-sm text-gray-600">
+                                      {custodyAgreement.fileName || 'Custody Agreement'}
+                                    </p>
+                                    {custodyAgreement.uploadDate && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Uploaded: {new Date(custodyAgreement.uploadDate).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleViewDocument}
+                                    disabled={!custodyAgreement.fileContent}
+                                    className="border-blue-300 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={!custodyAgreement.fileContent ? "Original file not available. Please re-upload to enable viewing." : custodyAgreement.fileType?.toLowerCase() === 'pdf' ? "View the document in a new tab" : "Download the document"}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowUploadAgreement(true)}
+                                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                                  >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Update
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {custodyAgreement.expenseSplit && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                  <h5 className="text-sm font-semibold text-gray-700 mb-2">Extracted Information:</h5>
+                                  <div className="space-y-2 text-sm">
+                                    {custodyAgreement.custodySchedule && (
+                                      <div>
+                                        <span className="font-medium text-gray-700">Custody Schedule: </span>
+                                        <span className="text-gray-600">{custodyAgreement.custodySchedule}</span>
+                                      </div>
+                                    )}
+                                    {custodyAgreement.holidaySchedule && (
+                                      <div>
+                                        <span className="font-medium text-gray-700">Holiday Schedule: </span>
+                                        <span className="text-gray-600">{custodyAgreement.holidaySchedule}</span>
+                                      </div>
+                                    )}
+                                    {custodyAgreement.decisionMaking && (
+                                      <div>
+                                        <span className="font-medium text-gray-700">Decision Making: </span>
+                                        <span className="text-gray-600">{custodyAgreement.decisionMaking}</span>
+                                      </div>
+                                    )}
+                                    {custodyAgreement.expenseSplit && (
+                                      <div>
+                                        <span className="font-medium text-gray-700">Expense Split: </span>
+                                        <span className="text-gray-600">
+                                          {custodyAgreement.expenseSplit.ratio || '50-50'} 
+                                          {custodyAgreement.expenseSplit.parent1 && custodyAgreement.expenseSplit.parent2 && (
+                                            ` (Parent 1: ${custodyAgreement.expenseSplit.parent1}%, Parent 2: ${custodyAgreement.expenseSplit.parent2}%)`
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-4">
+                            <Alert className="mb-4">
+                              <AlertCircle className="w-4 h-4" />
+                              <AlertDescription>
+                                No custody agreement uploaded yet. Upload your divorce agreement to automatically extract custody schedules, expense splits, and other important terms.
+                              </AlertDescription>
+                            </Alert>
+                            <Button
+                              onClick={() => setShowUploadAgreement(true)}
+                              className="bg-gradient-to-r from-blue-500 to-purple-600"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload Agreement
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Upload Form */}
+                        {showUploadAgreement && (
+                          <div className="mt-4 pt-4 border-t border-blue-200">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-gray-800">
+                                  {custodyAgreement ? 'Update' : 'Upload'} Custody Agreement
+                                </h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setShowUploadAgreement(false);
+                                    clearAgreementFile();
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  onChange={handleAgreementFileSelect}
+                                  accept=".pdf,.doc,.docx,.txt"
+                                  className="hidden"
+                                  id="agreement-upload"
+                                />
+                                
+                                {!agreementFile ? (
+                                  <label htmlFor="agreement-upload" className="cursor-pointer">
+                                    <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+                                    <p className="text-sm font-medium text-gray-700 mb-1">
+                                      Click to upload or drag and drop
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      PDF, DOC, DOCX, or TXT (max 10MB)
+                                    </p>
+                                  </label>
+                                ) : (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-center space-x-3">
+                                      <FileText className="w-8 h-8 text-blue-500" />
+                                      <div className="text-left">
+                                        <p className="text-sm font-medium text-gray-900">{agreementFile.name}</p>
+                                        <p className="text-xs text-gray-500">
+                                          {(agreementFile.size / 1024 / 1024).toFixed(2)} MB
+                                        </p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearAgreementFile}
+                                        className="ml-auto"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+
+                                    {uploadingAgreement && (
+                                      <div className="space-y-2">
+                                        <Progress value={uploadProgress} className="h-2" />
+                                        <p className="text-xs text-gray-600">
+                                          {uploadProgress < 50 ? 'Uploading...' : 'Analyzing document with AI...'}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex space-x-3">
+                                <Button 
+                                  onClick={handleUploadAgreement}
+                                  disabled={!agreementFile || uploadingAgreement}
+                                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
+                                >
+                                  {uploadingAgreement ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      {uploadProgress < 50 ? 'Uploading...' : 'Parsing...'}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Upload & Parse
+                                    </>
+                                  )}
+                                </Button>
+                                <Button 
+                                  onClick={() => {
+                                    setShowUploadAgreement(false);
+                                    clearAgreementFile();
+                                  }}
+                                  variant="outline"
+                                  disabled={uploadingAgreement}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+
+                              <Alert>
+                                <AlertDescription className="text-xs">
+                                  Bridge uses AI to automatically extract key information from your agreement, including custody schedules, expense splits, and decision-making arrangements.
+                                </AlertDescription>
+                              </Alert>
+                            </div>
                           </div>
                         )}
                       </CardContent>

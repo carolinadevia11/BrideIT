@@ -137,6 +137,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [adminPendingFamilies, setAdminPendingFamilies] = useState<AdminFamilyRecord[]>([]);
   const [adminRecentFamilies, setAdminRecentFamilies] = useState<AdminFamilyRecord[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [familyProfileLoading, setFamilyProfileLoading] = useState(true);
   const [adminError, setAdminError] = useState<string | null>(null);
 
   const pendingFamilyCount = adminStats?.unlinkedFamilies ?? adminPendingFamilies.length;
@@ -298,6 +299,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
     const fetchUserData = async () => {
       try {
+        setFamilyProfileLoading(true);
         const token = localStorage.getItem('authToken');
         if (token) {
           const userProfile = await authAPI.getCurrentUser();
@@ -312,6 +314,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
           if (userProfile.role === 'admin') {
             setFamilyProfile(null);
+            setFamilyProfileLoading(false);
             await loadAdminOverview();
             return;
           }
@@ -367,14 +370,22 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               
               // If family profile exists, clear onboarding state
               localStorage.removeItem('onboardingState');
+            } else {
+              setFamilyProfile(null);
             }
           } catch (error) {
             // Family profile doesn't exist yet - that's okay
             console.info('No family profile found yet');
+            setFamilyProfile(null);
+          } finally {
+            setFamilyProfileLoading(false);
           }
+        } else {
+          setFamilyProfileLoading(false);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        setFamilyProfileLoading(false);
       }
     };
 
@@ -1227,7 +1238,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               </CardContent>
             </Card>
 
-            {!familyProfile && (
+            {!familyProfileLoading && !familyProfile && (
               <Card className="border-2 border-yellow-200 bg-yellow-50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
