@@ -192,6 +192,19 @@ async def delete_calendar_event(
     return Response(status_code=204)
 
 
+@router.get("/swappable-dates", response_model=List[Event])
+async def get_swappable_dates(current_user: User = Depends(get_current_user)):
+    """Get all calendar events for the current user."""
+    _, family_id = _get_family_for_user(current_user)
+    
+    events_cursor = db.events.find({
+        "family_id": family_id,
+        "parent": current_user.email
+    })
+    
+    return [_serialize_event_document(event_doc) for event_doc in events_cursor]
+
+
 @router.get("/change-requests", response_model=List[ChangeRequest])
 async def get_change_requests(current_user: User = Depends(get_current_user)):
     """Get all change requests for the user's family."""

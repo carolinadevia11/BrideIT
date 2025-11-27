@@ -171,8 +171,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [expensesByDay, setExpensesByDay] = useState<Record<string, DayExpense[]>>({});
   const [documentsByDay, setDocumentsByDay] = useState<Record<string, DayDocument[]>>({});
-  const [showExpenses, setShowExpenses] = useState<boolean>(false);
-  const [showDocuments, setShowDocuments] = useState<boolean>(false);
   const [custodyAgreement, setCustodyAgreement] = useState<any>(null);
   const [selectedTimeZone, setSelectedTimeZone] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -378,12 +376,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const loadAllData = async () => {
       // Load events first so calendar appears immediately
       await loadEvents();
-      // Then load expenses and documents in parallel (non-blocking)
+      // Then load other data in parallel (non-blocking)
       Promise.all([
-        loadExpensesForMonth(),
-        loadDocumentsForMonth(),
+        // Other data loading calls can go here
       ]).catch((error) => {
-        console.error('Error loading expenses/documents:', error);
+        console.error('Error loading ancillary data:', error);
       });
     };
     loadAllData();
@@ -433,89 +430,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
-  const loadExpensesForMonth = async () => {
-    try {
-      const data = await expensesAPI.getExpenses();
-      const grouped: Record<string, DayExpense[]> = {};
-      const targetYear = currentMonth.getFullYear();
-      const targetMonth = currentMonth.getMonth();
-      
-      // Pre-filter and process in a single pass for better performance
-      for (const expense of data) {
-        const expenseDate =
-          parseApiDate(expense.date) ??
-          parseApiDate(expense.created_at) ??
-          parseApiDate(expense.updated_at);
-        
-        if (!expenseDate) continue;
-        
-        // Early exit if date doesn't match target month
-        if (expenseDate.getFullYear() !== targetYear || expenseDate.getMonth() !== targetMonth) {
-          continue;
-        }
-        
-        const key = getDayKey(expenseDate);
-        const entry: DayExpense = {
-          id: expense.id ?? expense._id ?? crypto.randomUUID(),
-          description: expense.description || 'Expense',
-          amount: typeof expense.amount === 'number' ? expense.amount : undefined,
-          status: expense.status,
-          date: expenseDate,
-        };
-        
-        if (!grouped[key]) {
-          grouped[key] = [];
-        }
-        grouped[key].push(entry);
-      }
-      setExpensesByDay(grouped);
-    } catch (error) {
-      console.error('Error loading expenses for calendar view:', error);
-      setExpensesByDay({}); // Reset on error
-    }
-  };
 
-  const loadDocumentsForMonth = async () => {
-    try {
-      const docs = await documentsAPI.getDocuments();
-      const grouped: Record<string, DayDocument[]> = {};
-      const targetYear = currentMonth.getFullYear();
-      const targetMonth = currentMonth.getMonth();
-      
-      // Pre-filter and process in a single pass for better performance
-      for (const doc of docs) {
-        const uploadDate =
-          parseApiDate(doc.uploadDate) ??
-          parseApiDate(doc.created_at) ??
-          parseApiDate(doc.updated_at);
-        
-        if (!uploadDate) continue;
-        
-        // Early exit if date doesn't match target month
-        if (uploadDate.getFullYear() !== targetYear || uploadDate.getMonth() !== targetMonth) {
-          continue;
-        }
-        
-        const key = getDayKey(uploadDate);
-        const entry: DayDocument = {
-          id: doc.id ?? doc._id ?? crypto.randomUUID(),
-          name: doc.name || 'Document',
-          type: doc.type,
-          folder: doc.folderName,
-          uploadDate,
-        };
-        
-        if (!grouped[key]) {
-          grouped[key] = [];
-        }
-        grouped[key].push(entry);
-      }
-      setDocumentsByDay(grouped);
-    } catch (error) {
-      console.error('Error loading documents for calendar view:', error);
-      setDocumentsByDay({}); // Reset on error
-    }
-  };
 
   const loadChangeRequests = async () => {
     setIsLoadingRequests(true);
@@ -1520,34 +1435,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
             {/* Filter Checkboxes */}
             <div className="flex flex-wrap items-center justify-end gap-4 px-2 py-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-expenses"
-                  checked={showExpenses}
-                  onCheckedChange={(checked) => setShowExpenses(checked === true)}
-                />
-                <Label
-                  htmlFor="show-expenses"
-                  className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                >
-                  <DollarSign className="w-4 h-4 text-rose-600" />
-                  Expenses
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="show-documents"
-                  checked={showDocuments}
-                  onCheckedChange={(checked) => setShowDocuments(checked === true)}
-                />
-                <Label
-                  htmlFor="show-documents"
-                  className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                >
-                  <FileText className="w-4 h-4 text-indigo-600" />
-                  Documents
-                </Label>
-              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1638,31 +1525,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               allItems.push({ type: 'event', data: event, id: event.id });
             });
             
-            // Add expenses if enabled and we have space
-            if (showExpenses && allItems.length < maxItemsToShow) {
-              const expensesToShow = Math.min(dayExpensesForDate.length, maxItemsToShow - allItems.length);
-              dayExpensesForDate.slice(0, expensesToShow).forEach(expense => {
-                allItems.push({ type: 'expense', data: expense, id: `expense-${expense.id}` });
-              });
-            }
-            
             // Add documents if enabled and we have space
-            if (showDocuments && allItems.length < maxItemsToShow) {
-              const docsToShow = Math.min(dayDocumentsForDate.length, maxItemsToShow - allItems.length);
-              dayDocumentsForDate.slice(0, docsToShow).forEach(doc => {
-                allItems.push({ type: 'document', data: doc, id: `doc-${doc.id}` });
-              });
-            }
             
             // Calculate remaining items
             const shownEvents = Math.min(dayEvents.length, maxItemsToShow);
-            const shownExpenses = showExpenses ? Math.min(dayExpensesForDate.length, Math.max(0, maxItemsToShow - shownEvents)) : 0;
-            const shownDocuments = showDocuments ? Math.min(dayDocumentsForDate.length, Math.max(0, maxItemsToShow - shownEvents - shownExpenses)) : 0;
+            const shownExpenses = 0;
+            const shownDocuments = 0;
             
             const remainingEvents = Math.max(0, dayEvents.length - shownEvents);
-            const remainingExpenses = showExpenses ? Math.max(0, dayExpensesForDate.length - shownExpenses) : 0;
-            const remainingDocuments = showDocuments ? Math.max(0, dayDocumentsForDate.length - shownDocuments) : 0;
-            const totalRemaining = remainingEvents + remainingExpenses + remainingDocuments;
+            const remainingExpenses = 0;
+            const remainingDocuments = 0;
+            const totalRemaining = remainingEvents;
 
             // Determine background color based on custody parent from agreement
             let dayBackgroundClass = 'border-gray-200';
@@ -1729,38 +1602,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           )}
                         </div>
                       );
-                    } else if (item.type === 'expense') {
-                      const expense = item.data as DayExpense;
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 rounded border border-rose-100 bg-rose-50 px-1.5 py-0.5 text-[9px] text-rose-700"
-                          title={expense.description}
-                        >
-                          <DollarSign className="w-2.5 h-2.5 flex-shrink-0" />
-                          <span className="truncate">
-                            {expense.description}
-                            {expense.amount ? ` • ${formatCurrency(expense.amount)}` : ''}
-                          </span>
-                        </div>
-                      );
-                    } else if (item.type === 'document') {
-                      const doc = item.data as DayDocument;
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 rounded border border-indigo-100 bg-indigo-50 px-1.5 py-0.5 text-[9px] text-indigo-700"
-                          title={doc.name}
-                        >
-                          <FileText className="w-2.5 h-2.5 flex-shrink-0" />
-                          <span className="truncate">
-                            {doc.name}
-                            {doc.type ? ` • ${doc.type}` : ''}
-                          </span>
-                        </div>
-                      );
                     }
                     return null;
                   })}
@@ -1769,7 +1610,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     <div 
                       onClick={(e) => e.stopPropagation()}
                       className="text-[9px] text-gray-500 px-1.5 py-0.5 font-medium"
-                      title={`${remainingEvents} events, ${remainingExpenses} expenses, ${remainingDocuments} documents`}
+                      title={`${remainingEvents} events`}
                     >
                       +{totalRemaining} more
                     </div>
@@ -2138,7 +1979,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       if (day === null) return <div key={index}></div>;
                       
                       const dayEvents = getEventsForDay(day);
-                      const swappableEvents = dayEvents.filter(e => e.isSwappable && e.type === selectedEvent.type);
+                      const swappableEvents = dayEvents.filter(e => e.isSwappable);
                       const canSwap = swappableEvents.length > 0 && day !== selectedEvent.date;
                       
                       return (
@@ -2158,7 +1999,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     })}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Green dates have swappable events of the same type
+                    Green dates have swappable events.
                   </p>
                 </div>
               )}

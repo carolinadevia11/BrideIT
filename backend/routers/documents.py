@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from fastapi.responses import FileResponse
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
 import base64
 import os
 from pathlib import Path
 
-from models import Document, DocumentUpload, DocumentFolder, DocumentFolderCreate, DocumentFolderUpdate, User
+from models import Document, DocumentUpload, DocumentFolder, DocumentFolderCreate, DocumentFolderUpdate, User, EventCreate
 from routers.auth import get_current_user
 from database import db
+from services.document_parser import DocumentParser
+from services.calendar_generator import generate_custody_events
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -546,6 +548,15 @@ async def upload_document(
         }
         
         db.documents.insert_one(document_doc)
+
+        # If custody agreement, parse and create events
+        if document_type == "custody-agreement":
+            await create_custody_events(
+                document_data.file_content,
+                file_type,
+                family,
+                current_user
+            )
         
         return {
             "id": document_id,
@@ -701,5 +712,27 @@ async def get_document_file(
         raise
     except Exception as e:
         print(f"[ERROR] Get document file: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
+async def create_custody_events(
+    file_content: str,
+    file_type: str,
+    family: dict,
+    current_user: User
+):
+    """Parse custody agreement and create calendar events"""
+    try:
+        parser = DocumentParser()
+        decoded_content = base64.b64decode(file_content)
+        parsed_data = await parser.parse_document(decoded_content, file_type)
+
+        if parsed_data and parsed_data.get("custodySchedule"):
+            family_id = str(family["_id"])
+            generate_custody_events(family_id, parsed_data)
+        else:
+            print("No custody schedule found in document")
+
+    except Exception as e:
+        print(f"Error creating custody events: {e}")
+        # We don't re-raise the exception to avoid failing the whole upload
+        # if calendar generation fails. This can be handled async later.
 

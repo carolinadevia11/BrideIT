@@ -8,3 +8,6 @@ python-jose[cryptography]
 PyJWT>=2.0.0
 python-multipart>=0.0.5
 certifi>=2024.8.30
+pdfplumber
+python-docx
+openai

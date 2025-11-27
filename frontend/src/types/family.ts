@@ -97,3 +97,15 @@ export interface Expense {
   paidBy: 'mom' | 'dad';
   status: string;
 }
+export interface CustodyDistribution {
+  parent1: {
+    name: string;
+    days: number;
+    percentage: number;
+  };
+  parent2: {
+    name: string;
+    days: number;
+    percentage: number;
+  };
+}

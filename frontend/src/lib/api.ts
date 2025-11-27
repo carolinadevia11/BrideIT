@@ -40,6 +40,7 @@ export const authAPI = {
   },
 
   login: async (email: string, password: string) => {
+    console.log('authAPI.login called with:', email, password);
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
@@ -161,6 +162,13 @@ export const familyAPI = {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     }
+  },
+  getCustodyDistribution: async (params?: { period: 'weekly' | 'yearly' }) => {
+    const url = new URL(`${API_BASE_URL}/api/v1/family/custody-distribution`);
+    if (params?.period) {
+      url.searchParams.append('period', params.period);
+    }
+    return fetchWithAuth(url.pathname + url.search);
   },
 };
 

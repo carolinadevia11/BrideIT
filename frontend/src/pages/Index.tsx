@@ -73,7 +73,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   // Determine active tab from URL pathname
   const getTabFromPath = (pathname: string): string => {
     if (pathname.startsWith('/calendar')) return 'calendar';
@@ -84,20 +84,25 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     if (pathname.startsWith('/dashboard')) return 'dashboard';
     return 'dashboard'; // default
   };
-  
+
   const [activeTab, setActiveTab] = useState(getTabFromPath(location.pathname));
-  
+
   // Sync activeTab with URL pathname when location changes
   useEffect(() => {
     const tab = getTabFromPath(location.pathname);
     setActiveTab(tab);
   }, [location.pathname]);
-  
+
   // Helper function to change tab and update URL
   const changeTab = (tab: string) => {
+    setShowSettings(false);
     setActiveTab(tab);
     navigate(`/${tab}`, { replace: true });
   };
+
+  useEffect(() => {
+    setShowSettings(startInSettings);
+  }, [startInSettings]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOnboardingExplanation, setShowOnboardingExplanation] = useState(startOnboarding);
   const [showAccountSetup, setShowAccountSetup] = useState(false);
@@ -224,18 +229,18 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       tempFamilyData,
       currentUser,
     };
-    
+
     // Only save if user is in onboarding flow (at least one onboarding screen is active)
-    const isInOnboarding = showOnboardingExplanation || showAccountSetup || showBridgettePersonalization || 
-                           showFamilyChoice || showFamilyOnboarding || showFamilyCodeSetup || showContractUpload;
-    
+    const isInOnboarding = showOnboardingExplanation || showAccountSetup || showBridgettePersonalization ||
+      showFamilyChoice || showFamilyOnboarding || showFamilyCodeSetup || showContractUpload;
+
     if (isInOnboarding) {
       localStorage.setItem('onboardingState', JSON.stringify(onboardingState));
     } else {
       localStorage.removeItem('onboardingState');
     }
-  }, [showOnboardingExplanation, showAccountSetup, showBridgettePersonalization, showFamilyChoice, 
-      showFamilyOnboarding, showFamilyCodeSetup, showContractUpload, familyCodeMode, tempFamilyData, currentUser]);
+  }, [showOnboardingExplanation, showAccountSetup, showBridgettePersonalization, showFamilyChoice,
+    showFamilyOnboarding, showFamilyCodeSetup, showContractUpload, familyCodeMode, tempFamilyData, currentUser]);
 
   // Restore onboarding state from localStorage on mount
   useEffect(() => {
@@ -367,7 +372,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 ...family,
                 children: children,
               } as FamilyProfile);
-              
+
               // If family profile exists, clear onboarding state
               localStorage.removeItem('onboardingState');
             } else {
@@ -408,33 +413,33 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
         const upcomingEventArray = Array.isArray(eventsResponse)
           ? eventsResponse
-              .map((event: { id?: string; date?: string; title?: string }) => {
-                const eventDate = event?.date ? new Date(event.date) : null;
-                if (!eventDate || Number.isNaN(eventDate.getTime()) || eventDate < now) {
-                  return null;
-                }
-                return {
-                  id: event.id ?? crypto.randomUUID(),
-                  title: event.title || 'Schedule event',
-                  dateLabel: eventDate.toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                  }),
-                  eventDate,
-                };
-              })
-              .filter((item): item is UpcomingEventDetail & { eventDate: Date } => Boolean(item))
-              .sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime())
+            .map((event: { id?: string; date?: string; title?: string }) => {
+              const eventDate = event?.date ? new Date(event.date) : null;
+              if (!eventDate || Number.isNaN(eventDate.getTime()) || eventDate < now) {
+                return null;
+              }
+              return {
+                id: event.id ?? crypto.randomUUID(),
+                title: event.title || 'Schedule event',
+                dateLabel: eventDate.toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                }),
+                eventDate,
+              };
+            })
+            .filter((item): item is UpcomingEventDetail & { eventDate: Date } => Boolean(item))
+            .sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime())
           : [];
 
         const upcomingEvents = upcomingEventArray.length;
 
         const pendingExpenseArray = Array.isArray(expensesResponse)
           ? expensesResponse.filter((expense: { status?: string }) => {
-              const status = (expense?.status || '').toLowerCase();
-              if (!status) return true;
-              return !['paid', 'reimbursed', 'settled'].includes(status);
-            })
+            const status = (expense?.status || '').toLowerCase();
+            if (!status) return true;
+            return !['paid', 'reimbursed', 'settled'].includes(status);
+          })
           : [];
 
         const pendingExpenses = pendingExpenseArray.length;
@@ -493,7 +498,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   // Show onboarding explanation (check this first as it's a direct user action)
   if (showOnboardingExplanation) {
     return (
-      <OnboardingExplanation 
+      <OnboardingExplanation
         onStartJourney={() => {
           setShowOnboardingExplanation(false);
           setShowAccountSetup(true);
@@ -510,7 +515,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   // Show account setup screen (check this before family onboarding)
   if (showAccountSetup) {
     return (
-      <AccountSetup 
+      <AccountSetup
         onComplete={(userData) => {
           // Store user data and show Bridgette personalization
           setCurrentUser(userData);
@@ -521,7 +526,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           });
           setShowAccountSetup(false);
           setShowBridgettePersonalization(true);
-        }} 
+        }}
       />
     );
   }
@@ -561,7 +566,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   // Show family onboarding to collect full family profile
   if (showFamilyOnboarding && !familyProfile) {
     return (
-      <FamilyOnboarding 
+      <FamilyOnboarding
         initialUserData={currentUser || undefined}
         onComplete={(profile) => {
           // Store the complete profile for later use
@@ -576,7 +581,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             children: profile.children,
           });
           setShowFamilyCodeSetup(true);
-        }} 
+        }}
       />
     );
   }
@@ -637,23 +642,36 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   // Show onboarding flow
   if (showOnboarding && isFirstTime) {
     return (
-      <OnboardingFlow 
+      <OnboardingFlow
         onComplete={() => {
           setShowOnboarding(false);
           setIsFirstTime(false);
-        }} 
+        }}
       />
     );
   }
 
   // Show settings screen
+  // Show settings screen
   if (showSettings) {
     return (
-      <UserSettings
-        onBack={() => setShowSettings(false)}
-        initialProfile={currentUser || undefined}
-        familyProfile={familyProfile}
-      />
+      <DashboardShell
+        navItems={dashboardNavItems}
+        activeItem="settings"
+        onNavigate={changeTab}
+        onLogout={handleLogoutClick}
+        onOpenSettings={() => { }}
+        onOpenChildren={familyProfile ? () => setShowChildManagement(true) : undefined}
+        onCreateQuickAction={handleQuickAdd}
+        onOpenMessages={handleOpenMessages}
+        currentUser={currentUser}
+        heroSubtitle={familyProfile?.familyName || 'Fair & Balanced Co-Parenting'}
+      >
+        <UserSettings
+          initialProfile={currentUser || undefined}
+          familyProfile={familyProfile}
+        />
+      </DashboardShell>
     );
   }
 
@@ -678,7 +696,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             onUpdateChild={(childId, updates) => {
               setFamilyProfile(prev => prev ? {
                 ...prev,
-                children: prev.children.map(c => 
+                children: prev.children.map(c =>
                   c.id === childId ? { ...c, ...updates } : c
                 )
               } : null);
@@ -934,9 +952,8 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                                   </p>
                                 </div>
                                 <span
-                                  className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                                    isLinked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                                  }`}
+                                  className={`text-xs font-semibold px-2 py-1 rounded-full ${isLinked ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                                    }`}
                                 >
                                   {isLinked ? 'Linked' : 'Awaiting link'}
                                 </span>
@@ -1013,7 +1030,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       heroSubtitle={familyProfile?.familyName || 'Fair & Balanced Co-Parenting'}
     >
       <>
-      <style>{`
+        <style>{`
         @keyframes bridgette-float {
           0%, 100% {
             transform: translateY(0px) scale(1);
@@ -1136,252 +1153,252 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
         }
        `}</style>
 
-      <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={changeTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white rounded-xl shadow-sm p-1 border-2 border-gray-200">
-            <TabsTrigger value="dashboard" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Calendar</span>
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black">
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Messages</span>
-            </TabsTrigger>
-            <TabsTrigger value="expenses" className="flex items-center space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white">
-              <DollarSign className="w-4 h-4" />
-              <span className="hidden sm:inline">Expenses</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Documents</span>
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Resources</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <Tabs value={activeTab} onValueChange={changeTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-6 bg-white rounded-xl shadow-sm p-1 border-2 border-gray-200">
+              <TabsTrigger value="dashboard" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex items-center space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white">
+                <Calendar className="w-4 h-4" />
+                <span className="hidden sm:inline">Calendar</span>
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="flex items-center space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black">
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Messages</span>
+              </TabsTrigger>
+              <TabsTrigger value="expenses" className="flex items-center space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white">
+                <DollarSign className="w-4 h-4" />
+                <span className="hidden sm:inline">Expenses</span>
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white">
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Documents</span>
+              </TabsTrigger>
+              <TabsTrigger value="resources" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Resources</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 pr-6 speech-bubble">
-                    <h2 className="text-2xl font-bold mb-3 text-bridge-black">
-                      Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
-                    </h2>
-                    <p className="text-bridge-black mb-4">
-                      Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
-                      {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
-                      {" "}Don't worry - I'm here to help keep everything organized and balanced!
-                    </p>
-                    {familyProfile && familyProfile.children.length > 0 && (
+            <TabsContent value="dashboard" className="space-y-6">
+              <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 pr-6 speech-bubble">
+                      <h2 className="text-2xl font-bold mb-3 text-bridge-black">
+                        Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
+                      </h2>
+                      <p className="text-bridge-black mb-4">
+                        Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
+                        {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
+                        {" "}Don't worry - I'm here to help keep everything organized and balanced!
+                      </p>
+                      {familyProfile && familyProfile.children.length > 0 && (
+                        <div className="bg-white/20 rounded-lg p-3 mb-4">
+                          <p className="text-bridge-black text-sm font-medium mb-2">
+                            👶 Your children:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {familyProfile.children.map((child) => (
+                              <span key={child.id} className="bg-white/30 px-3 py-1 rounded-full text-sm text-bridge-black">
+                                {child.firstName}, {child.age}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="bg-white/20 rounded-lg p-3 mb-4">
                         <p className="text-bridge-black text-sm font-medium mb-2">
-                          👶 Your children:
+                          📋 Quick items for your attention:
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          {familyProfile.children.map((child) => (
-                            <span key={child.id} className="bg-white/30 px-3 py-1 rounded-full text-sm text-bridge-black">
-                              {child.firstName}, {child.age}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="bg-white/20 rounded-lg p-3 mb-4">
-                      <p className="text-bridge-black text-sm font-medium mb-2">
-                        📋 Quick items for your attention:
-                      </p>
-                      <ul className="text-bridge-black text-sm space-y-1">
-                        {dashboardMetricsLoaded ? (
-                          <>
-                            {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
-                              dashboardMetrics.pendingExpenseDetails.map((expense) => (
-                                <li key={expense.id}>
-                                  • {expense.description}
-                                  {typeof expense.amount === 'number' && (
-                                    <> (${expense.amount.toFixed(2)})</>
-                                  )}
-                                  {expense.status && (
-                                    <> – status: {expense.status.replace(/_/g, ' ')}</>
-                                  )}
+                        <ul className="text-bridge-black text-sm space-y-1">
+                          {dashboardMetricsLoaded ? (
+                            <>
+                              {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
+                                dashboardMetrics.pendingExpenseDetails.map((expense) => (
+                                  <li key={expense.id}>
+                                    • {expense.description}
+                                    {typeof expense.amount === 'number' && (
+                                      <> (${expense.amount.toFixed(2)})</>
+                                    )}
+                                    {expense.status && (
+                                      <> – status: {expense.status.replace(/_/g, ' ')}</>
+                                    )}
+                                  </li>
+                                ))
+                              ) : (
+                                <li>• No expenses need your review right now 🎉</li>
+                              )}
+                              {dashboardMetrics.upcomingEventDetails.length > 0 && (
+                                <li key="upcoming-event">
+                                  • Next event:{' '}
+                                  {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
+                                  {dashboardMetrics.upcomingEventDetails[0].dateLabel}
                                 </li>
-                              ))
-                            ) : (
-                              <li>• No expenses need your review right now 🎉</li>
-                            )}
-                            {dashboardMetrics.upcomingEventDetails.length > 0 && (
-                              <li key="upcoming-event">
-                                • Next event:{' '}
-                                {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
-                                {dashboardMetrics.upcomingEventDetails[0].dateLabel}
-                              </li>
-                            )}
-                          </>
-                        ) : (
-                          <li>• Gathering your latest activity...</li>
-                        )}
-                      </ul>
+                              )}
+                            </>
+                          ) : (
+                            <li>• Gathering your latest activity...</li>
+                          )}
+                        </ul>
+                      </div>
+                      <Button
+                        onClick={() => changeTab('expenses')}
+                        className="bg-bridge-red hover:bg-red-600 text-white font-medium"
+                      >
+                        Review Now
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={() => changeTab('expenses')}
-                      className="bg-bridge-red hover:bg-red-600 text-white font-medium"
-                    >
-                      Review Now
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {!familyProfileLoading && !familyProfile && (
-              <Card className="border-2 border-yellow-200 bg-yellow-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
-                      <p className="text-bridge-black text-sm">
-                        Add information about your family to get personalized organization and support
-                      </p>
+              {!familyProfileLoading && !familyProfile && (
+                <Card className="border-2 border-yellow-200 bg-yellow-50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
+                        <p className="text-bridge-black text-sm">
+                          Add information about your family to get personalized organization and support
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setShowFamilyOnboarding(true)}
+                        className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Set Up Family Profile
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={() => setShowFamilyOnboarding(true)}
-                      className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400"
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProgressBar
+                  progress={85}
+                  title="Co-parenting Balance"
+                  subtitle="Great progress this month!"
+                  showTrophy={false}
+                />
+                <ProgressBar
+                  progress={100}
+                  title="January Setup"
+                  subtitle="All systems ready!"
+                  showTrophy={true}
+                />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-bridge-black mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <QuickActionCard
+                    title="Schedule Event"
+                    description="Add to shared calendar"
+                    icon={Calendar}
+                    color="green"
+                    onClick={() => changeTab('calendar')}
+                  />
+                  <QuickActionCard
+                    title="Send Message"
+                    description="Communicate securely"
+                    icon={MessageSquare}
+                    color="yellow"
+                    onClick={() => changeTab('messages')}
+                    badge={unreadMessagesCount > 0 ? String(unreadMessagesCount) : undefined}
+                  />
+                  <QuickActionCard
+                    title="Review Expense"
+                    description="Pending approval needed"
+                    icon={DollarSign}
+                    color="red"
+                    onClick={() => changeTab('expenses')}
+                    urgent={true}
+                    badge="URGENT"
+                  />
+                  <QuickActionCard
+                    title="View Documents"
+                    description="Access agreements"
+                    icon={FileText}
+                    color="blue"
+                    onClick={() => changeTab('documents')}
+                  />
+                </div>
+              </div>
+
+              <RecentActivity
+                onNavigateToExpenses={() => changeTab('expenses')}
+                onNavigateToCalendar={() => changeTab('calendar')}
+                onNavigateToMessages={() => changeTab('messages')}
+              />
+
+              <Card className="border-2 border-bridge-blue bg-blue-50">
+                <CardContent className="p-6">
+                  <div>
+                    <h3 className="font-semibold text-bridge-black mb-2">⚖️ Daily Balance Tip</h3>
+                    <p className="text-bridge-black text-sm mb-3">
+                      Remember, fair doesn't always mean equal. Consider each parent's circumstances
+                      when making decisions. Focus on what's best for your children's wellbeing.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => changeTab('resources')}
+                      className="border-bridge-blue text-bridge-blue hover:bg-bridge-blue hover:text-white"
                     >
-                      <Users className="w-4 h-4 mr-2" />
-                      Set Up Family Profile
+                      Learn More
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            )}
+            </TabsContent>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ProgressBar 
-                progress={85} 
-                title="Co-parenting Balance" 
-                subtitle="Great progress this month!"
-                showTrophy={false}
+            <TabsContent value="calendar">
+              <CalendarView
+                familyProfile={familyProfile}
+                currentUser={currentUser || undefined}
+                onNavigateToMessages={() => changeTab('messages')}
               />
-              <ProgressBar 
-                progress={100} 
-                title="January Setup" 
-                subtitle="All systems ready!"
-                showTrophy={true}
+            </TabsContent>
+
+            <TabsContent value="messages">
+              <MessagingInterface />
+            </TabsContent>
+
+            <TabsContent value="expenses">
+              <ExpenseTracker familyProfile={familyProfile} />
+            </TabsContent>
+
+            <TabsContent value="documents">
+              <DocumentManager />
+            </TabsContent>
+
+            <TabsContent value="resources">
+              <EducationalResources currentUserName={currentUser?.firstName} />
+            </TabsContent>
+          </Tabs>
+          <div className="fixed bottom-6 right-6 hidden md:block">
+            <button
+              className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
+              onClick={() => setShowSupportChatbot(true)}
+              title="Talk to Bridgette, your friendly co-parenting assistant! 👋"
+            >
+              <img
+                src="/bridgette-avatar.png"
+                alt="Bridgette"
+                className="w-full h-full object-cover"
               />
-            </div>
-
-            <div>
-              <h3 className="text-xl font-bold text-bridge-black mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <QuickActionCard
-                  title="Schedule Event"
-                  description="Add to shared calendar"
-                  icon={Calendar}
-                  color="green"
-                  onClick={() => changeTab('calendar')}
-                />
-                <QuickActionCard
-                  title="Send Message"
-                  description="Communicate securely"
-                  icon={MessageSquare}
-                  color="yellow"
-                  onClick={() => changeTab('messages')}
-                  badge={unreadMessagesCount > 0 ? String(unreadMessagesCount) : undefined}
-                />
-                <QuickActionCard
-                  title="Review Expense"
-                  description="Pending approval needed"
-                  icon={DollarSign}
-                  color="red"
-                  onClick={() => changeTab('expenses')}
-                  urgent={true}
-                  badge="URGENT"
-                />
-                <QuickActionCard
-                  title="View Documents"
-                  description="Access agreements"
-                  icon={FileText}
-                  color="blue"
-                  onClick={() => changeTab('documents')}
-                />
-              </div>
-            </div>
-
-            <RecentActivity
-              onNavigateToExpenses={() => changeTab('expenses')}
-              onNavigateToCalendar={() => changeTab('calendar')}
-              onNavigateToMessages={() => changeTab('messages')}
-            />
-
-            <Card className="border-2 border-bridge-blue bg-blue-50">
-              <CardContent className="p-6">
-                <div>
-                  <h3 className="font-semibold text-bridge-black mb-2">⚖️ Daily Balance Tip</h3>
-                  <p className="text-bridge-black text-sm mb-3">
-                    Remember, fair doesn't always mean equal. Consider each parent's circumstances 
-                    when making decisions. Focus on what's best for your children's wellbeing.
-                  </p>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => changeTab('resources')}
-                    className="border-bridge-blue text-bridge-blue hover:bg-bridge-blue hover:text-white"
-                  >
-                    Learn More
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="calendar">
-            <CalendarView
-              familyProfile={familyProfile}
-              currentUser={currentUser || undefined}
-              onNavigateToMessages={() => changeTab('messages')}
-            />
-          </TabsContent>
-
-          <TabsContent value="messages">
-            <MessagingInterface />
-          </TabsContent>
-
-          <TabsContent value="expenses">
-            <ExpenseTracker familyProfile={familyProfile} />
-          </TabsContent>
-
-          <TabsContent value="documents">
-            <DocumentManager />
-          </TabsContent>
-
-          <TabsContent value="resources">
-            <EducationalResources currentUserName={currentUser?.firstName} />
-          </TabsContent>
-        </Tabs>
-        <div className="fixed bottom-6 right-6 hidden md:block">
-          <button
-            className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
-            onClick={() => setShowSupportChatbot(true)}
-            title="Talk to Bridgette, your friendly co-parenting assistant! 👋"
-          >
-            <img 
-              src="/bridgette-avatar.png" 
-              alt="Bridgette" 
-              className="w-full h-full object-cover"
-            />
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
-      <SupportChatbot
-        isOpen={showSupportChatbot}
-        onClose={() => setShowSupportChatbot(false)}
-        parentName={currentUser?.firstName}
-      />
+        <SupportChatbot
+          isOpen={showSupportChatbot}
+          onClose={() => setShowSupportChatbot(false)}
+          parentName={currentUser?.firstName}
+        />
       </>
     </DashboardShell>
   );

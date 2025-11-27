@@ -4,7 +4,7 @@ import uuid
 import random
 import string
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 import base64
 import re
 
@@ -263,6 +263,8 @@ def parse_contract_with_ai(file_content: str, file_type: str):
         "parsedData": parsed_data
     }
 
+from services.calendar_generator import generate_custody_events
+
 @router.post("/api/v1/family/contract")
 async def upload_contract(contract: ContractUpload, current_user: User = Depends(get_current_user)):
     """Upload and parse custody agreement document."""
@@ -342,6 +344,9 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
             {"_id": user_family["_id"]},
             {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
         )
+        
+        # Generate calendar events from the new agreement
+        generate_custody_events(user_family["id"], custody_agreement.model_dump())
         
         return {
             "message": "Contract uploaded and parsed successfully",
@@ -441,3 +446,78 @@ async def delete_family(current_user: User = Depends(get_current_user)):
     db.families.delete_one({"_id": user_family["_id"]})
     
     return {"message": "Family profile deleted successfully"}
+
+@router.get("/api/v1/family/custody-distribution")
+async def get_custody_distribution(period: str = "yearly", current_user: User = Depends(get_current_user)):
+    """
+    Calculate and return the custody distribution for the current family.
+    Can be filtered by period: 'weekly' or 'yearly'.
+    """
+    user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
+
+    if not user_family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+
+    family_id = user_family["id"]
+    parent1_email = user_family.get("parent1_email")
+    parent2_email = user_family.get("parent2_email")
+    parent1_name = user_family.get("parent1_name", "Parent 1")
+    parent2_name = user_family.get("parent2_name", "Parent 2")
+
+    if not parent1_email or not parent2_email:
+        raise HTTPException(status_code=400, detail="Family is not fully linked")
+
+    # Define date range for query
+    today = datetime.now(timezone.utc).date()
+    if period == "weekly":
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        query = {
+            "family_id": family_id,
+            "type": "custody",
+            "date": {
+                "$gte": start_of_week.isoformat(),
+                "$lte": end_of_week.isoformat()
+            }
+        }
+    else:  # yearly
+        start_of_year = date(today.year, 1, 1)
+        end_of_year = date(today.year, 12, 31)
+        query = {
+            "family_id": family_id,
+            "type": "custody",
+            "date": {
+                "$gte": start_of_year.isoformat(),
+                "$lte": end_of_year.isoformat()
+            }
+        }
+
+    # Fetch calendar events for the specified period
+    events = list(db.events.find(query))
+
+    total_days = len(events)
+    if total_days == 0:
+        return {
+            "parent1": {"name": parent1_name, "days": 0, "percentage": 0},
+            "parent2": {"name": parent2_name, "days": 0, "percentage": 0},
+            "total_days": 0
+        }
+
+    parent1_days = 0
+    parent2_days = 0
+
+    for event in events:
+        parent_email = event.get("parent")
+        if parent_email == parent1_email:
+            parent1_days += 1
+        elif parent_email == parent2_email:
+            parent2_days += 1
+
+    parent1_percentage = round((parent1_days / total_days) * 100, 1) if total_days > 0 else 0
+    parent2_percentage = round((parent2_days / total_days) * 100, 1) if total_days > 0 else 0
+
+    return {
+        "parent1": {"name": parent1_name, "days": parent1_days, "percentage": parent1_percentage},
+        "parent2": {"name": parent2_name, "days": parent2_days, "percentage": parent2_percentage},
+        "total_days": total_days
+    }

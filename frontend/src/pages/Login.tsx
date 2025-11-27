@@ -16,11 +16,12 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('sarah@email.com');
+  const [password, setPassword] = useState('password');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
+    console.log('Logging in with:', email, password);
     setIsSubmitting(true);
     try {
       const response = await authAPI.login(email, password);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { User, Bell, Shield, Palette, Globe, Heart, Save, Edit, Camera, MessageSquare, BookOpen, Languages, ArrowLeft, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import AnimatedBridgette from './AnimatedBridgette';
-import { FamilyProfile } from '@/types/family';
+
+import { FamilyProfile, CustodyDistribution } from '@/types/family';
 import { authAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,16 +27,12 @@ type UserProfileInfo = {
 };
 
 interface UserSettingsProps {
-  onBack: () => void;
   initialProfile?: UserProfileInfo | null;
   familyProfile?: FamilyProfile | null;
 }
 
-const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, familyProfile }) => {
+const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfile }) => {
   const { toast } = useToast();
-  const [bridgetteExpression, setBridgetteExpression] = useState<'thinking' | 'encouraging' | 'celebrating' | 'balanced' | 'mediating'>('encouraging');
-  const [bridgetteMessage, setBridgetteMessage] = useState("Let's make sure your Bridge experience is perfect for you! I'm here to help with any changes you'd like to make! ⚙️");
-  const [hasChanges, setHasChanges] = useState(false);
 
   const [settings, setSettings] = useState({
     profile: {
@@ -97,7 +93,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
 
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  
+
   // Custody Agreement state
   const [custodyAgreement, setCustodyAgreement] = useState<any>(null);
   const [loadingAgreement, setLoadingAgreement] = useState(false);
@@ -106,6 +102,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
   const [uploadingAgreement, setUploadingAgreement] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [custodyDistribution, setCustodyDistribution] = useState<CustodyDistribution | null>(null);
+  const [loadingCustody, setLoadingCustody] = useState(false);
+  const [custodyViewPeriod, setCustodyViewPeriod] = useState<'weekly' | 'yearly'>('weekly');
 
   const applyProfileToSettings = (profile: UserProfileInfo) => {
     setSettings(prev => ({
@@ -168,7 +167,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
   useEffect(() => {
     const loadAgreement = async () => {
       if (!familyProfile) return;
-      
+
       try {
         setLoadingAgreement(true);
         const agreement = await familyAPI.getContract();
@@ -187,6 +186,27 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
 
     loadAgreement();
   }, [familyProfile]);
+
+  const loadCustodyDistribution = async (period: 'weekly' | 'yearly') => {
+    if (!familyProfile) return;
+    setLoadingCustody(true);
+    try {
+      const distribution = await familyAPI.getCustodyDistribution({ period });
+      setCustodyDistribution(distribution);
+    } catch (error) {
+      console.error('Error loading custody distribution:', error);
+      setCustodyDistribution(null); // Clear previous data on error
+    } finally {
+      setLoadingCustody(false);
+    }
+  };
+
+  useEffect(() => {
+    if (familyProfile) {
+      loadCustodyDistribution(custodyViewPeriod);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyProfile, custodyViewPeriod]);
 
   const activeEmail = (initialProfile?.email || settings.profile.email || '').toLowerCase();
 
@@ -215,9 +235,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
         firstName: matchedParent.firstName,
         lastName: matchedParent.lastName,
         email: matchedParent.email,
-        phone: ('phone' in matchedParent ? matchedParent.phone : undefined) || currentPhone,
-        timezone: ('timezone' in matchedParent ? matchedParent.timezone : undefined) || currentTimezone,
-        bio: ('bio' in matchedParent ? matchedParent.bio : undefined) || currentBio,
+        phone: ('phone' in matchedParent ? String(matchedParent.phone) : undefined) || currentPhone,
+        timezone: ('timezone' in matchedParent ? String(matchedParent.timezone) : undefined) || currentTimezone,
+        bio: ('bio' in matchedParent ? String(matchedParent.bio) : undefined) || currentBio,
       });
     }
   }, [familyProfile, activeEmail]);
@@ -236,34 +256,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
         [field]: value
       }
     }));
-    setHasChanges(true);
-
-    // Update Bridgette's reaction
-    if (category === 'preferences') {
-      if (field === 'language') {
-        setBridgetteExpression('encouraging');
-        setBridgetteMessage(value === 'spanish' ? "¡Perfecto! Ahora puedo ayudarte en español también! 🌟" : "Great! I'll continue helping you in English! 🌟");
-      } else if (field === 'messageTone') {
-        setBridgetteExpression('thinking');
-        setBridgetteMessage(`Perfect! I'll help you communicate with a ${value} tone. This will make your messages more effective! 💬`);
-      } else {
-        setBridgetteExpression('encouraging');
-        setBridgetteMessage("Excellent choices! These preferences will help me provide you with the most relevant content and support! ✨");
-      }
-    } else if (category === 'bridgette') {
-      setBridgetteExpression('encouraging');
-      setBridgetteMessage("Great choice! I love helping you customize your experience! ✨");
-    } else if (category === 'notifications') {
-      setBridgetteExpression('thinking');
-      setBridgetteMessage("Perfect! I'll make sure you get the right notifications at the right time! 🔔");
-    }
   };
 
   const updateNestedSetting = (category: string, subcategory: string, field: string, value: string | boolean) => {
     setSettings(prev => {
       const categoryData = prev[category as keyof typeof prev] as Record<string, unknown>;
       const subcategoryData = categoryData[subcategory] as Record<string, unknown>;
-      
+
       return {
         ...prev,
         [category]: {
@@ -275,21 +274,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
         }
       };
     });
-    setHasChanges(true);
-
-    setBridgetteExpression('encouraging');
-    setBridgetteMessage("Great! I'm updating your preferences to give you the best possible experience! 🎯");
   };
 
   const saveSettings = () => {
-    setBridgetteExpression('celebrating');
-    setBridgetteMessage("🎉 All saved! Your settings have been updated successfully!");
-    setHasChanges(false);
-    
-    setTimeout(() => {
-      setBridgetteExpression('encouraging');
-      setBridgetteMessage("Everything looks great! Is there anything else you'd like to adjust?");
-    }, 3000);
+    toast({
+      title: "Settings saved",
+      description: "Your settings have been updated successfully!",
+    });
   };
 
   const handleCopyFamilyCode = async () => {
@@ -350,7 +341,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
     try {
       // Read file as base64
       const reader = new FileReader();
-      
+
       reader.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 50;
@@ -383,14 +374,16 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
           setShowUploadAgreement(false);
           setAgreementFile(null);
           setUploadProgress(0);
-          
+
           toast({
             title: "Success!",
             description: "Custody agreement uploaded and parsed successfully",
           });
 
-          setBridgetteExpression('celebrating');
-          setBridgetteMessage("🎉 Great! I've analyzed your custody agreement and updated your family settings!");
+
+
+          // Refresh custody distribution
+          loadCustodyDistribution(custodyViewPeriod);
         } catch (error) {
           clearInterval(progressInterval);
           console.error('Error uploading agreement:', error);
@@ -452,761 +445,812 @@ const UserSettings: React.FC<UserSettingsProps> = ({ onBack, initialProfile, fam
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Bridgette Side */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              <AnimatedBridgette
-                size="xl"
-                expression={bridgetteExpression}
-                animation={bridgetteExpression === 'celebrating' ? 'celebrate' : 'float'}
-                showSpeechBubble={true}
-                message={bridgetteMessage}
-                position="center"
-              />
-              
-              {hasChanges && (
-                <Card className="mt-6 border-2 border-green-200 bg-green-50">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-green-800 mb-3">You have unsaved changes!</p>
-                    <Button onClick={saveSettings} className="w-full">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save All Changes
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+      <div className="w-full">
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 bg-slate-100 p-1 rounded-lg">
+            <TabsTrigger
+              value="profile"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="preferences"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden sm:inline">Preferences</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Notifications</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="privacy"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Privacy</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="bridgette"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden sm:inline">Bridgette</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="family"
+              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">Family</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <Card className="shadow-2xl">
+
+            <CardContent className="pt-6">
+
+              {/* Profile Settings */}
+              <TabsContent value="profile" className="space-y-6">
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {profileInitials}
+                    </div>
+                    <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
+                      <Camera className="w-4 h-4" />
                     </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-
-          {/* Settings Side */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <User className="w-6 h-6 mr-3 text-blue-600" />
-                    Account Settings
                   </div>
-                  <Button variant="ghost" size="sm" onClick={onBack}>
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back
-                  </Button>
-                </CardTitle>
-                <p className="text-gray-600">
-                  {loadingProfile ? 'Loading your information...' : 'Customize your Bridge experience'}
-                </p>
-                {loadError && (
-                  <p className="text-sm text-red-500 mt-1">{loadError}</p>
-                )}
-              </CardHeader>
-              
-              <CardContent>
-                <Tabs defaultValue="profile" className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-7">
-                    <TabsTrigger value="profile" className="flex items-center space-x-1">
-                      <User className="w-4 h-4" />
-                      <span className="hidden sm:inline">Profile</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="preferences" className="flex items-center space-x-1">
-                      <Heart className="w-4 h-4" />
-                      <span className="hidden sm:inline">Preferences</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="notifications" className="flex items-center space-x-1">
-                      <Bell className="w-4 h-4" />
-                      <span className="hidden sm:inline">Notifications</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="privacy" className="flex items-center space-x-1">
-                      <Shield className="w-4 h-4" />
-                      <span className="hidden sm:inline">Privacy</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="bridgette" className="flex items-center space-x-1">
-                      <Heart className="w-4 h-4" />
-                      <span className="hidden sm:inline">Bridgette</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="family" className="flex items-center space-x-1">
-                      <Globe className="w-4 h-4" />
-                      <span className="hidden sm:inline">Family</span>
-                    </TabsTrigger>
-                  </TabsList>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {[settings.profile.firstName, settings.profile.lastName].filter(Boolean).join(' ') || 'Your name'}
+                    </h3>
+                    <p className="text-gray-600">{settings.profile.email || 'Add your email address'}</p>
+                  </div>
+                </div>
 
-                  {/* Profile Settings */}
-                  <TabsContent value="profile" className="space-y-6">
-                    <div className="flex items-center space-x-4 mb-6">
-                      <div className="relative">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                          {profileInitials}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={settings.profile.firstName}
+                      onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={settings.profile.lastName}
+                      onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={settings.profile.email}
+                    onChange={(e) => updateSetting('profile', 'email', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={settings.profile.phone}
+                    onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="timezone">Time Zone</Label>
+                  <Select value={settings.profile.timezone} onValueChange={(value) => updateSetting('profile', 'timezone', value)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EST">Eastern Time (EST)</SelectItem>
+                      <SelectItem value="CST">Central Time (CST)</SelectItem>
+                      <SelectItem value="MST">Mountain Time (MST)</SelectItem>
+                      <SelectItem value="PST">Pacific Time (PST)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="bio">Bio (Optional)</Label>
+                  <Textarea
+                    id="bio"
+                    value={settings.profile.bio}
+                    onChange={(e) => updateSetting('profile', 'bio', e.target.value)}
+                    placeholder="Tell your co-parent a bit about yourself..."
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+
+              {/* New Preferences Tab */}
+              <TabsContent value="preferences" className="space-y-6">
+                {/* Language Selection */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Languages className="w-5 h-5 mr-2 text-blue-600" />
+                    Language Preference
+                  </h3>
+                  <Select value={settings.preferences.language} onValueChange={(value) => updateSetting('preferences', 'language', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="english">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Message Tone Preference */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
+                    Default Message Tone
+                  </h3>
+                  <Select value={settings.preferences.messageTone} onValueChange={(value) => updateSetting('preferences', 'messageTone', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="friendly">
+                        <div>
+                          <div className="font-medium">Friendly</div>
+                          <div className="text-xs text-gray-500">Warm and collaborative tone</div>
                         </div>
-                        <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
-                          <Camera className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {[settings.profile.firstName, settings.profile.lastName].filter(Boolean).join(' ') || 'Your name'}
-                        </h3>
-                        <p className="text-gray-600">{settings.profile.email || 'Add your email address'}</p>
-                      </div>
-                    </div>
+                      </SelectItem>
+                      <SelectItem value="matter-of-fact">
+                        <div>
+                          <div className="font-medium">Matter-of-fact</div>
+                          <div className="text-xs text-gray-500">Direct and clear communication</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="neutral-legal">
+                        <div>
+                          <div className="font-medium">Neutral Legal</div>
+                          <div className="text-xs text-gray-500">Professional and documented</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gentle">
+                        <div>
+                          <div className="font-medium">Gentle</div>
+                          <div className="text-xs text-gray-500">Soft and understanding approach</div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={settings.profile.firstName}
-                          onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
-                          className="mt-1"
+                {/* Notification Opt-ins */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Bell className="w-5 h-5 mr-2 text-blue-600" />
+                    Notification Preferences
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'dailyTips', label: 'Daily Co-parenting Tips', desc: 'Receive helpful daily tips and encouragement' },
+                      { key: 'weeklyDigest', label: 'Weekly Summary', desc: 'Weekly digest of your co-parenting activities' },
+                      { key: 'expertArticles', label: 'Expert Articles', desc: 'New articles from psychology and family experts' },
+                      { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge co-parenting community' },
+                      { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge' },
+                      { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn]}
+                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'notificationOptIn', item.key, checked)}
                         />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={settings.profile.lastName}
-                          onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={settings.profile.email}
-                        onChange={(e) => updateSetting('profile', 'email', e.target.value)}
-                        className="mt-1"
+                {/* Article Type Preferences */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
+                    Article Types You're Interested In
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'communication', label: 'Communication Strategies', desc: 'Tips for better co-parent communication' },
+                      { key: 'legal', label: 'Legal Guidance', desc: 'Understanding custody laws and agreements' },
+                      { key: 'emotional', label: 'Emotional Support', desc: 'Managing stress and emotional wellbeing' },
+                      { key: 'practical', label: 'Practical Tips', desc: 'Day-to-day co-parenting logistics' },
+                      { key: 'children', label: 'Children & Family', desc: 'Supporting your children through transitions' },
+                      { key: 'financial', label: 'Financial Planning', desc: 'Managing shared expenses and budgeting' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes]}
+                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'articleTypes', item.key, checked)}
+                        />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Notification Settings */}
+              <TabsContent value="notifications" className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Email Notifications</Label>
+                        <p className="text-sm text-gray-600">Receive updates via email</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.email}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'email', checked)}
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={settings.profile.phone}
-                        onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
-                        className="mt-1"
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">SMS Notifications</Label>
+                        <p className="text-sm text-gray-600">Urgent updates via text</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.sms}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'sms', checked)}
                       />
                     </div>
 
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Push Notifications</Label>
+                        <p className="text-sm text-gray-600">Real-time alerts on your device</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.push}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'push', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">What to notify me about</h3>
+
+                  <div className="space-y-3">
+                    {[
+                      { key: 'calendar', label: 'Calendar Changes', desc: 'Schedule updates and new events' },
+                      { key: 'messages', label: 'New Messages', desc: 'Messages from your co-parent' },
+                      { key: 'expenses', label: 'Expense Updates', desc: 'New expenses and payment requests' },
+                      { key: 'documents', label: 'Document Changes', desc: 'New documents and updates' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.notifications[item.key as keyof typeof settings.notifications] as boolean}
+                          onCheckedChange={(checked) => updateSetting('notifications', item.key, checked)}
+                        />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Privacy Settings */}
+              <TabsContent value="privacy" className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Controls</h3>
+
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="timezone">Time Zone</Label>
-                      <Select value={settings.profile.timezone} onValueChange={(value) => updateSetting('profile', 'timezone', value)}>
+                      <Label>Profile Visibility</Label>
+                      <Select value={settings.privacy.profileVisibility} onValueChange={(value) => updateSetting('privacy', 'profileVisibility', value)}>
                         <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="EST">Eastern Time (EST)</SelectItem>
-                          <SelectItem value="CST">Central Time (CST)</SelectItem>
-                          <SelectItem value="MST">Mountain Time (MST)</SelectItem>
-                          <SelectItem value="PST">Pacific Time (PST)</SelectItem>
+                          <SelectItem value="co-parent-only">Co-parent only</SelectItem>
+                          <SelectItem value="family-network">Extended family network</SelectItem>
+                          <SelectItem value="private">Completely private</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div>
-                      <Label htmlFor="bio">Bio (Optional)</Label>
-                      <Textarea
-                        id="bio"
-                        value={settings.profile.bio}
-                        onChange={(e) => updateSetting('profile', 'bio', e.target.value)}
-                        placeholder="Tell your co-parent a bit about yourself..."
-                        className="mt-1"
-                        rows={3}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Activity Sharing</Label>
+                        <p className="text-sm text-gray-600">Share activity status with co-parent</p>
+                      </div>
+                      <Switch
+                        checked={settings.privacy.activitySharing}
+                        onCheckedChange={(checked) => updateSetting('privacy', 'activitySharing', checked)}
                       />
                     </div>
-                  </TabsContent>
+                  </div>
+                </div>
 
-                  {/* New Preferences Tab */}
-                  <TabsContent value="preferences" className="space-y-6">
-                    {/* Language Selection */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-800">Data Security</p>
+                      <p className="text-blue-700">All your data is encrypted and stored securely. You can export or delete your data at any time.</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Bridgette Settings */}
+              <TabsContent value="bridgette" className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridgette</h3>
+
+                  <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <Languages className="w-5 h-5 mr-2 text-blue-600" />
-                        Language Preference
-                      </h3>
-                      <Select value={settings.preferences.language} onValueChange={(value) => updateSetting('preferences', 'language', value)}>
-                        <SelectTrigger>
+                      <Label>Bridgette's Personality</Label>
+                      <Select value={settings.bridgette.personality} onValueChange={(value) => updateSetting('bridgette', 'personality', value)}>
+                        <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="english">English</SelectItem>
+                          <SelectItem value="encouraging">Encouraging & Supportive</SelectItem>
+                          <SelectItem value="direct">Direct & Efficient</SelectItem>
+                          <SelectItem value="detailed">Detailed & Thorough</SelectItem>
+                          <SelectItem value="gentle">Gentle & Calm</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {/* Message Tone Preference */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
-                        Default Message Tone
-                      </h3>
-                      <Select value={settings.preferences.messageTone} onValueChange={(value) => updateSetting('preferences', 'messageTone', value)}>
-                        <SelectTrigger>
+                      <Label>Help Level</Label>
+                      <Select value={settings.bridgette.helpLevel} onValueChange={(value) => updateSetting('bridgette', 'helpLevel', value)}>
+                        <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="friendly">
-                            <div>
-                              <div className="font-medium">Friendly</div>
-                              <div className="text-xs text-gray-500">Warm and collaborative tone</div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="matter-of-fact">
-                            <div>
-                              <div className="font-medium">Matter-of-fact</div>
-                              <div className="text-xs text-gray-500">Direct and clear communication</div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="neutral-legal">
-                            <div>
-                              <div className="font-medium">Neutral Legal</div>
-                              <div className="text-xs text-gray-500">Professional and documented</div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="gentle">
-                            <div>
-                              <div className="font-medium">Gentle</div>
-                              <div className="text-xs text-gray-500">Soft and understanding approach</div>
-                            </div>
-                          </SelectItem>
+                          <SelectItem value="minimal">Minimal - Only when asked</SelectItem>
+                          <SelectItem value="balanced">Balanced - Helpful suggestions</SelectItem>
+                          <SelectItem value="detailed">Detailed - Comprehensive guidance</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {/* Notification Opt-ins */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                        Notification Preferences
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          { key: 'dailyTips', label: 'Daily Co-parenting Tips', desc: 'Receive helpful daily tips and encouragement' },
-                          { key: 'weeklyDigest', label: 'Weekly Summary', desc: 'Weekly digest of your co-parenting activities' },
-                          { key: 'expertArticles', label: 'Expert Articles', desc: 'New articles from psychology and family experts' },
-                          { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge co-parenting community' },
-                          { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge' },
-                          { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
-                        ].map((item) => (
-                          <div key={item.key} className="flex items-center space-x-3">
-                            <Checkbox
-                              checked={settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn]}
-                              onCheckedChange={(checked) => updateNestedSetting('preferences', 'notificationOptIn', item.key, checked)}
-                            />
-                            <div className="flex-1">
-                              <Label className="font-medium">{item.label}</Label>
-                              <p className="text-sm text-gray-600">{item.desc}</p>
-                            </div>
-                          </div>
-                        ))}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Proactive Help</Label>
+                        <p className="text-sm text-gray-600">Let Bridgette offer suggestions proactively</p>
                       </div>
+                      <Switch
+                        checked={settings.bridgette.proactiveHelp}
+                        onCheckedChange={(checked) => updateSetting('bridgette', 'proactiveHelp', checked)}
+                      />
                     </div>
 
-                    {/* Article Type Preferences */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
-                        Article Types You're Interested In
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          { key: 'communication', label: 'Communication Strategies', desc: 'Tips for better co-parent communication' },
-                          { key: 'legal', label: 'Legal Guidance', desc: 'Understanding custody laws and agreements' },
-                          { key: 'emotional', label: 'Emotional Support', desc: 'Managing stress and emotional wellbeing' },
-                          { key: 'practical', label: 'Practical Tips', desc: 'Day-to-day co-parenting logistics' },
-                          { key: 'children', label: 'Children & Family', desc: 'Supporting your children through transitions' },
-                          { key: 'financial', label: 'Financial Planning', desc: 'Managing shared expenses and budgeting' }
-                        ].map((item) => (
-                          <div key={item.key} className="flex items-center space-x-3">
-                            <Checkbox
-                              checked={settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes]}
-                              onCheckedChange={(checked) => updateNestedSetting('preferences', 'articleTypes', item.key, checked)}
-                            />
-                            <div className="flex-1">
-                              <Label className="font-medium">{item.label}</Label>
-                              <p className="text-sm text-gray-600">{item.desc}</p>
-                            </div>
-                          </div>
-                        ))}
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Daily Tips</Label>
+                        <p className="text-sm text-gray-600">Receive daily co-parenting tips</p>
                       </div>
+                      <Switch
+                        checked={settings.bridgette.dailyTips}
+                        onCheckedChange={(checked) => updateSetting('bridgette', 'dailyTips', checked)}
+                      />
                     </div>
-                  </TabsContent>
+                  </div>
+                </div>
+              </TabsContent>
 
-                  {/* Notification Settings */}
-                  <TabsContent value="notifications" className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
-                      
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">Email Notifications</Label>
-                            <p className="text-sm text-gray-600">Receive updates via email</p>
-                          </div>
-                          <Switch
-                            checked={settings.notifications.email}
-                            onCheckedChange={(checked) => updateSetting('notifications', 'email', checked)}
-                          />
-                        </div>
 
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">SMS Notifications</Label>
-                            <p className="text-sm text-gray-600">Urgent updates via text</p>
-                          </div>
-                          <Switch
-                            checked={settings.notifications.sms}
-                            onCheckedChange={(checked) => updateSetting('notifications', 'sms', checked)}
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">Push Notifications</Label>
-                            <p className="text-sm text-gray-600">Real-time alerts on your device</p>
-                          </div>
-                          <Switch
-                            checked={settings.notifications.push}
-                            onCheckedChange={(checked) => updateSetting('notifications', 'push', checked)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">What to notify me about</h3>
-                      
-                      <div className="space-y-3">
-                        {[
-                          { key: 'calendar', label: 'Calendar Changes', desc: 'Schedule updates and new events' },
-                          { key: 'messages', label: 'New Messages', desc: 'Messages from your co-parent' },
-                          { key: 'expenses', label: 'Expense Updates', desc: 'New expenses and payment requests' },
-                          { key: 'documents', label: 'Document Changes', desc: 'New documents and updates' }
-                        ].map((item) => (
-                          <div key={item.key} className="flex items-center space-x-3">
-                            <Checkbox
-                              checked={settings.notifications[item.key as keyof typeof settings.notifications] as boolean}
-                              onCheckedChange={(checked) => updateSetting('notifications', item.key, checked)}
-                            />
-                            <div className="flex-1">
-                              <Label className="font-medium">{item.label}</Label>
-                              <p className="text-sm text-gray-600">{item.desc}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  {/* Privacy Settings */}
-                  <TabsContent value="privacy" className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Controls</h3>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Profile Visibility</Label>
-                          <Select value={settings.privacy.profileVisibility} onValueChange={(value) => updateSetting('privacy', 'profileVisibility', value)}>
-                            <SelectTrigger className="mt-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="co-parent-only">Co-parent only</SelectItem>
-                              <SelectItem value="family-network">Extended family network</SelectItem>
-                              <SelectItem value="private">Completely private</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">Activity Sharing</Label>
-                            <p className="text-sm text-gray-600">Share activity status with co-parent</p>
-                          </div>
-                          <Switch
-                            checked={settings.privacy.activitySharing}
-                            onCheckedChange={(checked) => updateSetting('privacy', 'activitySharing', checked)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                        <div className="text-sm">
-                          <p className="font-medium text-blue-800">Data Security</p>
-                          <p className="text-blue-700">All your data is encrypted and stored securely. You can export or delete your data at any time.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  {/* Bridgette Settings */}
-                  <TabsContent value="bridgette" className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridgette</h3>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Bridgette's Personality</Label>
-                          <Select value={settings.bridgette.personality} onValueChange={(value) => updateSetting('bridgette', 'personality', value)}>
-                            <SelectTrigger className="mt-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="encouraging">Encouraging & Supportive</SelectItem>
-                              <SelectItem value="direct">Direct & Efficient</SelectItem>
-                              <SelectItem value="detailed">Detailed & Thorough</SelectItem>
-                              <SelectItem value="gentle">Gentle & Calm</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Help Level</Label>
-                          <Select value={settings.bridgette.helpLevel} onValueChange={(value) => updateSetting('bridgette', 'helpLevel', value)}>
-                            <SelectTrigger className="mt-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="minimal">Minimal - Only when asked</SelectItem>
-                              <SelectItem value="balanced">Balanced - Helpful suggestions</SelectItem>
-                              <SelectItem value="detailed">Detailed - Comprehensive guidance</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">Proactive Help</Label>
-                            <p className="text-sm text-gray-600">Let Bridgette offer suggestions proactively</p>
-                          </div>
-                          <Switch
-                            checked={settings.bridgette.proactiveHelp}
-                            onCheckedChange={(checked) => updateSetting('bridgette', 'proactiveHelp', checked)}
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <Label className="font-medium">Daily Tips</Label>
-                            <p className="text-sm text-gray-600">Receive daily co-parenting tips</p>
-                          </div>
-                          <Switch
-                            checked={settings.bridgette.dailyTips}
-                            onCheckedChange={(checked) => updateSetting('bridgette', 'dailyTips', checked)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  
-                  <TabsContent value="family" className="space-y-6">
-                    <Card className="border-2 border-green-200 bg-green-50 shadow-sm">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-green-800">
-                          <Globe className="w-5 h-5" />
-                          Family Profile & Code
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        {familyProfile ? (
-                          <>
-                            {/* Family Summary Banner */}
-                            <div className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4">
-                                  <Users className="w-8 h-8 text-green-600" />
-                                  <div>
-                                    <h3 className="font-semibold text-gray-800">{familyProfile.familyName || 'Your Family'}</h3>
-                                    <p className="text-sm text-gray-600">
-                                      {familyProfile.children.length} {familyProfile.children.length === 1 ? 'child' : 'children'} • 
-                                      {familyProfile.custodyArrangement === '50-50' ? ' 50/50 custody' : 
-                                       familyProfile.custodyArrangement === 'primary-secondary' ? ' Primary/Secondary custody' : 
-                                       ' Custom custody'}
-                                      {familyProfile.differentTimezones && ' • Different time zones'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  {familyProfile.children.map((child) => (
-                                    <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                      {child.firstName[0]}
-                                    </div>
-                                  ))}
-                                </div>
+              <TabsContent value="family" className="space-y-6">
+                <Card className="border-2 border-green-200 bg-green-50 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-800">
+                      <Globe className="w-5 h-5" />
+                      Family Profile & Code
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {familyProfile ? (
+                      <>
+                        {/* Family Summary Banner */}
+                        <div className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <Users className="w-8 h-8 text-green-600" />
+                              <div>
+                                <h3 className="font-semibold text-gray-800">{familyProfile.familyName || 'Your Family'}</h3>
+                                <p className="text-sm text-gray-600">
+                                  {familyProfile.children.length} {familyProfile.children.length === 1 ? 'child' : 'children'} •
+                                  {familyProfile.custodyArrangement === '50-50' ? ' 50/50 custody' :
+                                    familyProfile.custodyArrangement === 'primary-secondary' ? ' Primary/Secondary custody' :
+                                      ' Custom custody'}
+                                  {familyProfile.differentTimezones && ' • Different time zones'}
+                                </p>
                               </div>
                             </div>
-
-                            <div className="border rounded-lg bg-white/80 p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-2">
-                                Family Code
-                              </p>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className="font-mono text-lg bg-white px-4 py-2 rounded-md border border-green-200 text-green-800 shadow-sm">
-                                  {familyProfile.familyCode || 'Not yet generated'}
-                                </span>
-                                {familyProfile.familyCode && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleCopyFamilyCode}
-                                    className="border-green-200 text-green-700 hover:bg-green-100"
-                                  >
-                                    Copy
-                                  </Button>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500 mt-3">
-                                Share this code with your co-parent when they create their own Bridge account so they can link to this family.
-                              </p>
+                            <div className="flex space-x-2">
+                              {familyProfile.children.map((child) => (
+                                <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                  {child.firstName[0]}
+                                </div>
+                              ))}
                             </div>
-                          </>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-lg bg-white/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-2">
+                            Family Code
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="font-mono text-lg bg-white px-4 py-2 rounded-md border border-green-200 text-green-800 shadow-sm">
+                              {familyProfile.familyCode || 'Not yet generated'}
+                            </span>
+                            {familyProfile.familyCode && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCopyFamilyCode}
+                                className="border-green-200 text-green-700 hover:bg-green-100"
+                              >
+                                Copy
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-3">
+                            Share this code with your co-parent when they create their own Bridge account so they can link to this family.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-green-200 bg-white/70 p-6 text-center text-sm text-green-800">
+                        Complete your family onboarding to generate a Family Code.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Custody Distribution Section */}
+                <Card className="border-2 border-purple-200 bg-purple-50 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-purple-800">
+                      <Users className="w-5 h-5" />
+                      Custody Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs
+                      value={custodyViewPeriod}
+                      onValueChange={(value) => {
+                        setCustodyDistribution(null);
+                        setCustodyViewPeriod(value as 'weekly' | 'yearly');
+                      }}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                        <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="weekly">
+                        {loadingCustody ? (
+                          <div className="text-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                            <p className="text-sm text-gray-600 mt-2">Loading weekly custody details...</p>
+                          </div>
+                        ) : custodyDistribution ? (
+                          <div className="space-y-4 pt-4">
+                            <div className="flex justify-around text-center">
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
+                              </div>
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
+                              </div>
+                            </div>
+                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
+                          </div>
                         ) : (
-                          <div className="rounded-lg border border-dashed border-green-200 bg-white/70 p-6 text-center text-sm text-green-800">
-                            Complete your family onboarding to generate a Family Code.
+                          <div className="text-center text-sm text-gray-600 py-4">
+                            Weekly custody distribution data is not available.
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Custody Agreement Section */}
-                    <Card className="border-2 border-blue-200 bg-blue-50 shadow-sm">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-blue-800">
-                          <FileText className="w-5 h-5" />
-                          Custody Agreement
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {loadingAgreement ? (
+                      </TabsContent>
+                      <TabsContent value="yearly">
+                        {loadingCustody ? (
                           <div className="text-center py-4">
-                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
-                            <p className="text-sm text-gray-600 mt-2">Loading agreement...</p>
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                            <p className="text-sm text-gray-600 mt-2">Loading yearly custody details...</p>
                           </div>
-                        ) : custodyAgreement ? (
-                          <>
-                            <div className="bg-white rounded-lg p-4 border border-blue-200">
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center space-x-3">
-                                  <CheckCircle className="w-6 h-6 text-green-600" />
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">Agreement Uploaded</h4>
-                                    <p className="text-sm text-gray-600">
-                                      {custodyAgreement.fileName || 'Custody Agreement'}
-                                    </p>
-                                    {custodyAgreement.uploadDate && (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Uploaded: {new Date(custodyAgreement.uploadDate).toLocaleDateString()}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleViewDocument}
-                                    disabled={!custodyAgreement.fileContent}
-                                    className="border-blue-300 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={!custodyAgreement.fileContent ? "Original file not available. Please re-upload to enable viewing." : custodyAgreement.fileType?.toLowerCase() === 'pdf' ? "View the document in a new tab" : "Download the document"}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setShowUploadAgreement(true)}
-                                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                                  >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Update
-                                  </Button>
-                                </div>
+                        ) : custodyDistribution ? (
+                          <div className="space-y-4 pt-4">
+                            <div className="flex justify-around text-center">
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
                               </div>
-
-                              {custodyAgreement.expenseSplit && (
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                  <h5 className="text-sm font-semibold text-gray-700 mb-2">Extracted Information:</h5>
-                                  <div className="space-y-2 text-sm">
-                                    {custodyAgreement.custodySchedule && (
-                                      <div>
-                                        <span className="font-medium text-gray-700">Custody Schedule: </span>
-                                        <span className="text-gray-600">{custodyAgreement.custodySchedule}</span>
-                                      </div>
-                                    )}
-                                    {custodyAgreement.holidaySchedule && (
-                                      <div>
-                                        <span className="font-medium text-gray-700">Holiday Schedule: </span>
-                                        <span className="text-gray-600">{custodyAgreement.holidaySchedule}</span>
-                                      </div>
-                                    )}
-                                    {custodyAgreement.decisionMaking && (
-                                      <div>
-                                        <span className="font-medium text-gray-700">Decision Making: </span>
-                                        <span className="text-gray-600">{custodyAgreement.decisionMaking}</span>
-                                      </div>
-                                    )}
-                                    {custodyAgreement.expenseSplit && (
-                                      <div>
-                                        <span className="font-medium text-gray-700">Expense Split: </span>
-                                        <span className="text-gray-600">
-                                          {custodyAgreement.expenseSplit.ratio || '50-50'} 
-                                          {custodyAgreement.expenseSplit.parent1 && custodyAgreement.expenseSplit.parent2 && (
-                                            ` (Parent 1: ${custodyAgreement.expenseSplit.parent1}%, Parent 2: ${custodyAgreement.expenseSplit.parent2}%)`
-                                          )}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
+                              </div>
                             </div>
-                          </>
+                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
+                          </div>
                         ) : (
-                          <div className="text-center py-4">
-                            <Alert className="mb-4">
-                              <AlertCircle className="w-4 h-4" />
-                              <AlertDescription>
-                                No custody agreement uploaded yet. Upload your divorce agreement to automatically extract custody schedules, expense splits, and other important terms.
-                              </AlertDescription>
-                            </Alert>
+                          <div className="text-center text-sm text-gray-600 py-4">
+                            Yearly custody distribution data is not available.
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                {/* Custody Agreement Section */}
+                <Card className="border-2 border-blue-200 bg-blue-50 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-blue-800">
+                      <FileText className="w-5 h-5" />
+                      Custody Agreement
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {loadingAgreement ? (
+                      <div className="text-center py-4">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                        <p className="text-sm text-gray-600 mt-2">Loading agreement...</p>
+                      </div>
+                    ) : custodyAgreement ? (
+                      <>
+                        <div className="bg-white rounded-lg p-4 border border-blue-200">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <CheckCircle className="w-6 h-6 text-green-600" />
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Agreement Uploaded</h4>
+                                <p className="text-sm text-gray-600">
+                                  {custodyAgreement.fileName || 'Custody Agreement'}
+                                </p>
+                                {custodyAgreement.uploadDate && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Uploaded: {new Date(custodyAgreement.uploadDate).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleViewDocument}
+                                disabled={!custodyAgreement.fileContent}
+                                className="border-blue-300 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={!custodyAgreement.fileContent ? "Original file not available. Please re-upload to enable viewing." : custodyAgreement.fileType?.toLowerCase() === 'pdf' ? "View the document in a new tab" : "Download the document"}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowUploadAgreement(true)}
+                                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                              >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Update
+                              </Button>
+                            </div>
+                          </div>
+
+                          {custodyAgreement.expenseSplit && (
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <h5 className="text-sm font-semibold text-gray-700 mb-2">Extracted Information:</h5>
+                              <div className="space-y-2 text-sm">
+                                {custodyAgreement.custodySchedule && (
+                                  <div>
+                                    <span className="font-medium text-gray-700">Custody Schedule: </span>
+                                    <span className="text-gray-600">{custodyAgreement.custodySchedule}</span>
+                                  </div>
+                                )}
+                                {custodyAgreement.holidaySchedule && (
+                                  <div>
+                                    <span className="font-medium text-gray-700">Holiday Schedule: </span>
+                                    <span className="text-gray-600">{custodyAgreement.holidaySchedule}</span>
+                                  </div>
+                                )}
+                                {custodyAgreement.decisionMaking && (
+                                  <div>
+                                    <span className="font-medium text-gray-700">Decision Making: </span>
+                                    <span className="text-gray-600">{custodyAgreement.decisionMaking}</span>
+                                  </div>
+                                )}
+                                {custodyAgreement.expenseSplit && (
+                                  <div>
+                                    <span className="font-medium text-gray-700">Expense Split: </span>
+                                    <span className="text-gray-600">
+                                      {custodyAgreement.expenseSplit.ratio || '50-50'}
+                                      {custodyAgreement.expenseSplit.parent1 && custodyAgreement.expenseSplit.parent2 && (
+                                        ` (Parent 1: ${custodyAgreement.expenseSplit.parent1}%, Parent 2: ${custodyAgreement.expenseSplit.parent2}%)`
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <Alert className="mb-4">
+                          <AlertCircle className="w-4 h-4" />
+                          <AlertDescription>
+                            No custody agreement uploaded yet. Upload your divorce agreement to automatically extract custody schedules, expense splits, and other important terms.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={() => setShowUploadAgreement(true)}
+                          className="bg-gradient-to-r from-blue-500 to-purple-600"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Agreement
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Upload Form */}
+                    {showUploadAgreement && (
+                      <div className="mt-4 pt-4 border-t border-blue-200">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-gray-800">
+                              {custodyAgreement ? 'Update' : 'Upload'} Custody Agreement
+                            </h4>
                             <Button
-                              onClick={() => setShowUploadAgreement(true)}
-                              className="bg-gradient-to-r from-blue-500 to-purple-600"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowUploadAgreement(false);
+                                clearAgreementFile();
+                              }}
                             >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Upload Agreement
+                              <X className="w-4 h-4" />
                             </Button>
                           </div>
-                        )}
 
-                        {/* Upload Form */}
-                        {showUploadAgreement && (
-                          <div className="mt-4 pt-4 border-t border-blue-200">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-gray-800">
-                                  {custodyAgreement ? 'Update' : 'Upload'} Custody Agreement
-                                </h4>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setShowUploadAgreement(false);
-                                    clearAgreementFile();
-                                  }}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              onChange={handleAgreementFileSelect}
+                              accept=".pdf,.doc,.docx,.txt"
+                              className="hidden"
+                              id="agreement-upload"
+                            />
 
-                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                                <input
-                                  ref={fileInputRef}
-                                  type="file"
-                                  onChange={handleAgreementFileSelect}
-                                  accept=".pdf,.doc,.docx,.txt"
-                                  className="hidden"
-                                  id="agreement-upload"
-                                />
-                                
-                                {!agreementFile ? (
-                                  <label htmlFor="agreement-upload" className="cursor-pointer">
-                                    <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-                                    <p className="text-sm font-medium text-gray-700 mb-1">
-                                      Click to upload or drag and drop
-                                    </p>
+                            {!agreementFile ? (
+                              <label htmlFor="agreement-upload" className="cursor-pointer">
+                                <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+                                <p className="text-sm font-medium text-gray-700 mb-1">
+                                  Click to upload or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  PDF, DOC, DOCX, or TXT (max 10MB)
+                                </p>
+                              </label>
+                            ) : (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-center space-x-3">
+                                  <FileText className="w-8 h-8 text-blue-500" />
+                                  <div className="text-left">
+                                    <p className="text-sm font-medium text-gray-900">{agreementFile.name}</p>
                                     <p className="text-xs text-gray-500">
-                                      PDF, DOC, DOCX, or TXT (max 10MB)
+                                      {(agreementFile.size / 1024 / 1024).toFixed(2)} MB
                                     </p>
-                                  </label>
-                                ) : (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center justify-center space-x-3">
-                                      <FileText className="w-8 h-8 text-blue-500" />
-                                      <div className="text-left">
-                                        <p className="text-sm font-medium text-gray-900">{agreementFile.name}</p>
-                                        <p className="text-xs text-gray-500">
-                                          {(agreementFile.size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={clearAgreementFile}
-                                        className="ml-auto"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </Button>
-                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearAgreementFile}
+                                    className="ml-auto"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
 
-                                    {uploadingAgreement && (
-                                      <div className="space-y-2">
-                                        <Progress value={uploadProgress} className="h-2" />
-                                        <p className="text-xs text-gray-600">
-                                          {uploadProgress < 50 ? 'Uploading...' : 'Analyzing document with AI...'}
-                                        </p>
-                                      </div>
-                                    )}
+                                {uploadingAgreement && (
+                                  <div className="space-y-2">
+                                    <Progress value={uploadProgress} className="h-2" />
+                                    <p className="text-xs text-gray-600">
+                                      {uploadProgress < 50 ? 'Uploading...' : 'Analyzing document with AI...'}
+                                    </p>
                                   </div>
                                 )}
                               </div>
-
-                              <div className="flex space-x-3">
-                                <Button 
-                                  onClick={handleUploadAgreement}
-                                  disabled={!agreementFile || uploadingAgreement}
-                                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
-                                >
-                                  {uploadingAgreement ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      {uploadProgress < 50 ? 'Uploading...' : 'Parsing...'}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Upload className="w-4 h-4 mr-2" />
-                                      Upload & Parse
-                                    </>
-                                  )}
-                                </Button>
-                                <Button 
-                                  onClick={() => {
-                                    setShowUploadAgreement(false);
-                                    clearAgreementFile();
-                                  }}
-                                  variant="outline"
-                                  disabled={uploadingAgreement}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-
-                              <Alert>
-                                <AlertDescription className="text-xs">
-                                  Bridge uses AI to automatically extract key information from your agreement, including custody schedules, expense splits, and decision-making arrangements.
-                                </AlertDescription>
-                              </Alert>
-                            </div>
+                            )}
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+
+                          <div className="flex space-x-3">
+                            <Button
+                              onClick={handleUploadAgreement}
+                              disabled={!agreementFile || uploadingAgreement}
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
+                            >
+                              {uploadingAgreement ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  {uploadProgress < 50 ? 'Uploading...' : 'Parsing...'}
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Upload & Parse
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setShowUploadAgreement(false);
+                                clearAgreementFile();
+                              }}
+                              variant="outline"
+                              disabled={uploadingAgreement}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+
+                          <Alert>
+                            <AlertDescription className="text-xs">
+                              Bridge uses AI to automatically extract key information from your agreement, including custody schedules, expense splits, and decision-making arrangements.
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </CardContent>
+          </Card>
+        </Tabs>
       </div>
     </div>
   );

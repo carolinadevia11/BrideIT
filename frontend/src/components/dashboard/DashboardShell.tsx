@@ -75,7 +75,7 @@ const DashboardNavigation = ({
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton
               className={cn(
-                "text-slate-600 hover:text-slate-900 data-[active=true]:bg-slate-100 data-[active=true]:text-slate-900",
+                "text-slate-600 hover:text-slate-900 data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700",
                 item.tone === "alert" && "text-orange-600 data-[active=true]:text-orange-700"
               )}
               isActive={activeItem === item.id}
@@ -113,12 +113,12 @@ const DashboardShell = ({
   heroSubtitle = "Fair & balanced co-parenting",
 }: DashboardShellProps) => {
   const activeLabel =
-    navItems.find((item) => item.id === activeItem)?.label ?? "Overview";
+    navItems.find((item) => item.id === activeItem)?.label ?? "Settings";
 
   const initials = currentUser
     ? `${currentUser.firstName?.[0] ?? ""}${currentUser.lastName?.[0] ?? ""}` ||
-      currentUser.email?.[0] ||
-      "B"
+    currentUser.email?.[0] ||
+    "B"
     : "B";
 
   return (
@@ -177,7 +177,10 @@ const DashboardShell = ({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className={cn(
+                "w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+                activeItem === "settings" && "bg-blue-50 text-blue-700"
+              )}
               onClick={onOpenSettings}
             >
               <Settings className="mr-2 h-4 w-4" />
@@ -244,7 +247,7 @@ const DashboardShell = ({
               <Bell className="h-4 w-4" />
               <span className="sr-only">Notifications</span>
             </Button>
-            <Avatar 
+            <Avatar
               className="h-9 w-9 border border-slate-100 cursor-pointer hover:ring-2 hover:ring-slate-300 transition-all"
               onClick={onOpenSettings}
             >
