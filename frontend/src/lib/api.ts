@@ -273,6 +273,19 @@ export const calendarAPI = {
     });
   },
 
+  updateEvent: async (eventId: string, eventData: {
+    date: string;
+    type: string;
+    title: string;
+    parent?: string;
+    isSwappable?: boolean;
+  }) => {
+    return fetchWithAuth(`/api/v1/calendar/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(eventData),
+    });
+  },
+
   createChangeRequest: async (requestData: {
     event_id: string;
     requestType: 'swap' | 'modify' | 'cancel';

@@ -93,6 +93,7 @@ class Event(BaseModel):
     title: str
     parent: Optional[str] = None
     isSwappable: Optional[bool] = False
+    createdBy_email: Optional[str] = None
 
 class EventCreate(BaseModel):
     date: datetime

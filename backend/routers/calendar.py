@@ -38,6 +38,7 @@ def _serialize_event_document(event_doc: dict) -> Event:
         title=event_doc.get("title"),
         parent=event_doc.get("parent"),
         isSwappable=event_doc.get("isSwappable", False),
+        createdBy_email=event_doc.get("createdBy_email"),
     )
 
 
@@ -147,6 +148,7 @@ async def create_calendar_event(
         "title": event_data.title,
         "parent": event_data.parent,
         "isSwappable": event_data.isSwappable,
+        "createdBy_email": current_user.email,
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow(),
     }
@@ -161,9 +163,17 @@ async def update_calendar_event(
     event_data: EventCreate,
     current_user: User = Depends(get_current_user),
 ):
-    """Update an existing calendar event."""
+    """Update an existing calendar event. Only the creator can edit directly."""
     _, family_id = _get_family_for_user(current_user)
     event_doc = _find_event_for_family(event_id, family_id)
+
+    # Only allow the creator to edit directly
+    event_creator = event_doc.get("createdBy_email")
+    if event_creator and event_creator != current_user.email:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the event creator can edit this event. Please use a change request instead."
+        )
 
     update_fields = {
         "date": _ensure_datetime(event_data.date),

@@ -44,6 +44,7 @@ interface CalendarEvent {
   parent?: 'mom' | 'dad' | 'both';
   isSwappable?: boolean;
   hasTime?: boolean;
+  createdByEmail?: string;
 }
 
 interface DayExpense {
@@ -165,6 +166,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   );
   const [newEventSwappable, setNewEventSwappable] = useState(true);
   const [creatingEvent, setCreatingEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [isEditingMode, setIsEditingMode] = useState(false);
   const today = new Date().getDate();
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -216,6 +219,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return parent?.email || undefined;
   };
 
+  const isEventCreator = (event: CalendarEvent | null): boolean => {
+    if (!event || !currentUser?.email) return false;
+    return event.createdByEmail?.toLowerCase() === currentUser.email.toLowerCase();
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('calendarTimeZone', selectedTimeZone);
@@ -225,12 +233,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const formatDateTime = (value?: Date | string | null): string => {
     const dateObj = parseApiDate(value);
     if (!dateObj) return '—';
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: selectedTimeZone,
-      timeZoneName: 'short',
-    }).format(dateObj);
+    
+    // Validate timezone
+    const timeZone = selectedTimeZone && US_TIME_ZONES.some(tz => tz.value === selectedTimeZone) 
+      ? selectedTimeZone 
+      : 'America/New_York';
+    
+    try {
+      // Use more compatible options instead of dateStyle/timeStyle
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: timeZone,
+        timeZoneName: 'short',
+      }).format(dateObj);
+    } catch (error) {
+      // Fallback to basic formatting if Intl.DateTimeFormat fails
+      console.error('Error formatting date:', error);
+      return dateObj.toLocaleString('en-US', { timeZone: timeZone });
+    }
   };
 
   const selectedTimeZoneLabel =
@@ -240,11 +264,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const formatTimeOnly = (value?: Date): string => {
     if (!value) return '';
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: selectedTimeZone,
-    }).format(value);
+    
+    // Validate timezone
+    const timeZone = selectedTimeZone && US_TIME_ZONES.some(tz => tz.value === selectedTimeZone) 
+      ? selectedTimeZone 
+      : 'America/New_York';
+    
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: timeZone,
+      }).format(value);
+    } catch (error) {
+      // Fallback to basic formatting if Intl.DateTimeFormat fails
+      console.error('Error formatting time:', error);
+      return value.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        timeZone: timeZone 
+      });
+    }
   };
 
   const formatCurrency = (value?: number) => {
@@ -412,6 +452,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             parent: event.parent as 'mom' | 'dad' | 'both' | undefined,
             isSwappable: event.isSwappable ?? false,
             hasTime: hasSpecificTime(eventDate),
+            createdByEmail: event.createdBy_email,
           } as CalendarEvent;
         })
         .filter((event): event is CalendarEvent => Boolean(event));
@@ -1006,6 +1047,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setNewEventParent("both");
     setNewEventSwappable(true);
     setNewEventTime('');
+    setEditingEvent(null);
+    setIsEditingMode(false);
+    setShowCreateEvent(true);
+  };
+
+  const openEditEventModal = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setIsEditingMode(true);
+    setNewEventDate(formatDateInputValue(event.fullDate));
+    setNewEventTitle(event.title);
+    setNewEventType(event.type);
+    setNewEventParent(event.parent || "both");
+    setNewEventSwappable(event.isSwappable ?? true);
+    setNewEventTime(event.hasTime ? formatTimeOnly(event.fullDate) : '');
+    setShowEventDetails(false);
     setShowCreateEvent(true);
   };
 
@@ -1068,16 +1124,41 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
     setCreatingEvent(true);
     try {
-      await createNewEvent({
-        date: parsedDate,
-        type: newEventType,
-        title: newEventTitle.trim(),
-        parent: newEventParent,
-        isSwappable: newEventSwappable,
-      });
-      setShowCreateEvent(false);
+      if (isEditingMode && editingEvent) {
+        // Update existing event
+        await calendarAPI.updateEvent(editingEvent.id, {
+          date: parsedDate.toISOString(),
+          type: newEventType,
+          title: newEventTitle.trim(),
+          parent: newEventParent,
+          isSwappable: newEventSwappable,
+        });
+        toast({
+          title: "Success!",
+          description: "Event updated successfully.",
+        });
+        await loadEvents();
+        setShowCreateEvent(false);
+        setEditingEvent(null);
+        setIsEditingMode(false);
+      } else {
+        // Create new event
+        await createNewEvent({
+          date: parsedDate,
+          type: newEventType,
+          title: newEventTitle.trim(),
+          parent: newEventParent,
+          isSwappable: newEventSwappable,
+        });
+        setShowCreateEvent(false);
+      }
     } catch (error) {
-      // toast already handled inside createNewEvent
+      console.error('Error saving event:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : (isEditingMode ? "Failed to update event." : "Failed to create event."),
+        variant: "destructive",
+      });
     } finally {
       setCreatingEvent(false);
     }
@@ -1706,11 +1787,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Create Event Dialog */}
-      <Dialog open={showCreateEvent} onOpenChange={setShowCreateEvent}>
+      {/* Create/Edit Event Dialog */}
+      <Dialog open={showCreateEvent} onOpenChange={(open) => {
+        setShowCreateEvent(open);
+        if (!open) {
+          setEditingEvent(null);
+          setIsEditingMode(false);
+        }
+      }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Calendar Event</DialogTitle>
+            <DialogTitle>{isEditingMode ? 'Edit Calendar Event' : 'Add Calendar Event'}</DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleCreateEventSubmit}>
             <div className="space-y-2">
@@ -1806,7 +1893,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={creatingEvent}>
-                {creatingEvent ? "Creating..." : "Create Event"}
+                {creatingEvent 
+                  ? (isEditingMode ? "Updating..." : "Creating...") 
+                  : (isEditingMode ? "Update Event" : "Create Event")}
               </Button>
             </div>
           </form>
@@ -1897,18 +1986,165 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
 
               {/* Pending Requests for this event */}
-              {changeRequests.filter(r => r.originalEvent.id === selectedEvent.id && r.status === 'pending').length > 0 && (
-                <Alert className="border-[hsl(45,100%,80%)] bg-[hsl(45,100%,95%)]">
-                  <AlertTriangle className="h-4 w-4 text-[hsl(45,100%,50%)]" />
-                  <AlertDescription className="text-orange-800">
-                    This event has pending change requests. Check the "Requests" button to review them.
-                  </AlertDescription>
-                </Alert>
-              )}
+              {(() => {
+                const pendingRequestsForEvent = changeRequests.filter(
+                  r => r.originalEvent.id === selectedEvent.id && r.status === 'pending'
+                );
+                
+                if (pendingRequestsForEvent.length > 0) {
+                  return (
+                    <div className="space-y-3">
+                      <Separator />
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-gray-800 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-orange-500" />
+                          Pending Change Requests ({pendingRequestsForEvent.length})
+                        </h4>
+                        {pendingRequestsForEvent.map((request) => {
+                          // Check if current user is the requester
+                          // Only the non-requester can approve/reject change requests
+                          const currentUserEmail = currentUser?.email?.toLowerCase()?.trim();
+                          const requesterEmail = request.requestedByEmail?.toLowerCase()?.trim();
+                          const isCurrentUserRequester = currentUserEmail === requesterEmail;
+                          const canApproveReject = !isCurrentUserRequester && !!currentUserEmail;
+                          
+                          return (
+                            <Card key={request.id} className="border-orange-200 bg-orange-50">
+                              <CardContent className="p-3 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-gray-800">
+                                      {request.requestedBy === 'mom' ? 'You' : 'Your co-parent'} wants to {request.type} this event
+                                    </span>
+                                  </div>
+                                  <Badge variant="outline" className="border-orange-300 text-orange-600 text-xs">
+                                    {request.type}
+                                  </Badge>
+                                </div>
+                                
+                                <div className="bg-white rounded p-2 text-sm">
+                                  <p className="font-medium text-gray-700 mb-1">Reason:</p>
+                                  <p className="text-gray-600 text-xs">{request.reason}</p>
+                                </div>
+
+                                {request.consequences.length > 0 && (
+                                  <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                                    <p className="text-xs font-medium text-yellow-800 mb-1">What will change:</p>
+                                    <ul className="text-xs text-yellow-700 space-y-0.5">
+                                      {request.consequences.slice(0, 2).map((consequence, idx) => (
+                                        <li key={idx} className="flex items-start">
+                                          <span className="mr-1">•</span>
+                                          <span>{consequence}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {canApproveReject ? (
+                                  // Show Approve/Reject buttons if current user is NOT the requester
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          await handleRequestResponse(request.id, 'approved');
+                                          setShowEventDetails(false);
+                                        } catch (error) {
+                                          console.error('Error approving request:', error);
+                                        }
+                                      }}
+                                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        try {
+                                          await handleRequestResponse(request.id, 'rejected');
+                                          setShowEventDetails(false);
+                                        } catch (error) {
+                                          console.error('Error rejecting request:', error);
+                                        }
+                                      }}
+                                      className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                ) : isCurrentUserRequester ? (
+                                  // Show Cancel button if current user is the requester
+                                  <div className="space-y-2">
+                                    <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                                      <p className="text-xs text-blue-800 text-center mb-2">
+                                        <Clock className="w-3 h-3 inline mr-1" />
+                                        Waiting for {isEventCreator(selectedEvent) ? 'the other parent' : 'event creator'} to respond
+                                      </p>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        try {
+                                          await handleRequestResponse(request.id, 'rejected');
+                                          toast({
+                                            title: "Request cancelled",
+                                            description: "Your change request has been cancelled.",
+                                          });
+                                          setShowEventDetails(false);
+                                        } catch (error) {
+                                          console.error('Error cancelling request:', error);
+                                        }
+                                      }}
+                                      className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
+                                    >
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Cancel Request
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  // Fallback: show status
+                                  <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                                    <p className="text-xs text-blue-800 text-center">
+                                      <Clock className="w-3 h-3 inline mr-1" />
+                                      Waiting for response
+                                    </p>
+                                  </div>
+                                )}
+
+                                <p className="text-xs text-gray-500 text-center">
+                                  Requested {formatDateTime(request.timestamp)}
+                                </p>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Actions */}
+              <Separator />
               <div className="flex gap-2 pt-2">
-                {selectedEvent.isSwappable && (
+                {isEventCreator(selectedEvent) ? (
+                  // Creator can edit directly
+                  <Button
+                    onClick={() => openEditEventModal(selectedEvent)}
+                    className="flex-1"
+                  >
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Edit Event
+                  </Button>
+                ) : selectedEvent.isSwappable ? (
+                  // Other parent can request change
                   <Button
                     onClick={handleRequestChangeFromDetails}
                     className="flex-1"
@@ -1916,11 +2152,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     <Edit3 className="w-4 h-4 mr-2" />
                     Request Change
                   </Button>
-                )}
+                ) : null}
                 <Button
                   variant="outline"
                   onClick={() => setShowEventDetails(false)}
-                  className={selectedEvent.isSwappable ? '' : 'flex-1'}
+                  className={isEventCreator(selectedEvent) || selectedEvent.isSwappable ? '' : 'flex-1'}
                 >
                   Close
                 </Button>
@@ -2127,75 +2363,131 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           </DialogHeader>
           
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {changeRequests.filter(r => r.status === 'pending').map((request) => (
-              <Card key={request.id} className="border-orange-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center">
-                      <User className="w-5 h-5 mr-2 text-blue-600" />
-                      {request.requestedBy === 'mom' ? 'You' : 'Your co-parent'} wants to {request.type} a date
-                    </CardTitle>
-                    <Badge variant="outline" className="border-orange-300 text-orange-600">
-                      {request.type}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-gray-800 mb-1">Reason:</p>
-                    <p className="text-sm text-gray-600">{request.reason}</p>
-                  </div>
+            {isLoadingRequests ? (
+              <div className="text-center py-12">
+                <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300 animate-spin" />
+                <p className="text-gray-500">Loading change requests...</p>
+              </div>
+            ) : changeRequests.filter(r => r.status === 'pending').length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-700 font-medium mb-2">No Pending Requests</p>
+                <p className="text-gray-500 text-sm">
+                  All change requests have been resolved, or no requests have been made yet.
+                </p>
+              </div>
+            ) : (
+              changeRequests.filter(r => r.status === 'pending').map((request) => {
+              // Check if current user is the requester
+              const currentUserEmail = currentUser?.email?.toLowerCase()?.trim();
+              const requesterEmail = request.requestedByEmail?.toLowerCase()?.trim();
+              const isCurrentUserRequester = currentUserEmail === requesterEmail;
+              const canApproveReject = !isCurrentUserRequester && !!currentUserEmail;
+              
+              return (
+                <Card key={request.id} className="border-orange-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center">
+                        <User className="w-5 h-5 mr-2 text-blue-600" />
+                        {isCurrentUserRequester ? 'You want' : 'Your co-parent wants'} to {request.type} a date
+                      </CardTitle>
+                      <Badge variant="outline" className="border-orange-300 text-orange-600">
+                        {request.type}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Reason:</p>
+                      <p className="text-sm text-gray-600">{request.reason}</p>
+                    </div>
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <h4 className="font-medium text-yellow-800 mb-2 flex items-center">
-                      <AlertTriangle className="w-4 h-4 mr-1" />
-                      What will change:
-                    </h4>
-                    <ul className="space-y-1 text-sm text-yellow-700">
-                      {request.consequences.map((consequence, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{consequence}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <h4 className="font-medium text-yellow-800 mb-2 flex items-center">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        What will change:
+                      </h4>
+                      <ul className="space-y-1 text-sm text-yellow-700">
+                        {request.consequences.map((consequence, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="mr-2">•</span>
+                            <span>{consequence}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <h4 className="font-medium text-blue-800 mb-2 flex items-center">
-                      <Mail className="w-4 h-4 mr-1" />
-                      If you approve this change:
-                    </h4>
-                    <p className="text-sm text-blue-700">
-                      Both parents will automatically receive an official email documenting the change, 
-                      its impact on your custody agreement, and confirmation of mutual approval.
+                    {canApproveReject && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                          <Mail className="w-4 h-4 mr-1" />
+                          If you approve this change:
+                        </h4>
+                        <p className="text-sm text-blue-700">
+                          Both parents will automatically receive an official email documenting the change, 
+                          its impact on your custody agreement, and confirmation of mutual approval.
+                        </p>
+                      </div>
+                    )}
+
+                    {canApproveReject ? (
+                      // Show Approve/Reject buttons if current user is NOT the requester
+                      <div className="flex space-x-3">
+                        <Button 
+                          onClick={() => handleRequestResponse(request.id, 'approved')}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve Change
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => handleRequestResponse(request.id, 'rejected')}
+                          className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Decline
+                        </Button>
+                      </div>
+                    ) : (
+                      // Show Cancel button if current user is the requester
+                      <div className="space-y-2">
+                        <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                          <p className="text-sm text-blue-800 text-center">
+                            <Clock className="w-4 h-4 inline mr-1" />
+                            Waiting for your co-parent to respond to your request
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await handleRequestResponse(request.id, 'rejected');
+                              toast({
+                                title: "Request cancelled",
+                                description: "Your change request has been cancelled.",
+                              });
+                            } catch (error) {
+                              console.error('Error cancelling request:', error);
+                            }
+                          }}
+                          className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Cancel My Request
+                        </Button>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 text-center">
+                      Requested {formatDateTime(request.timestamp)}
                     </p>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <Button 
-                      onClick={() => handleRequestResponse(request.id, 'approved')}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve Change
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => handleRequestResponse(request.id, 'rejected')}
-                      className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Decline
-                    </Button>
-                  </div>
-
-                  <p className="text-xs text-gray-500 text-center">
-                  Requested {formatDateTime(request.timestamp)}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })
+            )}
           </div>
         </DialogContent>
       </Dialog>
