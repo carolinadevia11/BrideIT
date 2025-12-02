@@ -289,7 +289,9 @@ async def test_prompt_content():
     prompt = parser._build_parsing_prompt(sample_text)
     
     checks = [
-        ("Schedule detail instruction", "EXPLICITLY state which days"),
+        ("Primary schedule instruction", "PRIMARY/MAIN custody schedule"),
+        ("2-2-3 schedule option", "2-2-3 schedule"),
+        ("Week-on/week-off option", "Week-on/week-off"),
         ("JSON structure", "custodyArrangement"),
         ("Holiday schedule", "holidaySchedule"),
         ("Decision making", "decisionMaking"),

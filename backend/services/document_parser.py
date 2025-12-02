@@ -137,11 +137,22 @@ class DocumentParser:
         
         return f"""Analyze the following divorce/custody agreement document and extract key information.
 
+CRITICAL INSTRUCTIONS FOR CUSTODY SCHEDULE:
+1. Find the PRIMARY/MAIN custody schedule in sections titled "Physical Custody", "Parenting Time", "Custody Schedule", or "Schedule"
+2. Look for explicit schedule types like "2-2-3", "2-2-3 rotating", "week-on/week-off", "alternating weeks", etc.
+3. If you see "2-2-3" or "2-2-3 rotating schedule" mentioned in the main custody section, that is the PRIMARY schedule
+4. IGNORE alternative schedules mentioned later (e.g., "unless parents choose week-on/week-off for summer")
+5. The custodySchedule field should be ONE of these exact values:
+   - "2-2-3 schedule" (if document mentions 2-2-3, two-two-three, or 2 days/2 days/3 days pattern)
+   - "Week-on/week-off" (if document mentions alternating full weeks)
+   - "Custom schedule" (if it's a different pattern)
+6. Do NOT use "Week-on/week-off" if the document primarily describes a 2-2-3 schedule, even if week-on/week-off is mentioned as an alternative option
+
 Return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
 
 {{
     "custodyArrangement": "50-50" | "primary-secondary" | "custom",
-    "custodySchedule": "Detailed description of the schedule. EXPLICITLY state which days belong to which parent (e.g., 'Mon/Tue: Parent 1, Wed/Thu: Parent 2, Fri-Sun: Alternating').",
+    "custodySchedule": "2-2-3 schedule" | "Week-on/week-off" | "Custom schedule",
     "holidaySchedule": "description of holiday arrangements",
     "decisionMaking": "joint" | "sole" | "split",
     "expenseSplit": {{
@@ -201,6 +212,8 @@ Document text:
             content = content.strip()
             
             parsed = json.loads(content)
+            # Normalize the custody schedule to ensure correct format
+            parsed = self._normalize_parsed_data(parsed, text)
             return parsed
             
         except json.JSONDecodeError as e:
@@ -211,6 +224,50 @@ Document text:
             print(f"⚠️  OpenAI API error: {e}")
             # Fallback to pattern matching
             return self._parse_with_patterns(text)
+    
+    def _normalize_parsed_data(self, parsed: Dict[str, Any], original_text: str) -> Dict[str, Any]:
+        """
+        Normalize parsed data to ensure consistent format, especially for custody schedule.
+        This fixes cases where AI might return variations or get confused by alternative schedules.
+        """
+        text_lower = original_text.lower()
+        custody_schedule = parsed.get("custodySchedule", "").lower()
+        
+        # Priority 1: Check if original text explicitly mentions 2-2-3 in main custody sections
+        # Look for 2-2-3 in sections about Physical Custody, Parenting Time, or Schedule
+        custody_sections = []
+        for section in ["physical custody", "parenting time", "custody schedule", "schedule", "article iii", "article iv"]:
+            if section in text_lower:
+                # Find the section and get text around it (next 500 chars)
+                idx = text_lower.find(section)
+                if idx >= 0:
+                    section_text = text_lower[idx:idx+500]
+                    custody_sections.append(section_text)
+        
+        # Check if 2-2-3 is mentioned in main custody sections
+        has_2_2_3_in_main = any(
+            re.search(r'2\s*-\s*2\s*-\s*3|two.*two.*three', section) 
+            for section in custody_sections
+        )
+        
+        # Check if week-on/week-off is mentioned in main custody sections
+        has_weekly_in_main = any(
+            re.search(r'week.*on.*week.*off|alternat.*week', section) 
+            for section in custody_sections
+        ) and not has_2_2_3_in_main  # Only if 2-2-3 is NOT in main sections
+        
+        # Normalize custody schedule
+        if has_2_2_3_in_main:
+            # Force 2-2-3 if it's in the main custody sections, regardless of what AI returned
+            parsed["custodySchedule"] = "2-2-3 schedule"
+        elif has_weekly_in_main:
+            parsed["custodySchedule"] = "Week-on/week-off"
+        elif "2-2-3" in custody_schedule or "two-two-three" in custody_schedule:
+            parsed["custodySchedule"] = "2-2-3 schedule"
+        elif "week-on" in custody_schedule or "week on week off" in custody_schedule or "alternating week" in custody_schedule:
+            parsed["custodySchedule"] = "Week-on/week-off"
+        
+        return parsed
     
     def _parse_with_patterns(self, text: str) -> Dict[str, Any]:
         """
