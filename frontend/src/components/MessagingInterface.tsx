@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical } from 'lucide-react';
+import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,6 +56,7 @@ const MessagingInterface: React.FC = () => {
   const [newConversationSubject, setNewConversationSubject] = useState('');
   const [newConversationCategory, setNewConversationCategory] = useState<'custody' | 'medical' | 'school' | 'activities' | 'financial' | 'general' | 'urgent'>('general');
   const [loading, setLoading] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const conversationPollingRef = useRef<number | null>(null);
   const messagePollingRef = useRef<number | null>(null);
@@ -139,6 +140,9 @@ const MessagingInterface: React.FC = () => {
 
   const fetchMessages = useCallback(async (conversationId: string, options: { silent?: boolean } = {}) => {
     const { silent = false } = options;
+    if (!silent) {
+      setLoadingMessages(true);
+    }
     try {
       const data = await messagingAPI.getMessages(conversationId);
       setMessages((prev) => {
@@ -159,6 +163,10 @@ const MessagingInterface: React.FC = () => {
           description: "Failed to load messages",
           variant: "destructive",
         });
+      }
+    } finally {
+      if (!silent) {
+        setLoadingMessages(false);
       }
     }
   }, [toast]);
@@ -186,7 +194,13 @@ const MessagingInterface: React.FC = () => {
   // Fetch messages when active conversation changes
   useEffect(() => {
     if (activeConversation) {
+      // Clear messages and show loading when switching conversations
+      setMessages([]);
+      setLoadingMessages(true);
       fetchMessages(activeConversation);
+    } else {
+      setMessages([]);
+      setLoadingMessages(false);
     }
   }, [activeConversation, fetchMessages]);
 
@@ -462,7 +476,31 @@ const MessagingInterface: React.FC = () => {
 
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                <p className="text-sm text-gray-500">Loading conversations...</p>
+                {/* Skeleton loaders */}
+                <div className="w-full space-y-3 mt-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border-b border-gray-100 animate-pulse">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                          <div className="h-4 bg-gray-200 rounded w-32"></div>
+                        </div>
+                        <div className="w-6 h-4 bg-gray-200 rounded"></div>
+                      </div>
+                      <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
+                      <div className="flex items-center justify-between">
+                        <div className="h-3 bg-gray-200 rounded w-16"></div>
+                        <div className="h-3 bg-gray-200 rounded w-20"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : filteredConversations.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p>No conversations found</p>
@@ -529,16 +567,21 @@ const MessagingInterface: React.FC = () => {
               {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-800">{activeConv.subject}</h2>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge className={categoryColors[activeConv.category]}>
-                        {activeConv.category}
-                      </Badge>
-                      <span className="text-sm text-gray-600">
-                        {activeConv.messageCount} messages
-                      </span>
+                  <div className="flex items-center space-x-2">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-800">{activeConv.subject}</h2>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className={categoryColors[activeConv.category]}>
+                          {activeConv.category}
+                        </Badge>
+                        <span className="text-sm text-gray-600">
+                          {activeConv.messageCount} messages
+                        </span>
+                      </div>
                     </div>
+                    {loadingMessages && (
+                      <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -560,7 +603,28 @@ const MessagingInterface: React.FC = () => {
                 className="flex-1 p-4 overflow-y-auto space-y-4"
                 ref={messagesContainerRef}
               >
-                {messages.length === 0 ? (
+                {loadingMessages ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                    <p className="text-sm text-gray-500">Loading messages...</p>
+                    {/* Skeleton loaders for messages */}
+                    <div className="w-full space-y-4 mt-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'} animate-pulse`}>
+                          <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                            i % 2 === 0 ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            <div className="h-3 bg-gray-300 rounded w-20 mb-2"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-300 rounded w-full"></div>
+                              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="text-center text-gray-500 mt-8">
                     <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                     <p>No messages yet. Start the conversation!</p>
@@ -652,7 +716,11 @@ const MessagingInterface: React.FC = () => {
                     rows={2}
                   />
                   <Button onClick={sendMessage} disabled={!newMessage.trim() || isSending}>
-                    <Send className="w-4 h-4" />
+                    {isSending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 
