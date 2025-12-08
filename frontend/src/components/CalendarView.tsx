@@ -1795,7 +1795,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           setIsEditingMode(false);
         }
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditingMode ? 'Edit Calendar Event' : 'Add Calendar Event'}</DialogTitle>
           </DialogHeader>
@@ -1904,7 +1904,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Event Details Dialog */}
       <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Event Details</DialogTitle>
           </DialogHeader>
@@ -2168,7 +2168,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Change Request Dialog */}
       <Dialog open={showChangeRequest} onOpenChange={setShowChangeRequest}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Request Schedule Change</DialogTitle>
           </DialogHeader>
@@ -2357,7 +2357,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Pending Requests Dialog */}
       <Dialog open={showPendingRequests} onOpenChange={setShowPendingRequests}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pending Schedule Change Requests</DialogTitle>
           </DialogHeader>

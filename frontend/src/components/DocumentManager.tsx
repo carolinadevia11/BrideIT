@@ -477,7 +477,7 @@ const DocumentManager: React.FC = () => {
 
   const renderCreateFolderDialog = () => (
     <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Plus className="w-5 h-5 mr-2 text-blue-600" />
