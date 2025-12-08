@@ -230,6 +230,7 @@ class Document(BaseModel):
     type: str  # 'custody-agreement', 'court-order', 'medical', 'school', 'financial', 'emergency', 'memories', 'custom', 'other'
     custom_category: Optional[str] = None  # For custom folder documents
     file_url: str
+    gridfs_id: Optional[str] = None
     file_name: str
     file_type: str  # 'pdf', 'doc', 'image', 'video', 'other'
     file_size: int  # Size in bytes

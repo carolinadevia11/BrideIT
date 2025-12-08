@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import certifi
 import pymongo
+import gridfs
 from bson import ObjectId
 from dotenv import load_dotenv
 
@@ -158,6 +159,8 @@ class InMemoryDB:
         self.expenses = InMemoryCollection()
         self.documents = InMemoryCollection()
         self.document_folders = InMemoryCollection()
+        # Mock GridFS for in-memory DB (basic placeholder)
+        self.fs = SimpleNamespace(put=lambda x, **y: "mock_file_id", get=lambda x: None, delete=lambda x: None)
 
 
 try:
@@ -165,16 +168,19 @@ try:
     if not mongo_uri:
         print("MONGODB_URI not found in environment variables - using in-memory storage")
         db = InMemoryDB()
+        fs = db.fs
     else:
         client = pymongo.MongoClient(
-            mongo_uri, 
+            mongo_uri,
             tlsCAFile=certifi.where(),
             serverSelectionTimeoutMS=5000  # 5 second timeout
         )
         db = client.bridge
+        fs = gridfs.GridFS(db)
         client.admin.command('ismaster')
         print("✅ DB connection successful")
 except Exception as e:
     print(f"⚠️  DB connection failed: {e}")
     print("🔄 Running in development mode with in-memory database")
     db = InMemoryDB()
+    fs = db.fs

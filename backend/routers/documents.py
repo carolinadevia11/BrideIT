@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId
 import uuid
 import base64
 import os
+import io
 from pathlib import Path
 
 from models import Document, DocumentUpload, DocumentFolder, DocumentFolderCreate, DocumentFolderUpdate, User, EventCreate
 from routers.auth import get_current_user
-from database import db
+from database import db, fs
 from services.document_parser import DocumentParser
 from services.calendar_generator import generate_custody_events
 
@@ -72,23 +73,26 @@ DEFAULT_FOLDERS = [
 ]
 
 def save_document_file(file_content: str, file_name: str, document_id: str) -> str:
-    """Save document file and return URL/path"""
-    documents_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "documents")
-    if not os.path.exists(documents_dir):
-        os.makedirs(documents_dir)
-    
-    # Get file extension
-    file_extension = file_name.split('.')[-1] if '.' in file_name else 'pdf'
-    file_path = os.path.join(documents_dir, f"{document_id}.{file_extension}")
-    
+    """Save document file to GridFS and return file ID"""
     try:
         decoded_content = base64.b64decode(file_content)
-        with open(file_path, 'wb') as f:
-            f.write(decoded_content)
-        # Return API endpoint path
-        return f"/api/v1/documents/files/{document_id}.{file_extension}"
+        # Determine content type
+        ext = file_name.split('.')[-1].lower() if '.' in file_name else ''
+        content_type = "application/octet-stream"
+        if ext in ['pdf']: content_type = 'application/pdf'
+        elif ext in ['jpg', 'jpeg']: content_type = 'image/jpeg'
+        elif ext in ['png']: content_type = 'image/png'
+        elif ext in ['doc', 'docx']: content_type = 'application/msword'
+        
+        file_id = fs.put(
+            decoded_content,
+            filename=file_name,
+            content_type=content_type,
+            metadata={"document_id": document_id}
+        )
+        return str(file_id)
     except Exception as e:
-        print(f"Error saving document: {e}")
+        print(f"Error saving document to GridFS: {e}")
         return ""
 
 def format_file_size(size_bytes: int) -> str:
@@ -487,14 +491,16 @@ async def upload_document(
         file_size = len(base64.b64decode(document_data.file_content))
         
         # Save file
-        file_url = save_document_file(
+        gridfs_id = save_document_file(
             document_data.file_content,
             document_data.file_name,
             document_id
         )
         
-        if not file_url:
+        if not gridfs_id:
             raise HTTPException(status_code=500, detail="Failed to save document file")
+            
+        file_url = f"/api/v1/documents/files/{gridfs_id}"
         
         # Determine folder and custom category
         folder_id = document_data.folder_id
@@ -533,6 +539,7 @@ async def upload_document(
             "type": document_type,
             "custom_category": custom_category,
             "file_url": file_url,
+            "gridfs_id": gridfs_id,
             "file_name": document_data.file_name,
             "file_type": file_type,
             "file_size": file_size,
@@ -621,17 +628,13 @@ async def delete_document(
                        (document.get("protection_reason", "") or "It contains critical legal information.")
             )
         
-        # Delete file from filesystem
-        file_url = document.get("file_url", "")
-        if file_url and file_url.startswith("/api/v1/documents/files/"):
-            file_name = file_url.replace("/api/v1/documents/files/", "")
-            documents_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "documents")
-            file_path = os.path.join(documents_dir, file_name)
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except Exception as e:
-                    print(f"Warning: Could not delete file {file_path}: {e}")
+        # Delete file from GridFS
+        gridfs_id = document.get("gridfs_id")
+        if gridfs_id:
+            try:
+                fs.delete(ObjectId(gridfs_id))
+            except Exception as e:
+                print(f"Warning: Could not delete file from GridFS {gridfs_id}: {e}")
         
         # Delete document from database
         db.documents.delete_one({
@@ -649,21 +652,19 @@ async def delete_document(
         print(f"[ERROR] Delete document: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/files/{file_name}")
+@router.get("/files/{file_id}")
 async def get_document_file(
-    file_name: str,
+    file_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Serve document file"""
+    """Serve document file from GridFS"""
     try:
-        # Extract document ID from filename
-        document_id = file_name.split('.')[0]
-        
         # Verify user has access to this document
+        # Search by gridfs_id or file_url containing the ID
         document = db.documents.find_one({
             "$or": [
-                {"id": document_id},
-                {"_id": ObjectId(document_id) if ObjectId.is_valid(document_id) else None}
+                {"gridfs_id": file_id},
+                {"file_url": {"$regex": file_id}}
             ]
         })
         
@@ -679,34 +680,20 @@ async def get_document_file(
         if not family or str(family["_id"]) != document["family_id"]:
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get file path
-        documents_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "documents")
-        file_path = os.path.join(documents_dir, file_name)
-        
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="Document file not found")
-        
-        # Determine media type
-        file_extension = file_name.split('.')[-1].lower()
-        media_types = {
-            'pdf': 'application/pdf',
-            'doc': 'application/msword',
-            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'png': 'image/png',
-            'gif': 'image/gif',
-            'mp4': 'video/mp4',
-            'mov': 'video/quicktime',
-            'avi': 'video/x-msvideo'
-        }
-        media_type = media_types.get(file_extension, 'application/octet-stream')
-        
-        return FileResponse(
-            file_path,
-            media_type=media_type,
-            filename=document.get("file_name", file_name)
-        )
+        # Get file from GridFS
+        try:
+            # If we don't have the gridfs_id directly (older records might be tricky, but we are fixing forward)
+            # Use the file_id passed in, assuming it is the gridfs_id
+            grid_out = fs.get(ObjectId(file_id))
+            
+            return StreamingResponse(
+                io.BytesIO(grid_out.read()),
+                media_type=grid_out.content_type,
+                headers={"Content-Disposition": f"attachment; filename={document.get('file_name', 'document')}"}
+            )
+        except Exception as e:
+            print(f"GridFS Error: {e}")
+            raise HTTPException(status_code=404, detail="File not found in storage")
         
     except HTTPException:
         raise
