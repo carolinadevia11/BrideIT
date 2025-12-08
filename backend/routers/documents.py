@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, Query
+from fastapi import APIRouter, Depends, HTTPException, Response, Query, Header
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -8,6 +8,7 @@ import base64
 import os
 import io
 from pathlib import Path
+import jwt
 
 from models import Document, DocumentUpload, DocumentFolder, DocumentFolderCreate, DocumentFolderUpdate, User, EventCreate
 from routers.auth import get_current_user
@@ -119,6 +120,21 @@ def get_file_type(file_name: str) -> str:
         return 'video'
     else:
         return 'other'
+
+def get_user_from_token(token: str) -> Optional[User]:
+    """Helper to decode token and get user manually"""
+    try:
+        payload = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        user = db.users.find_one({"email": email})
+        if user is None:
+            return None
+        return User(**user)
+    except Exception as e:
+        print(f"Token validation error: {e}")
+        return None
 
 @router.get("/folders", response_model=List[dict])
 async def get_folders(current_user: User = Depends(get_current_user)):
@@ -655,10 +671,27 @@ async def delete_document(
 @router.get("/files/{file_id}")
 async def get_document_file(
     file_id: str,
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None),
+    download: bool = Query(False)
 ):
     """Serve document file from GridFS"""
     try:
+        user = None
+        
+        # 1. Try query token (direct browser link)
+        if token:
+            user = get_user_from_token(token)
+            
+        # 2. Try Authorization header (API call)
+        if not user and authorization:
+            scheme, _, param = authorization.partition(" ")
+            if scheme.lower() == "bearer":
+                user = get_user_from_token(param)
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
         # Verify user has access to this document
         # Search by gridfs_id or file_url containing the ID
         document = db.documents.find_one({
@@ -673,8 +706,8 @@ async def get_document_file(
         
         # Get user's family to verify access
         family = db.families.find_one({"$or": [
-            {"parent1_email": current_user.email},
-            {"parent2_email": current_user.email}
+            {"parent1_email": user.email},
+            {"parent2_email": user.email}
         ]})
         
         if not family or str(family["_id"]) != document["family_id"]:
@@ -686,10 +719,26 @@ async def get_document_file(
             # Use the file_id passed in, assuming it is the gridfs_id
             grid_out = fs.get(ObjectId(file_id))
             
+            def iterfile():
+                while True:
+                    chunk = grid_out.read(1024 * 1024)  # Read 1MB chunks
+                    if not chunk:
+                        break
+                    yield chunk
+
+            # Determine disposition type based on file extension
+            file_name = document.get('file_name', 'document')
+            file_type = get_file_type(file_name)
+            
+            if download:
+                disposition = "attachment"
+            else:
+                disposition = "inline" if file_type in ['pdf', 'image', 'video'] else "attachment"
+
             return StreamingResponse(
-                io.BytesIO(grid_out.read()),
+                iterfile(),
                 media_type=grid_out.content_type,
-                headers={"Content-Disposition": f"attachment; filename={document.get('file_name', 'document')}"}
+                headers={"Content-Disposition": f"{disposition}; filename={file_name}"}
             )
         except Exception as e:
             print(f"GridFS Error: {e}")

@@ -489,6 +489,14 @@ export const documentsAPI = {
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   },
+
+  getDocumentUrl: (fileUrl: string, download: boolean = false) => {
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const cleanPath = fileUrl.startsWith('http') ? new URL(fileUrl).pathname : fileUrl;
+    const fullUrl = `${apiBaseUrl}${cleanPath}`;
+    const token = localStorage.getItem('authToken');
+    return `${fullUrl}?token=${token}${download ? '&download=true' : ''}`;
+  },
 };
 
 // Support Coach API

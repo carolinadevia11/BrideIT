@@ -434,14 +434,13 @@ const DocumentManager: React.FC = () => {
     }
   };
 
-  const handleViewDocument = async (doc: Document) => {
+  const handleViewDocument = (doc: Document) => {
     if (!doc.fileUrl) return;
     
     try {
-      const blobUrl = await documentsAPI.getDocumentFile(doc.fileUrl);
-      window.open(blobUrl, '_blank');
-      // Clean up blob URL after a delay
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+      // Use direct URL with token for streaming/instant access
+      const fileUrl = documentsAPI.getDocumentUrl(doc.fileUrl);
+      window.open(fileUrl, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
       toast({
@@ -452,19 +451,20 @@ const DocumentManager: React.FC = () => {
     }
   };
 
-  const handleDownloadDocument = async (doc: Document) => {
+  const handleDownloadDocument = (doc: Document) => {
     if (!doc.fileUrl) return;
     
     try {
-      const blobUrl = await documentsAPI.getDocumentFile(doc.fileUrl);
+      // Use direct URL with token for streaming/instant access
+      const fileUrl = documentsAPI.getDocumentUrl(doc.fileUrl, true);
       const link = document.createElement('a');
-      link.href = blobUrl;
+      link.href = fileUrl;
+      // For direct links, the backend Content-Disposition header handles the filename
+      // but setting download attribute is still good practice
       link.download = doc.fileName || doc.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      // Clean up blob URL after a delay
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
       console.error('Error downloading document:', error);
       toast({
