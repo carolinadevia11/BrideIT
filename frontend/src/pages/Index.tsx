@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot } from 'lucide-react';
+import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -95,14 +95,20 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
   // Helper function to change tab and update URL
   const changeTab = (tab: string) => {
-    setShowSettings(false);
-    setActiveTab(tab);
-    navigate(`/${tab}`, { replace: true });
+    // Just navigate, let the useEffect update the state
+    navigate(`/${tab}`, { replace: false });
   };
 
+  // Sync state from URL
   useEffect(() => {
-    setShowSettings(startInSettings);
-  }, [startInSettings]);
+    const isSettings = location.pathname === '/settings';
+    setShowSettings(isSettings);
+    
+    if (!isSettings) {
+      const tab = getTabFromPath(location.pathname);
+      setActiveTab(tab);
+    }
+  }, [location.pathname]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOnboardingExplanation, setShowOnboardingExplanation] = useState(startOnboarding);
   const [showAccountSetup, setShowAccountSetup] = useState(false);
@@ -469,21 +475,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     loadDashboardMetrics();
   }, [familyProfile, currentUser]);
 
-  useEffect(() => {
-    if (startInSettings) {
-      setShowSettings(true);
-    }
-  }, [startInSettings]);
-
-  useEffect(() => {
-    if (showSettings) {
-      if (location.pathname !== '/settings') {
-        navigate('/settings', { replace: true });
-      }
-    } else if (location.pathname === '/settings') {
-      navigate('/', { replace: true });
-    }
-  }, [showSettings, location.pathname, navigate]);
+  // Removed problematic bidirectional sync useEffect
 
   const eventsCopy = dashboardMetricsLoaded
     ? `${dashboardMetrics.upcomingEvents} upcoming event${dashboardMetrics.upcomingEvents === 1 ? '' : 's'}`
@@ -667,6 +659,12 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
         currentUser={currentUser}
         heroSubtitle={familyProfile?.familyName || 'Fair & Balanced Co-Parenting'}
       >
+        <div className="mb-6">
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
         <UserSettings
           initialProfile={currentUser || undefined}
           familyProfile={familyProfile}
@@ -739,7 +737,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowSettings(true)}
+                  onClick={() => navigate('/settings')}
                   className="border-gray-300 text-slate-700 hover:bg-gray-100"
                 >
                   <Settings className="w-4 h-4 mr-2" />
@@ -1022,7 +1020,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       activeItem={activeTab}
       onNavigate={changeTab}
       onLogout={handleLogoutClick}
-      onOpenSettings={() => setShowSettings(true)}
+      onOpenSettings={() => navigate('/settings', { replace: false })}
       onOpenChildren={familyProfile ? () => setShowChildManagement(true) : undefined}
       onCreateQuickAction={handleQuickAdd}
       onOpenMessages={handleOpenMessages}

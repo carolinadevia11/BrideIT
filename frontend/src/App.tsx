@@ -162,7 +162,7 @@ const App = () => {
               path="/settings"
               element={
                 isAuthenticated ? (
-                  <Index onLogout={handleLogout} startInSettings />
+                  <Index onLogout={handleLogout} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
