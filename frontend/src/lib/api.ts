@@ -327,8 +327,8 @@ export const messagingAPI = {
     });
   },
 
-  getMessages: async (conversationId: string) => {
-    return fetchWithAuth(`/api/v1/messaging/conversations/${conversationId}/messages`);
+  getMessages: async (conversationId: string, page: number = 1, limit: number = 50) => {
+    return fetchWithAuth(`/api/v1/messaging/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
   },
 
   sendMessage: async (messageData: {

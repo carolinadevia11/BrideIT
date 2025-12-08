@@ -1,18 +1,89 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from typing import List, Dict, Optional
 from datetime import datetime
 from bson import ObjectId
 from models import MessageCreate, ConversationCreate, Message, Conversation, User
 from routers.auth import get_current_user
 from database import db
+import json
 
 router = APIRouter(prefix="/api/v1/messaging", tags=["messaging"])
+
+# WebSocket Connection Manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, email: str):
+        await websocket.accept()
+        if email not in self.active_connections:
+            self.active_connections[email] = []
+        self.active_connections[email].append(websocket)
+        print(f"[WS] User connected: {email}. Total connections: {len(self.active_connections[email])}")
+
+    def disconnect(self, websocket: WebSocket, email: str):
+        if email in self.active_connections:
+            if websocket in self.active_connections[email]:
+                self.active_connections[email].remove(websocket)
+            
+            if not self.active_connections[email]:
+                del self.active_connections[email]
+            
+            print(f"[WS] User disconnected: {email}")
+
+    async def send_personal_message(self, message: dict, email: str):
+        if email in self.active_connections:
+            # Ensure datetime objects are converted to strings
+            if 'timestamp' in message and isinstance(message['timestamp'], datetime):
+                message['timestamp'] = message['timestamp'].isoformat()
+            
+            message_str = json.dumps(message)
+            
+            # Iterate over a copy of the list to allow modification during iteration if needed
+            # (though we handle disconnects explicitly)
+            for connection in self.active_connections[email]:
+                try:
+                    await connection.send_text(message_str)
+                except Exception as e:
+                    print(f"[WS] Error sending message to {email}: {e}")
+                    # We don't remove here, we let the disconnect handler do it
+
+manager = ConnectionManager()
+
+# WebSocket Endpoint
+@router.websocket("/ws/{email}")
+async def websocket_endpoint(websocket: WebSocket, email: str):
+    await manager.connect(websocket, email)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                message = json.loads(data)
+                # Handle typing indicators
+                if message.get("type") == "typing":
+                    recipient_email = message.get("recipientEmail")
+                    if recipient_email:
+                        await manager.send_personal_message({
+                            "type": "typing",
+                            "conversationId": message.get("conversationId"),
+                            "senderEmail": email
+                        }, recipient_email)
+            except json.JSONDecodeError:
+                pass
+            except Exception as e:
+                print(f"[WS] Error processing message: {e}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, email)
+    except Exception as e:
+        print(f"[WS] Error: {e}")
+        manager.disconnect(websocket, email)
 
 # Get all conversations for the current user's family
 @router.get("/conversations", response_model=List[dict])
 async def get_conversations(current_user: User = Depends(get_current_user)):
     """
     Get all conversations for the current user's family
+    Optimized with MongoDB Aggregation to avoid N+1 query problem
     """
     try:
         print(f"[GET /conversations] User: {current_user.email}")
@@ -28,44 +99,87 @@ async def get_conversations(current_user: User = Depends(get_current_user)):
             return []
         
         family_id = str(family["_id"])
-        print(f"[GET /conversations] Family ID: {family_id}")
         
-        # Get all conversations for this family
-        conversations = list(db.conversations.find({"family_id": family_id, "is_archived": False}))
+        # Aggregation Pipeline
+        pipeline = [
+            # 1. Match conversations for this family (not archived)
+            {
+                "$match": {
+                    "family_id": family_id,
+                    "is_archived": False
+                }
+            },
+            # 2. Lookup messages for each conversation to get counts and last message
+            {
+                "$lookup": {
+                    "from": "messages",
+                    "let": {"conv_id": {"$toString": "$_id"}},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$eq": ["$conversation_id", "$$conv_id"]}}},
+                        {"$sort": {"timestamp": -1}}, # Newest first
+                    ],
+                    "as": "messages"
+                }
+            },
+            # 3. Project the fields we need
+            {
+                "$project": {
+                    "id": {"$toString": "$_id"},
+                    "subject": 1,
+                    "category": 1,
+                    "participants": 1,
+                    "is_starred": 1,
+                    "is_archived": 1,
+                    "created_at": 1,
+                    "last_message_at": 1,
+                    "messageCount": {"$size": "$messages"},
+                    "unreadCount": {
+                        "$size": {
+                            "$filter": {
+                                "input": "$messages",
+                                "as": "msg",
+                                "cond": {
+                                    "$and": [
+                                        {"$ne": ["$$msg.sender_email", current_user.email]},
+                                        {"$ne": ["$$msg.status", "read"]}
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "lastMessage": {"$arrayElemAt": ["$messages", 0]}
+                }
+            }
+        ]
         
+        conversations = list(db.conversations.aggregate(pipeline))
         print(f"[GET /conversations] Found {len(conversations)} conversations")
         
-        # For each conversation, get message count and unread count
+        # Format result
         result = []
         for conv in conversations:
-            conv_id = str(conv["_id"])
+            # Determine last activity time (message or creation)
+            last_msg_time = conv.get("lastMessage", {}).get("timestamp")
+            created_at = conv.get("created_at")
             
-            # Get all messages for this conversation
-            messages = list(db.messages.find({"conversation_id": conv_id}).sort("timestamp", 1))
-            
-            # Count unread messages for current user
-            unread_count = sum(1 for msg in messages 
-                             if msg.get("sender_email") != current_user.email 
-                             and msg.get("status") != "read")
-            
-            # Get last message timestamp
-            last_message_at = messages[-1]["timestamp"] if messages else conv.get("created_at")
+            # Use stored last_message_at if available and consistent, otherwise fallback
+            display_time = last_msg_time or created_at
             
             result.append({
-                "id": conv_id,
+                "id": conv["id"],
                 "subject": conv["subject"],
                 "category": conv["category"],
                 "participants": conv["participants"],
-                "messageCount": len(messages),
-                "unreadCount": unread_count,
-                "lastMessageAt": last_message_at.isoformat() if last_message_at else None,
+                "messageCount": conv["messageCount"],
+                "unreadCount": conv["unreadCount"],
+                "lastMessageAt": display_time.isoformat() if display_time else None,
                 "isStarred": conv.get("is_starred", False),
                 "isArchived": conv.get("is_archived", False),
-                "createdAt": conv.get("created_at").isoformat() if conv.get("created_at") else None
+                "createdAt": created_at.isoformat() if created_at else None
             })
         
         # Sort by last message time (most recent first)
-        result.sort(key=lambda x: x["lastMessageAt"] or x["createdAt"], reverse=True)
+        result.sort(key=lambda x: x["lastMessageAt"] or x["createdAt"] or "", reverse=True)
         
         return result
     except Exception as e:
@@ -143,17 +257,19 @@ async def create_conversation(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Get messages for a conversation
-@router.get("/conversations/{conversation_id}/messages", response_model=List[dict])
+# Get messages for a conversation (with pagination)
+@router.get("/conversations/{conversation_id}/messages", response_model=dict)
 async def get_messages(
     conversation_id: str,
+    page: int = 1,
+    limit: int = 50,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all messages for a conversation
+    Get messages for a conversation with pagination
     """
     try:
-        print(f"[GET /messages] Conversation: {conversation_id}, User: {current_user.email}")
+        print(f"[GET /messages] Conversation: {conversation_id}, User: {current_user.email}, Page: {page}")
         
         # Verify user has access to this conversation
         conversation = db.conversations.find_one({"_id": ObjectId(conversation_id)})
@@ -163,12 +279,25 @@ async def get_messages(
         if current_user.email not in conversation["participants"]:
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get all messages
-        messages = list(db.messages.find({"conversation_id": conversation_id}).sort("timestamp", 1))
+        # Calculate skip
+        skip = (page - 1) * limit
         
-        print(f"[GET /messages] Found {len(messages)} messages")
+        # Get total count
+        total_messages = db.messages.count_documents({"conversation_id": conversation_id})
         
-        # Mark messages as read for current user
+        # Get paginated messages (sort by timestamp DESC for pagination, then reverse for display)
+        # We fetch newest first to easily get the latest "limit" messages
+        cursor = db.messages.find({"conversation_id": conversation_id})\
+            .sort("timestamp", -1)\
+            .skip(skip)\
+            .limit(limit)
+            
+        messages = list(cursor)
+        messages.reverse() # Reverse back to chronological order
+        
+        print(f"[GET /messages] Found {len(messages)} messages (Total: {total_messages})")
+        
+        # Mark messages as read for current user (only unread ones)
         db.messages.update_many(
             {
                 "conversation_id": conversation_id,
@@ -178,13 +307,13 @@ async def get_messages(
             {"$set": {"status": "read"}}
         )
         
-        # Format messages for response (reflect read status without re-query)
-        result = []
+        # Format messages for response
+        formatted_messages = []
         for msg in messages:
             status = msg.get("status", "sent")
             if msg.get("sender_email") != current_user.email:
                 status = "read"
-            result.append({
+            formatted_messages.append({
                 "id": str(msg["_id"]),
                 "conversationId": conversation_id,
                 "senderEmail": msg["sender_email"],
@@ -194,7 +323,15 @@ async def get_messages(
                 "status": status
             })
         
-        return result
+        return {
+            "messages": formatted_messages,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_messages,
+                "hasMore": (skip + limit) < total_messages
+            }
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -246,7 +383,7 @@ async def send_message(
         
         print(f"[POST /message] Sent message: {msg_id}")
         
-        return {
+        response_data = {
             "id": msg_id,
             "conversationId": message.conversation_id,
             "senderEmail": current_user.email,
@@ -255,6 +392,15 @@ async def send_message(
             "timestamp": timestamp.isoformat(),
             "status": "sent"
         }
+        
+        # Push to other participants via WebSocket
+        for participant in conversation["participants"]:
+            if participant != current_user.email:
+                # Add a flag so frontend knows this is a real-time update
+                ws_payload = {**response_data, "type": "new_message"}
+                await manager.send_personal_message(ws_payload, participant)
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

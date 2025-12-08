@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical, Loader2 } from 'lucide-react';
+import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical, Loader2, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,9 +59,16 @@ const MessagingInterface: React.FC = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const conversationPollingRef = useRef<number | null>(null);
-  const messagePollingRef = useRef<number | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const categoryColors = {
     custody: 'bg-blue-100 text-blue-800',
@@ -138,16 +145,31 @@ const MessagingInterface: React.FC = () => {
     }
   }, [activeConversation, toast]);
 
-  const fetchMessages = useCallback(async (conversationId: string, options: { silent?: boolean } = {}) => {
-    const { silent = false } = options;
-    if (!silent) {
+  const fetchMessages = useCallback(async (conversationId: string, pageNum: number = 1, options: { silent?: boolean; append?: boolean } = {}) => {
+    const { silent = false, append = false } = options;
+    if (!silent && !append) {
       setLoadingMessages(true);
     }
+    if (append) {
+      setIsFetchingMore(true);
+    }
+    
     try {
-      const data = await messagingAPI.getMessages(conversationId);
+      const data = await messagingAPI.getMessages(conversationId, pageNum);
+      const { messages: newMessages, pagination } = data;
+      
       setMessages((prev) => {
         const optimistic = prev.filter((msg) => msg.id.startsWith('temp-'));
-        const merged = [...data];
+        
+        // If appending (loading older messages), put them at the start
+        if (append) {
+          // Remove duplicates just in case
+          const uniqueNew = newMessages.filter((nm: Message) => !prev.some(pm => pm.id === nm.id));
+          return [...uniqueNew, ...prev];
+        }
+        
+        // If regular load, replace but keep optimistic
+        const merged = [...newMessages];
         optimistic.forEach((msg) => {
           if (!merged.some((existing) => existing.id === msg.id)) {
             merged.push(msg);
@@ -155,6 +177,10 @@ const MessagingInterface: React.FC = () => {
         });
         return merged;
       });
+      
+      setHasMore(pagination.hasMore);
+      setPage(pageNum);
+      
     } catch (error) {
       console.error('Error fetching messages:', error);
       if (!silent) {
@@ -165,24 +191,24 @@ const MessagingInterface: React.FC = () => {
         });
       }
     } finally {
-      if (!silent) {
+      if (!silent && !append) {
         setLoadingMessages(false);
+      }
+      if (append) {
+        setIsFetchingMore(false);
       }
     }
   }, [toast]);
 
-  // Fetch current user and conversations on mount + start conversations polling
+  // Fetch current user and conversations on mount
   useEffect(() => {
     fetchCurrentUser();
     fetchConversations();
-
-    if (conversationPollingRef.current) {
-      window.clearInterval(conversationPollingRef.current);
-    }
-
+    
+    // Polling only for conversation list updates (less frequent)
     conversationPollingRef.current = window.setInterval(() => {
       fetchConversations({ silent: true });
-    }, 1500);
+    }, 3000); // Increased to 3s to reduce load further
 
     return () => {
       if (conversationPollingRef.current) {
@@ -191,55 +217,120 @@ const MessagingInterface: React.FC = () => {
     };
   }, [fetchCurrentUser, fetchConversations]);
 
+  // WebSocket Connection
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
+    
+    console.log('Connecting to WebSocket:', WS_URL);
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket Connected');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Typing Indicator
+        if (data.type === 'typing') {
+          setActiveConversation(currentActive => {
+            if (currentActive === data.conversationId) {
+              setIsTyping(true);
+              if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+              typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+            }
+            return currentActive;
+          });
+          return;
+        }
+
+        // New Message
+        if (data.type === 'new_message' || data.id) {
+           setIsTyping(false); // Clear typing indicator on new message
+           
+           // If it belongs to the active conversation, add it
+           // Use functional state update to access latest activeConversation
+           setActiveConversation(currentActive => {
+             if (currentActive === data.conversationId) {
+               setMessages(prev => {
+                 if (prev.some(m => m.id === data.id)) return prev;
+                 return [...prev, data];
+               });
+             }
+             return currentActive;
+           });
+           
+           // Also refresh conversations list to update unread counts/order
+           fetchConversations({ silent: true });
+        }
+      } catch (e) {
+        console.error('WebSocket message error:', e);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket Disconnected');
+      // Simple reconnect logic could go here
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [currentUser, fetchConversations]);
+
   // Fetch messages when active conversation changes
   useEffect(() => {
     if (activeConversation) {
-      // Clear messages and show loading when switching conversations
       setMessages([]);
-      setLoadingMessages(true);
-      fetchMessages(activeConversation);
+      setPage(1);
+      setHasMore(false);
+      setIsTyping(false);
+      fetchMessages(activeConversation, 1);
     } else {
       setMessages([]);
-      setLoadingMessages(false);
     }
   }, [activeConversation, fetchMessages]);
 
-  // Auto-scroll when messages update
+  // Scroll handling
   useEffect(() => {
-    if (messagesContainerRef.current) {
+    // Only scroll to bottom on initial load (page 1) or when new message is sent/received
+    // NOT when loading older messages
+    if (page === 1 && messagesContainerRef.current) {
       const container = messagesContainerRef.current;
-      window.requestAnimationFrame(() => {
-        container.scrollTo({
+      // Use timeout to allow render
+      setTimeout(() => {
+         container.scrollTo({
           top: container.scrollHeight,
           behavior: 'smooth',
         });
-      });
+      }, 100);
     }
-  }, [messages, activeConversation]);
+  }, [messages, page, activeConversation]);
 
-  // Poll messages for the active conversation
-  useEffect(() => {
-    if (messagePollingRef.current) {
-      window.clearInterval(messagePollingRef.current);
-    }
-
-    if (!activeConversation) {
-      return;
-    }
-
-    const pollMessages = () => {
-      fetchMessages(activeConversation, { silent: true });
-    };
-
-    pollMessages();
-    messagePollingRef.current = window.setInterval(pollMessages, 750);
-
-    return () => {
-      if (messagePollingRef.current) {
-        window.clearInterval(messagePollingRef.current);
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop } = messagesContainerRef.current;
+      if (scrollTop === 0 && hasMore && !isFetchingMore && activeConversation) {
+        // Load previous page
+        const nextPage = page + 1;
+        // Save current scroll height to maintain position after load
+        const currentScrollHeight = messagesContainerRef.current.scrollHeight;
+        
+        fetchMessages(activeConversation, nextPage, { append: true }).then(() => {
+          // Adjust scroll position to keep user at same relative point
+          if (messagesContainerRef.current) {
+            const newScrollHeight = messagesContainerRef.current.scrollHeight;
+            messagesContainerRef.current.scrollTop = newScrollHeight - currentScrollHeight;
+          }
+        });
       }
-    };
-  }, [activeConversation, fetchMessages]);
+    }
+  };
 
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = conv.subject.toLowerCase().includes(searchTerm.toLowerCase());
@@ -249,6 +340,23 @@ const MessagingInterface: React.FC = () => {
   });
 
   const activeConv = conversations.find(conv => conv.id === activeConversation);
+
+  const handleTyping = () => {
+    if (!wsRef.current || !activeConversation || !currentUser) return;
+    
+    // Find recipient
+    const currentConv = conversations.find(c => c.id === activeConversation);
+    const recipient = currentConv?.participants.find(p => p !== currentUser.email);
+    
+    if (recipient) {
+      // Send typing event (debouncing could be added here if needed)
+      wsRef.current.send(JSON.stringify({
+        type: 'typing',
+        conversationId: activeConversation,
+        recipientEmail: recipient
+      }));
+    }
+  };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConversation || !currentUser || isSending) return;
@@ -280,12 +388,9 @@ const MessagingInterface: React.FC = () => {
         prev.map((msg) => (msg.id === tempId ? response : msg))
       );
       fetchConversations({ silent: true });
-      fetchMessages(activeConversation, { silent: true });
+     // fetchMessages(activeConversation, { silent: true }); // No need to refetch entire list, we updated optimistically and WS will confirm if needed
       
-      toast({
-        title: "Message sent",
-        description: "Your message has been delivered",
-      });
+      // Removed "Message sent" toast as requested
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove optimistic message if send failed
@@ -602,7 +707,14 @@ const MessagingInterface: React.FC = () => {
               <div
                 className="flex-1 p-4 overflow-y-auto space-y-4"
                 ref={messagesContainerRef}
+                onScroll={handleScroll}
               >
+                {isFetchingMore && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                  </div>
+                )}
+                
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center py-8 space-y-4">
                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -637,31 +749,52 @@ const MessagingInterface: React.FC = () => {
                         key={message.id}
                         className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                        <div className={`relative max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
                           isCurrentUser
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-blue-600 text-white rounded-br-none'
+                            : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'
                         }`}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              isCurrentUser ? 'bg-blue-600 text-white' : toneColors[message.tone]
-                            }`}>
-                              {message.tone}
-                            </span>
-                            <span className="text-xs opacity-70 ml-2">
-                              {formatTime(message.timestamp)}
-                            </span>
+                          {/* Tone Badge */}
+                          <div className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${
+                            isCurrentUser ? 'text-blue-200' : 'text-gray-400'
+                          }`}>
+                            {message.tone}
                           </div>
-                          <p className="text-sm">{message.content}</p>
-                          {isCurrentUser && (
-                            <div className="flex items-center justify-end mt-2">
-                              {message.status === 'read' && <CheckCircle className="w-3 h-3 opacity-70" />}
-                            </div>
-                          )}
+                          
+                          {/* Content */}
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                          
+                          {/* Footer: Time & Status */}
+                          <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${
+                             isCurrentUser ? 'text-blue-100' : 'text-gray-400'
+                          }`}>
+                            <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            
+                            {isCurrentUser && (
+                              <span className="ml-1">
+                                {message.status === 'read' ? (
+                                  <CheckCheck className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 opacity-70" />
+                                )}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
                   })
+                )}
+                
+                {/* Typing Indicator */}
+                {isTyping && (
+                   <div className="flex justify-start">
+                     <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center space-x-1">
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                     </div>
+                   </div>
                 )}
               </div>
 
@@ -710,10 +843,19 @@ const MessagingInterface: React.FC = () => {
                 <div className="flex space-x-2">
                   <Textarea
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTyping();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
                     placeholder="Type your message..."
-                    className="flex-1 resize-none"
-                    rows={2}
+                    className="flex-1 resize-none min-h-[50px]"
+                    rows={1}
                   />
                   <Button onClick={sendMessage} disabled={!newMessage.trim() || isSending}>
                     {isSending ? (
