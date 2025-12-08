@@ -66,8 +66,26 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/login"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Login onLogin={handleLogin} />
+                )
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Signup />
+                )
+              }
+            />
             <Route
               path="/"
               element={

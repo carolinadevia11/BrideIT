@@ -15,7 +15,7 @@ router = APIRouter()
 # Secret key to sign the JWT token
 SECRET_KEY = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "12960"))  # default 3 days
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))  # default 1 hour
 BCRYPT_MAX_BYTES = 72
 
 pwd_context = CryptContext(
