@@ -172,6 +172,7 @@ class Expense(BaseModel):
     status: str = 'pending'  # 'pending', 'approved', 'disputed', 'paid'
     split_ratio: dict  # e.g., {"parent1": 50, "parent2": 50}
     receipt_url: Optional[str] = None
+    gridfs_id: Optional[str] = None
     receipt_file_name: Optional[str] = None
     children_ids: Optional[List[str]] = None  # Which children this expense is for
     dispute_reason: Optional[str] = None

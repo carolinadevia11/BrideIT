@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from typing import List
 from datetime import datetime, date
 from bson import ObjectId
 import uuid
 import base64
 import os
+import io
 from pathlib import Path
 
 from models import Expense, ExpenseCreate, ExpenseUpdate, User
 from routers.auth import get_current_user
-from database import db
+from database import db, fs
 
 router = APIRouter(prefix="/api/v1/expenses", tags=["expenses"])
 
@@ -26,24 +27,26 @@ def get_family_expense_split(family: dict) -> dict:
     return {"parent1": 50, "parent2": 50}
 
 def save_receipt(receipt_content: str, receipt_file_name: str, expense_id: str) -> str:
-    """Save receipt file and return URL/path"""
-    # In production, this would upload to S3 or similar
-    # For now, we'll store in a receipts directory
-    receipts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "receipts")
-    if not os.path.exists(receipts_dir):
-        os.makedirs(receipts_dir)
-    
-    file_extension = receipt_file_name.split('.')[-1] if '.' in receipt_file_name else 'jpg'
-    file_path = f"{receipts_dir}/{expense_id}.{file_extension}"
-    
+    """Save receipt file to GridFS and return file ID"""
     try:
         decoded_content = base64.b64decode(receipt_content)
-        with open(file_path, 'wb') as f:
-            f.write(decoded_content)
-        # Return API endpoint path instead of relative path
-        return f"/api/v1/expenses/receipts/{expense_id}.{file_extension}"
+        # Determine content type
+        ext = receipt_file_name.split('.')[-1].lower() if '.' in receipt_file_name else ''
+        content_type = "application/octet-stream"
+        if ext in ['jpg', 'jpeg']: content_type = 'image/jpeg'
+        elif ext in ['png']: content_type = 'image/png'
+        elif ext in ['pdf']: content_type = 'application/pdf'
+        elif ext in ['gif']: content_type = 'image/gif'
+        
+        file_id = fs.put(
+            decoded_content,
+            filename=receipt_file_name,
+            content_type=content_type,
+            metadata={"expense_id": expense_id, "type": "receipt"}
+        )
+        return str(file_id)
     except Exception as e:
-        print(f"Error saving receipt: {e}")
+        print(f"Error saving receipt to GridFS: {e}")
         return ""
 
 @router.get("", response_model=List[dict])
@@ -129,12 +132,15 @@ async def create_expense(
         receipt_url = None
         
         # Save receipt if provided
+        gridfs_id = None
         if expense_data.receipt_content and expense_data.receipt_file_name:
-            receipt_url = save_receipt(
+            gridfs_id = save_receipt(
                 expense_data.receipt_content,
                 expense_data.receipt_file_name,
                 expense_id
             )
+            if gridfs_id:
+                receipt_url = f"/api/v1/expenses/receipts/{gridfs_id}"
         
         # Convert date to string for MongoDB compatibility
         date_str = expense_data.date.isoformat() if isinstance(expense_data.date, date) else str(expense_data.date)
@@ -150,6 +156,7 @@ async def create_expense(
             "status": "pending",
             "split_ratio": split_ratio,
             "receipt_url": receipt_url,
+            "gridfs_id": gridfs_id,
             "receipt_file_name": expense_data.receipt_file_name,
             "children_ids": expense_data.children_ids or [],
             "created_at": datetime.utcnow(),
@@ -303,6 +310,14 @@ async def delete_expense(
         if expense["paid_by_email"] != current_user.email:
             raise HTTPException(status_code=403, detail="Can only delete your own expenses")
         
+        # Delete receipt from GridFS if it exists
+        gridfs_id = expense.get("gridfs_id")
+        if gridfs_id:
+            try:
+                fs.delete(ObjectId(gridfs_id))
+            except Exception as e:
+                print(f"Warning: Could not delete receipt from GridFS {gridfs_id}: {e}")
+
         # Delete using the field we found it with
         if "id" in expense and expense["id"] == expense_id:
             db.expenses.delete_one({"id": expense_id})
@@ -378,27 +393,26 @@ async def get_expense_summary(current_user: User = Depends(get_current_user)):
         print(f"[ERROR] Get expense summary: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/receipts/{receipt_filename}")
+@router.get("/receipts/{file_id}")
 async def get_receipt(
-    receipt_filename: str,
+    file_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Serve receipt file"""
+    """Serve receipt file from GridFS"""
     try:
-        # Extract expense ID from filename (format: expense_id.extension)
-        expense_id = receipt_filename.split('.')[0]
-        
-        # Verify user has access to this expense - try both 'id' and '_id' fields
-        expense = db.expenses.find_one({"id": expense_id})
-        if not expense:
-            # Try MongoDB ObjectId format
-            try:
-                from bson import ObjectId
-                expense = db.expenses.find_one({"_id": ObjectId(expense_id)})
-            except:
-                pass
+        # Verify user has access to this expense
+        # Search by gridfs_id or receipt_url containing the ID
+        expense = db.expenses.find_one({
+            "$or": [
+                {"gridfs_id": file_id},
+                {"receipt_url": {"$regex": file_id}}
+            ]
+        })
         
         if not expense:
+            # Fallback for legacy files - try parsing ID from filename if it looks like one
+            # But with GridFS IDs this is less likely to collide.
+            # We'll rely on the DB lookup above.
             raise HTTPException(status_code=404, detail="Receipt not found")
         
         # Get user's family to verify access
@@ -410,29 +424,18 @@ async def get_receipt(
         if not family or str(family["_id"]) != expense["family_id"]:
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get file path
-        receipts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "receipts")
-        file_path = os.path.join(receipts_dir, receipt_filename)
-        
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="Receipt file not found")
-        
-        # Determine media type
-        file_extension = receipt_filename.split('.')[-1].lower()
-        media_types = {
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'png': 'image/png',
-            'pdf': 'application/pdf',
-            'gif': 'image/gif'
-        }
-        media_type = media_types.get(file_extension, 'application/octet-stream')
-        
-        return FileResponse(
-            file_path,
-            media_type=media_type,
-            filename=expense.get("receipt_file_name", receipt_filename)
-        )
+        # Get file from GridFS
+        try:
+            grid_out = fs.get(ObjectId(file_id))
+            
+            return StreamingResponse(
+                io.BytesIO(grid_out.read()),
+                media_type=grid_out.content_type,
+                headers={"Content-Disposition": f"attachment; filename={expense.get('receipt_file_name', 'receipt')}"}
+            )
+        except Exception as e:
+            print(f"GridFS Error: {e}")
+            raise HTTPException(status_code=404, detail="File not found in storage")
     except HTTPException:
         raise
     except Exception as e:
