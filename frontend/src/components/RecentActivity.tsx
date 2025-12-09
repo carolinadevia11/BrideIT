@@ -39,14 +39,21 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     try {
       setLoading(true);
       const data = await activityAPI.getRecentActivity();
-      setActivities(data);
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load recent activity",
-        variant: "destructive",
-      });
+      // If no family exists (404), data will be null - just show empty state
+      setActivities(data || []);
+    } catch (error: any) {
+      // Only show error if it's not a 404 (no family found)
+      if (!error.message?.includes('404') && !error.message?.includes('not found')) {
+        console.error('Error fetching activities:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load recent activity",
+          variant: "destructive",
+        });
+      } else {
+        // No family found - just show empty state silently
+        setActivities([]);
+      }
     } finally {
       setLoading(false);
     }

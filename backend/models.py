@@ -8,6 +8,7 @@ class User(BaseModel):
     email: str
     password: str
     role: str = "user"
+    tourCompleted: Optional[bool] = False
 
 class Child(BaseModel):
     id: Optional[str] = None

@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface FamilyOnboardingProps {
   onComplete: (familyProfile: FamilyProfile) => void;
+  onBack?: () => void;
   initialUserData?: {
     firstName: string;
     lastName: string;
@@ -22,7 +23,7 @@ interface FamilyOnboardingProps {
   };
 }
 
-const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initialUserData }) => {
+const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, onBack, initialUserData }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -832,14 +833,24 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
               {renderStepContent()}
               
               <div className="flex justify-between pt-6">
-                <Button 
-                  onClick={prevStep} 
-                  variant="outline"
-                  disabled={currentStep === 0}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
+                {currentStep === 0 && onBack ? (
+                  <Button 
+                    onClick={onBack} 
+                    variant="outline"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Family Choice
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={prevStep} 
+                    variant="outline"
+                    disabled={currentStep === 0}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                )}
                 
                 <Button
                   onClick={nextStep}

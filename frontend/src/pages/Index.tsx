@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot, ArrowLeft } from 'lucide-react';
+import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot, ArrowLeft, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +23,7 @@ import UserSettings from '@/components/UserSettings';
 import FamilyOnboarding from '@/components/FamilyOnboarding';
 import ChildManagement from '@/components/ChildManagement';
 import RecentActivity from '@/components/RecentActivity';
+import ProductTour from '@/components/ProductTour';
 import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
 import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI } from '@/lib/api';
@@ -117,6 +118,8 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [showFamilyCodeSetup, setShowFamilyCodeSetup] = useState(false);
   const [showContractUpload, setShowContractUpload] = useState(false);
   const [showFamilyOnboarding, setShowFamilyOnboarding] = useState(false);
+  const [showProductTour, setShowProductTour] = useState(false);
+  const [tourCompleted, setTourCompleted] = useState(false);
   const [showSettings, setShowSettings] = useState(startInSettings);
   const [showChildManagement, setShowChildManagement] = useState(false);
   const [showSupportChatbot, setShowSupportChatbot] = useState(false);
@@ -322,6 +325,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           };
 
           setCurrentUser(normalizedUser);
+          
+          // Set tour completion status from user profile (default to false if not set)
+          setTourCompleted(userProfile.tourCompleted === true);
 
           if (userProfile.role === 'admin') {
             setFamilyProfile(null);
@@ -382,10 +388,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               // If family profile exists, clear onboarding state
               localStorage.removeItem('onboardingState');
             } else {
+              // No family found - set family to null
               setFamilyProfile(null);
             }
-          } catch (error) {
-            // Family profile doesn't exist yet - that's okay
+          } catch (error: any) {
+            // Family profile doesn't exist yet (404) - that's okay, no error shown
             console.info('No family profile found yet');
             setFamilyProfile(null);
           } finally {
@@ -402,6 +409,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
     fetchUserData();
   }, [toast]);
+
 
   useEffect(() => {
     const loadDashboardMetrics = async () => {
@@ -551,6 +559,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           setShowFamilyChoice(false);
           setShowFamilyCodeSetup(true);
         }}
+        onBack={() => {
+          setShowFamilyChoice(false);
+        }}
       />
     );
   }
@@ -560,6 +571,10 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     return (
       <FamilyOnboarding
         initialUserData={currentUser || undefined}
+        onBack={() => {
+          setShowFamilyOnboarding(false);
+          setShowFamilyChoice(true);
+        }}
         onComplete={(profile) => {
           // Store the complete profile for later use
           setFamilyProfile(profile);
@@ -583,6 +598,17 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     return (
       <FamilyCodeSetup
         mode={familyCodeMode}
+        onBack={() => {
+          if (familyCodeMode === 'join') {
+            // Go back to family choice
+            setShowFamilyCodeSetup(false);
+            setShowFamilyChoice(true);
+          } else {
+            // Go back to family onboarding
+            setShowFamilyCodeSetup(false);
+            setShowFamilyOnboarding(true);
+          }
+        }}
         onSuccess={(familyData) => {
           if (familyCodeMode === 'join') {
             // Parent 2 successfully linked - go straight to dashboard
@@ -1153,47 +1179,106 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={changeTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 bg-white rounded-xl shadow-sm p-1 border-2 border-gray-200">
+            <TabsList 
+              data-tour="navigation-tabs"
+              className="grid w-full grid-cols-6 bg-white rounded-xl shadow-sm p-1 border-2 border-gray-200"
+            >
               <TabsTrigger value="dashboard" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
                 <Home className="w-4 h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white">
+              <TabsTrigger 
+                data-tour="calendar-tab"
+                value="calendar" 
+                className="flex items-center space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white"
+              >
                 <Calendar className="w-4 h-4" />
                 <span className="hidden sm:inline">Calendar</span>
               </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black">
+              <TabsTrigger 
+                data-tour="messages-tab"
+                value="messages" 
+                className="flex items-center space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black"
+              >
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Messages</span>
               </TabsTrigger>
-              <TabsTrigger value="expenses" className="flex items-center space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white">
+              <TabsTrigger 
+                data-tour="expenses-tab"
+                value="expenses" 
+                className="flex items-center space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white"
+              >
                 <DollarSign className="w-4 h-4" />
                 <span className="hidden sm:inline">Expenses</span>
               </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white">
+              <TabsTrigger 
+                data-tour="documents-tab"
+                value="documents" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+              >
                 <FileText className="w-4 h-4" />
                 <span className="hidden sm:inline">Documents</span>
               </TabsTrigger>
-              <TabsTrigger value="resources" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
+              <TabsTrigger 
+                data-tour="resources-tab"
+                value="resources" 
+                className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white"
+              >
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Resources</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard" className="space-y-6">
-              <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden">
+              <Card 
+                data-tour="dashboard-welcome"
+                className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 pr-6 speech-bubble">
                       <h2 className="text-2xl font-bold mb-3 text-bridge-black">
                         Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
                       </h2>
-                      <p className="text-bridge-black mb-4">
-                        Bridge-it here! I hope you're having a wonderful day. Bridge-it wanted to let you know that you have{' '}
-                        {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
-                        {" "}Don't worry - Bridge-it is here to help keep everything organized and balanced!
-                      </p>
-                      {familyProfile && familyProfile.children.length > 0 && (
+                      {familyProfileLoading ? (
+                        <div className="space-y-4">
+                          <p className="text-bridge-black mb-4">
+                            Loading your family information...
+                          </p>
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bridge-blue"></div>
+                          </div>
+                        </div>
+                      ) : !familyProfile ? (
+                        <div 
+                          className="space-y-4 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => setShowFamilyChoice(true)}
+                          title="Click to set up your family"
+                        >
+                          <p className="text-bridge-black mb-4 text-lg font-medium">
+                            👋 Welcome to Bridge-it! I'm here to help you get started.
+                          </p>
+                          <p className="text-bridge-black mb-4">
+                            To begin using Bridge-it, you'll need to either create a new family profile or link to an existing one using a Family Code. Let me guide you through this! 🚀
+                          </p>
+                          <Button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowFamilyChoice(true);
+                            }}
+                            className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold px-6 py-2"
+                          >
+                            Connect To Your Family →
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-bridge-black mb-4">
+                          Bridge-it here! I hope you're having a wonderful day. Bridge-it wanted to let you know that you have{' '}
+                          {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
+                          {" "}Don't worry - Bridge-it is here to help keep everything organized and balanced!
+                        </p>
+                      )}
+                      {!familyProfileLoading && familyProfile && familyProfile.children.length > 0 && (
                         <div className="bg-white/20 rounded-lg p-3 mb-4">
                           <p className="text-bridge-black text-sm font-medium mb-2">
                             👶 Your children:
@@ -1207,47 +1292,51 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                           </div>
                         </div>
                       )}
-                      <div className="bg-white/20 rounded-lg p-3 mb-4">
-                        <p className="text-bridge-black text-sm font-medium mb-2">
-                          📋 Quick items for your attention:
-                        </p>
-                        <ul className="text-bridge-black text-sm space-y-1">
-                          {dashboardMetricsLoaded ? (
-                            <>
-                              {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
-                                dashboardMetrics.pendingExpenseDetails.map((expense) => (
-                                  <li key={expense.id}>
-                                    • {expense.description}
-                                    {typeof expense.amount === 'number' && (
-                                      <> (${expense.amount.toFixed(2)})</>
-                                    )}
-                                    {expense.status && (
-                                      <> – status: {expense.status.replace(/_/g, ' ')}</>
-                                    )}
+                      {!familyProfileLoading && familyProfile && (
+                        <div className="bg-white/20 rounded-lg p-3 mb-4">
+                          <p className="text-bridge-black text-sm font-medium mb-2">
+                            📋 Quick items for your attention:
+                          </p>
+                          <ul className="text-bridge-black text-sm space-y-1">
+                            {dashboardMetricsLoaded ? (
+                              <>
+                                {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
+                                  dashboardMetrics.pendingExpenseDetails.map((expense) => (
+                                    <li key={expense.id}>
+                                      • {expense.description}
+                                      {typeof expense.amount === 'number' && (
+                                        <> (${expense.amount.toFixed(2)})</>
+                                      )}
+                                      {expense.status && (
+                                        <> – status: {expense.status.replace(/_/g, ' ')}</>
+                                      )}
+                                    </li>
+                                  ))
+                                ) : (
+                                  <li>• No expenses need your review right now 🎉</li>
+                                )}
+                                {dashboardMetrics.upcomingEventDetails.length > 0 && (
+                                  <li key="upcoming-event">
+                                    • Next event:{' '}
+                                    {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
+                                    {dashboardMetrics.upcomingEventDetails[0].dateLabel}
                                   </li>
-                                ))
-                              ) : (
-                                <li>• No expenses need your review right now 🎉</li>
-                              )}
-                              {dashboardMetrics.upcomingEventDetails.length > 0 && (
-                                <li key="upcoming-event">
-                                  • Next event:{' '}
-                                  {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
-                                  {dashboardMetrics.upcomingEventDetails[0].dateLabel}
-                                </li>
-                              )}
-                            </>
-                          ) : (
-                            <li>• Gathering your latest activity...</li>
-                          )}
-                        </ul>
-                      </div>
-                      <Button
-                        onClick={() => changeTab('expenses')}
-                        className="bg-bridge-red hover:bg-red-600 text-white font-medium"
-                      >
-                        Review Now
-                      </Button>
+                                )}
+                              </>
+                            ) : (
+                              <li>• Gathering your latest activity...</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                      {!familyProfileLoading && familyProfile && (
+                        <Button
+                          onClick={() => changeTab('expenses')}
+                          className="bg-bridge-red hover:bg-red-600 text-white font-medium"
+                        >
+                          Review Now
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1258,13 +1347,13 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
+                        <h3 className="text-lg font-semibold text-bridge-black mb-2">Connect To Your Family!</h3>
                         <p className="text-bridge-black text-sm">
                           Add information about your family to get personalized organization and support
                         </p>
                       </div>
                       <Button
-                        onClick={() => setShowFamilyOnboarding(true)}
+                        onClick={() => setShowFamilyChoice(true)}
                         className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400"
                       >
                         <Users className="w-4 h-4 mr-2" />
@@ -1290,7 +1379,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 />
               </div>
 
-              <div>
+              <div data-tour="quick-actions">
                 <h3 className="text-xl font-bold text-bridge-black mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <QuickActionCard
@@ -1327,11 +1416,34 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </div>
               </div>
 
-              <RecentActivity
-                onNavigateToExpenses={() => changeTab('expenses')}
-                onNavigateToCalendar={() => changeTab('calendar')}
-                onNavigateToMessages={() => changeTab('messages')}
-              />
+              {familyProfileLoading ? (
+                <Card className="border-2 border-bridge-blue">
+                  <CardContent className="p-6 text-center">
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bridge-blue"></div>
+                    </div>
+                    <p className="text-gray-500 text-sm mt-4">
+                      Loading activity...
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : familyProfile ? (
+                <div data-tour="recent-activity">
+                  <RecentActivity
+                    onNavigateToExpenses={() => changeTab('expenses')}
+                    onNavigateToCalendar={() => changeTab('calendar')}
+                    onNavigateToMessages={() => changeTab('messages')}
+                  />
+                </div>
+              ) : (
+                <Card className="border-2 border-bridge-blue">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-gray-500 text-sm">
+                      Set up your family profile to see recent activity
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="border-2 border-bridge-blue bg-blue-50">
                 <CardContent className="p-6">
@@ -1380,6 +1492,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           </Tabs>
           <div className="fixed bottom-6 right-6 hidden md:block">
             <button
+              data-tour="support-chatbot"
               className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
               onClick={() => setShowSupportChatbot(true)}
               title="Talk to Bridge-it, your friendly co-parenting assistant! 👋"
@@ -1397,6 +1510,39 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           onClose={() => setShowSupportChatbot(false)}
           parentName={currentUser?.firstName}
         />
+        <ProductTour
+          run={showProductTour}
+          onComplete={async () => {
+            setShowProductTour(false);
+            try {
+              // Save tour completion to database
+              await authAPI.updateUserProfile({ tourCompleted: true });
+              setTourCompleted(true);
+              toast({
+                title: "Tour Completed!",
+                description: "You've completed the Bridge-it tour. Welcome!",
+              });
+            } catch (error) {
+              console.error('Error saving tour completion:', error);
+              // Still mark as completed locally if API fails
+              setTourCompleted(true);
+            }
+          }}
+        />
+        {/* Modern Tour Start Button - Show even without family for new users, but hide when tour is running */}
+        {!tourCompleted && !familyProfileLoading && !showProductTour && (
+          <div className="fixed top-20 right-6 z-[10001] hidden md:block animate-in fade-in slide-in-from-top-2 duration-300" data-tour-button="true">
+            <Button
+              onClick={() => setShowProductTour(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0"
+              size="lg"
+            >
+              <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+              <span className="font-semibold">Take a Tour</span>
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
       </>
     </DashboardShell>
   );

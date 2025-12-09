@@ -6,7 +6,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function to make authenticated requests
-const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+const fetchWithAuth = async (url: string, options: RequestInit = {}, allow404: boolean = false) => {
   const token = getAuthToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -23,6 +23,10 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
+    // For 404 errors on family/activity endpoints, return null instead of throwing
+    if (allow404 && response.status === 404) {
+      return null;
+    }
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
     throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
@@ -32,43 +36,57 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
 // Auth API
 export const authAPI = {
-  signup: async (userData: { firstName: string; lastName: string; email: string; password: string }) => {
-    return fetchWithAuth('/api/v1/auth/signup', {
-      method: 'POST',
+  signup: async (userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) => {
+    return fetchWithAuth("/api/v1/auth/signup", {
+      method: "POST",
       body: JSON.stringify(userData),
     });
   },
 
   login: async (email: string, password: string) => {
-    console.log('authAPI.login called with:', email, password);
+    console.log("authAPI.login called with:", email, password);
     const formData = new URLSearchParams();
-    formData.append('username', email);
-    formData.append('password', password);
+    formData.append("username", email);
+    formData.append("password", password);
 
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formData,
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Login failed' }));
-      throw new Error(error.detail || 'Login failed');
+      const error = await response
+        .json()
+        .catch(() => ({ detail: "Login failed" }));
+      throw new Error(error.detail || "Login failed");
     }
 
     const data = await response.json();
-    localStorage.setItem('authToken', data.access_token);
+    localStorage.setItem("authToken", data.access_token);
     return data;
   },
 
   logout: () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem("authToken");
   },
 
   getCurrentUser: async () => {
-    return fetchWithAuth('/api/v1/auth/me');
+    return fetchWithAuth("/api/v1/auth/me");
+  },
+
+  updateUserProfile: async (updates: Record<string, any>) => {
+    return fetchWithAuth("/api/v1/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
   },
 };
 
@@ -97,7 +115,7 @@ export const familyAPI = {
   },
 
   getFamily: async () => {
-    return fetchWithAuth('/api/v1/family');
+    return fetchWithAuth('/api/v1/family', {}, true);
   },
 
   uploadContract: async (contractData: {
@@ -400,7 +418,7 @@ export const expensesAPI = {
 // Activity API
 export const activityAPI = {
   getRecentActivity: async () => {
-    return fetchWithAuth('/api/v1/activity');
+    return fetchWithAuth('/api/v1/activity', {}, true);
   },
 };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Link2 } from 'lucide-react';
+import { Users, Link2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AnimatedBridgette from './AnimatedBridgette';
@@ -7,12 +7,23 @@ import AnimatedBridgette from './AnimatedBridgette';
 interface FamilyChoiceProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
+  onBack?: () => void;
 }
 
-const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting }) => {
+const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting, onBack }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
+        {onBack && (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="mb-4 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">

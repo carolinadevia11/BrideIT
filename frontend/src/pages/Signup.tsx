@@ -5,10 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Signup: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -16,6 +17,48 @@ const Signup: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSignup = async () => {
+    // Basic validation
+    if (!firstName.trim()) {
+      toast({
+        title: "First name required",
+        description: "Please enter your first name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!lastName.trim()) {
+      toast({
+        title: "Last name required",
+        description: "Please enter your last name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!email.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!password.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please create a password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await authAPI.signup({
@@ -27,11 +70,13 @@ const Signup: React.FC = () => {
       
       toast({
         title: "Success!",
-        description: "Your account has been created successfully. Please log in.",
+        description: "Your account has been created successfully. Redirecting to login...",
       });
-      // In a real app, you might automatically log the user in
-      // and redirect them to the dashboard. For now, we'll just
-      // show a success message and let them log in manually.
+      
+      // Redirect to login page after a short delay to show success message
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
     } catch (error) {
       console.error('Error signing up:', error);
       toast({
@@ -60,7 +105,9 @@ const Signup: React.FC = () => {
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Sarah"
+                placeholder="First name"
+                autoComplete="given-name"
+                className="placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-2">
@@ -69,7 +116,9 @@ const Signup: React.FC = () => {
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Johnson"
+                placeholder="Last name"
+                autoComplete="family-name"
+                className="placeholder:text-gray-400"
               />
             </div>
           </div>
@@ -80,7 +129,9 @@ const Signup: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="sarah@email.com"
+              placeholder="Enter your email address"
+              autoComplete="email"
+              className="placeholder:text-gray-400"
             />
           </div>
           <div className="space-y-2">
@@ -90,7 +141,9 @@ const Signup: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="********"
+              placeholder="Create a secure password"
+              autoComplete="new-password"
+              className="placeholder:text-gray-400"
             />
           </div>
           <Button onClick={handleSignup} disabled={isSubmitting} className="w-full">

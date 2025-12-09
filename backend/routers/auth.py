@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from passlib.context import CryptContext
-from typing import Union
+from typing import Union, Dict, Any
 import jwt
 from datetime import datetime, timedelta
 import os
@@ -65,7 +65,11 @@ async def create_user(user_data: User):
             detail="Unable to process password; please choose a shorter value.",
         ) from exc
     user_in_db = user_data.model_copy(update={"password": hashed_password})
-    db.users.insert_one(user_in_db.model_dump())
+    # Ensure tourCompleted is set to False for new users
+    user_dict = user_in_db.model_dump()
+    if 'tourCompleted' not in user_dict or user_dict['tourCompleted'] is None:
+        user_dict['tourCompleted'] = False
+    db.users.insert_one(user_dict)
     return user_in_db
 
 @router.post("/api/v1/auth/login", response_model=Token)
@@ -129,3 +133,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 @router.get("/api/v1/auth/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.put("/api/v1/auth/me", response_model=User)
+async def update_user_profile(
+    updates: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user's profile"""
+    # Remove password from updates if present (should be updated via separate endpoint)
+    updates.pop('password', None)
+    updates.pop('email', None)  # Email shouldn't be changed
+    
+    # Only allow specific fields to be updated
+    allowed_fields = {'firstName', 'lastName', 'tourCompleted'}
+    filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+    
+    if not filtered_updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Update user in database
+    result = db.users.update_one(
+        {"email": current_user.email},
+        {"$set": filtered_updates}
+    )
+    
+    # Fetch updated user
+    updated_user = db.users.find_one({"email": current_user.email})
+    if updated_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return User(**updated_user)

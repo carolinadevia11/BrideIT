@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Link2, Upload, FileText, Loader2 } from 'lucide-react';
+import { Copy, Check, Link2, Upload, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { Child } from '@/types/family';
 interface FamilyCodeSetupProps {
   mode: 'create' | 'join';
   onSuccess: (familyData: any) => void;
+  onBack?: () => void;
   familyName?: string;
   parent1Name?: string;
   parent2Name?: string;
@@ -20,7 +21,7 @@ interface FamilyCodeSetupProps {
   children?: Child[];
 }
 
-const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, familyName, parent1Name, parent2Name: initialParent2Name, custodyArrangement, children }) => {
+const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, onBack, familyName, parent1Name, parent2Name: initialParent2Name, custodyArrangement, children }) => {
   const { toast } = useToast();
   const [familyCode, setFamilyCode] = useState('');
   const [parent2Name, setParent2Name] = useState(initialParent2Name || '');
@@ -182,6 +183,16 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
   if (mode === 'create') {
     return (
       <div className="space-y-6">
+        {onBack && (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="mb-4 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
         <div className="text-center mb-6">
           <AnimatedBridgette
             size="md"
@@ -287,6 +298,16 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
   // Join mode
   return (
     <div className="space-y-6">
+      {onBack && (
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="mb-4 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      )}
       <div className="text-center mb-6">
         <AnimatedBridgette
           size="md"

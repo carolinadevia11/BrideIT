@@ -16,12 +16,29 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('sarah@email.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
-    console.log('Logging in with:', email, password);
+    // Basic validation
+    if (!email.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!password.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await authAPI.login(email, password);
@@ -88,7 +105,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="sarah@email.com"
+                placeholder="Enter your email address"
+                autoComplete="email"
+                autoFocus
+                className="placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-2">
@@ -99,7 +119,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="********"
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                className="placeholder:text-gray-400"
               />
             </div>
             <Button onClick={handleLogin} disabled={isSubmitting} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
