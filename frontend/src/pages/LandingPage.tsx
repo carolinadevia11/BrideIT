@@ -18,8 +18,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <img 
-                  src="/bridge-avatar.png" 
-                  alt="Bridge Logo" 
+                  src="/bridgette-avatar.png" 
+                  alt="Bridge-it Logo" 
                   className="w-8 h-8"
                 />
                 <h1 className="text-2xl font-bold text-bridge-black">
@@ -401,8 +401,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <img 
-                  src="/bridge-avatar.png" 
-                  alt="Bridge Logo" 
+                  src="/bridgette-avatar.png" 
+                  alt="Bridge-it Logo" 
                   className="w-8 h-8"
                 />
                 <h3 className="text-xl font-bold">Bridge-it</h3>

@@ -96,7 +96,7 @@ const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
         {/* Main Avatar Image */}
         <img 
           src="/bridgette-avatar.png" 
-          alt="Bridgette" 
+          alt="Bridge-it" 
           className={`${sizeClasses[size]} rounded-full shadow-2xl border-4 border-white hover:scale-105 transition-transform duration-300`}
           onError={(e) => {
             // Fallback to emoji design if image fails to load
@@ -166,7 +166,7 @@ const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
 
       {/* Name tag */}
       <div className="mt-4 bg-white px-4 py-2 rounded-full shadow-lg border-2 border-bridge-blue">
-        <span className="text-sm font-bold text-bridge-blue">Bridgette</span>
+        <span className="text-sm font-bold text-bridge-blue">Bridge-it</span>
         <span className="text-xs text-bridge-black ml-1">⚖️ Your AI Assistant</span>
       </div>
     </div>

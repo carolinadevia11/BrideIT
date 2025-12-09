@@ -128,9 +128,9 @@ const DashboardShell = ({
           <SidebarHeader className="px-4 pt-5 pb-3">
             <div className="flex items-center gap-3">
               <img
-                src="/bridge-avatar.png"
+                src="/bridgette-avatar.png"
                 alt="Bridge-it"
-                className="h-8 w-8 rounded-full bg-white/10 p-1"
+                className="h-12 w-12 rounded-full bg-white/10 p-1 object-contain"
               />
               <div>
                 <p className="text-base font-semibold tracking-tight text-slate-900">

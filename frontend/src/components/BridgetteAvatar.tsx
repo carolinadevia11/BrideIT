@@ -41,7 +41,7 @@ const BridgetteAvatar: React.FC<BridgetteAvatarProps> = ({
         {/* Main Avatar Image */}
         <img 
           src="/bridgette-avatar.png" 
-          alt="Bridgette" 
+          alt="Bridge-it" 
           className={`${sizeClasses[size]} rounded-full shadow-lg border-4 border-white ${animationClasses[expression]} transition-transform duration-300`}
           onError={(e) => {
             // Fallback to emoji design if image fails to load

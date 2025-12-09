@@ -59,14 +59,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        {/* Bridgette Welcome */}
+        {/* Bridge-it Welcome */}
         <div className="text-center">
           <AnimatedBridgette
             size="xl"
             expression="encouraging"
             animation="float"
             showSpeechBubble={true}
-            message="Welcome back! I'm here to help you get organized and find balance. Let's get you signed in! ⚖️"
+            message="Welcome back! Bridge-it is here to help you get organized and find balance. Let's get you signed in! ⚖️"
             position="center"
           />
         </div>

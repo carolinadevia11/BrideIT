@@ -267,7 +267,7 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
               Back
             </Link>
             <div className="flex items-center space-x-2">
-              <img src="/bridge-avatar.png" alt="Bridge Logo" className="w-8 h-8" />
+              <img src="/bridgette-avatar.png" alt="Bridge-it Logo" className="w-8 h-8" />
               <span className="text-xl font-semibold text-slate-900">Bridge-it</span>
             </div>
           </div>
