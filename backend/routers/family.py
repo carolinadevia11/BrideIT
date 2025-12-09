@@ -96,7 +96,7 @@ async def get_children(current_user: User = Depends(get_current_user)):
     user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
     
     if not user_family:
-        raise HTTPException(status_code=404, detail="Family profile not found")
+        return []
     
     children = user_family.get("children", [])
     print(f"DEBUG: Found family for {current_user.email}")

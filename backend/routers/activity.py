@@ -20,7 +20,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         ]})
         
         if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+            return []
         
         family_id = str(family["_id"])
         

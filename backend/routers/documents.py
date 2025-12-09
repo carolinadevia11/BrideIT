@@ -147,7 +147,22 @@ async def get_folders(current_user: User = Depends(get_current_user)):
         ]})
         
         if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+            # Return default folders with 0 counts if no family
+            folders = []
+            for default_folder in DEFAULT_FOLDERS:
+                folders.append({
+                    "id": default_folder["id"],
+                    "name": default_folder["name"],
+                    "description": default_folder["description"],
+                    "icon": default_folder["icon"],
+                    "color": default_folder["color"],
+                    "bgColor": default_folder["bg_color"],
+                    "documentTypes": default_folder["document_types"],
+                    "count": 0,
+                    "isCustom": False,
+                    "isSpecial": default_folder.get("is_special", False)
+                })
+            return folders
         
         family_id = str(family["_id"])
         
@@ -424,7 +439,7 @@ async def get_documents(
         ]})
         
         if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+            return []
         
         family_id = str(family["_id"])
         
