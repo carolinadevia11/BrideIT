@@ -18,6 +18,7 @@ app.add_middleware(
         "http://127.0.0.1:5174",
         "https://bridge-fe-eqsr.onrender.com",
         "https://bridge-fe-kcd1.onrender.com",
+        "https://bridge-it.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
