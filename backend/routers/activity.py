@@ -9,6 +9,11 @@ from database import db
 
 router = APIRouter(prefix="/api/v1/activity", tags=["activity"])
 
+@router.get("/health")
+async def activity_health():
+    """Health check endpoint for activity router"""
+    return {"status": "ok", "router": "activity"}
+
 @router.get("", response_model=List[dict])
 async def get_recent_activity(current_user: User = Depends(get_current_user)):
     """Get recent activity feed for the current user's family"""

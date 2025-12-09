@@ -30,15 +30,21 @@ app.add_middleware(
 db_connection_status = "successful" if db is not None else "failed"
 
 # Include routers AFTER middleware
-app.include_router(auth.router)
-app.include_router(family.router)
-app.include_router(calendar.router)
-app.include_router(admin.router)
-app.include_router(messaging.router)
-app.include_router(expenses.router)
-app.include_router(activity.router)
-app.include_router(documents.router)
-app.include_router(support.router)
+try:
+    app.include_router(auth.router)
+    app.include_router(family.router)
+    app.include_router(calendar.router)
+    app.include_router(admin.router)
+    app.include_router(messaging.router)
+    app.include_router(expenses.router)
+    app.include_router(activity.router)
+    app.include_router(documents.router)
+    app.include_router(support.router)
+    print("[INFO] All routers included successfully")
+except Exception as e:
+    print(f"[ERROR] Failed to include routers: {e}")
+    import traceback
+    traceback.print_exc()
 
 @app.get("/")
 def read_root():
