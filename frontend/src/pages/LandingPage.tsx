@@ -23,7 +23,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   className="w-8 h-8"
                 />
                 <h1 className="text-2xl font-bold text-bridge-black">
-                  Bridge
+                  Bridge-it
                 </h1>
               </div>
               <div className="hidden md:block text-sm text-bridge-black font-medium">
@@ -56,23 +56,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
           <div className="relative text-center">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-sm font-medium text-blue-700 mb-6">
-              <Sparkles className="w-4 h-4 mr-2" /> Introducing Bridgette — your AI co-parenting guide
+              <Sparkles className="w-4 h-4 mr-2" /> Introducing Bridge-it — your AI co-parenting guide
             </div>
 
             <div className="flex justify-center mb-8">
               <img 
                 src="/bridgette-avatar.png" 
-                alt="Bridgette AI Assistant" 
+                alt="Bridge-it AI Assistant" 
                 className="w-36 h-36 md:w-44 md:h-44 bridgette-animated"
                 style={{ mixBlendMode: 'multiply' }}
               />
             </div>
 
             <h2 className="text-4xl md:text-5xl font-extrabold text-bridge-black tracking-tight mb-6">
-              Transform Co-Parenting with <span className="text-bridge-blue">Bridge</span>
+              Transform Co-Parenting with <span className="text-bridge-blue">Bridge-it</span>
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Meet <strong>Bridgette</strong>, the friendly assistant that keeps both parents aligned. From custody schedules to expenses and conversations, Bridge brings calm, clarity, and cooperation to every family.
+              Meet <strong>Bridge-it</strong>, the friendly assistant that keeps both parents aligned. From custody schedules to expenses and conversations, Bridge-it brings calm, clarity, and cooperation to every family.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
@@ -211,7 +211,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="w-5 h-5 text-yellow-600 mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Bridgette mediates and suggests improvements to messages</span>
+                    <span className="text-gray-700">Bridge-it mediates and suggests improvements to messages</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="w-5 h-5 text-yellow-600 mr-2 mt-1 flex-shrink-0" />
@@ -285,11 +285,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div className="flex items-center mb-4">
                   <Sparkles className="w-8 h-8 text-purple-600 mr-3" />
                   <h2 className="text-4xl font-bold text-bridge-black">
-                    Meet Bridgette, Your AI Assistant
+                    Meet Bridge-it, Your AI Assistant
                   </h2>
                 </div>
                 <p className="text-lg text-gray-700 mb-6">
-                  Bridgette is more than just a chatbot—she's your compassionate co-parenting companion who:
+                  Bridge-it is more than just a chatbot—it's your compassionate co-parenting companion that:
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-start">
@@ -313,7 +313,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="md:w-1/2 flex justify-center">
                 <img 
                   src="/bridgette-avatar.png" 
-                  alt="Bridgette" 
+                  alt="Bridge-it" 
                   className="w-64 h-64 animate-pulse"
                   style={{ mixBlendMode: 'multiply' }}
                 />
@@ -405,7 +405,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   alt="Bridge Logo" 
                   className="w-8 h-8"
                 />
-                <h3 className="text-xl font-bold">Bridge</h3>
+                <h3 className="text-xl font-bold">Bridge-it</h3>
               </div>
               <p className="text-gray-400">
                 Fair & Balanced Co-Parenting
@@ -456,7 +456,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Bridge Co-Parenting Platform. All rights reserved.</p>
+            <p>&copy; 2025 Bridge-it Co-Parenting Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>

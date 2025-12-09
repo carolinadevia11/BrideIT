@@ -129,12 +129,12 @@ const DashboardShell = ({
             <div className="flex items-center gap-3">
               <img
                 src="/bridge-avatar.png"
-                alt="Bridge"
+                alt="Bridge-it"
                 className="h-8 w-8 rounded-full bg-white/10 p-1"
               />
               <div>
                 <p className="text-base font-semibold tracking-tight text-slate-900">
-                  Bridge
+                  Bridge-it
                 </p>
                 <p className="text-xs text-slate-500">{heroSubtitle}</p>
               </div>
@@ -204,7 +204,7 @@ const DashboardShell = ({
             <SidebarTrigger className="text-slate-600 hover:text-slate-900" />
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                Bridge workspace
+                Bridge-it workspace
               </p>
               <h1 className="text-lg font-semibold text-slate-900">
                 {activeLabel}

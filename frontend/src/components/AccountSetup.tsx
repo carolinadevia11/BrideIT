@@ -20,7 +20,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bridgetteExpression, setBridgetteExpression] = useState<'happy' | 'thinking' | 'encouraging' | 'celebrating' | 'waving'>('waving');
-  const [bridgetteMessage, setBridgetteMessage] = useState("Hi there! I'm Bridgette, and I'm so excited to help you create your Bridge account! Let's get started! 🌟");
+  const [bridgetteMessage, setBridgetteMessage] = useState("Hi there! Bridge-it is so excited to help you create your Bridge-it account! Let's get started! 🌟");
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -109,7 +109,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
         await authAPI.login(formData.email, formData.password);
 
       setBridgetteExpression('celebrating');
-      setBridgetteMessage("🎉 Welcome to Bridge! Your account is all set up and ready to go!");
+      setBridgetteMessage("🎉 Welcome to Bridge-it! Your account is all set up and ready to go!");
         
         toast({
           title: "Success!",
@@ -145,7 +145,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
 
   const getStepMessage = (step: number) => {
     const messages = [
-      "Hi there! I'm Bridgette, and I'm so excited to help you create your Bridge account! Let's get started! 🌟",
+      "Hi there! Bridge-it is so excited to help you create your Bridge-it account! Let's get started! 🌟",
       "You're doing amazing! Just a couple more details and we'll have you all set up! 📱",
       "Perfect! Now let's make sure you get all the important updates about your co-parenting journey! 🔔",
       "Last step! Let's make sure your family's information stays safe and secure! 🛡️"

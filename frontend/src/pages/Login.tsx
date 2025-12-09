@@ -75,7 +75,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <Card className="w-full shadow-2xl">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-gray-800 text-center">
-              Welcome to Bridge! 👋
+              Welcome to Bridge-it! 👋
             </CardTitle>
             <p className="text-center text-gray-500">Fair & Balanced Co-Parenting</p>
           </CardHeader>

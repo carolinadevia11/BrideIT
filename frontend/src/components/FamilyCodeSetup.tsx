@@ -189,7 +189,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
             animation="celebrate"
             showSpeechBubble={true}
             message={generatedCode 
-              ? "Perfect! Share this Family Code with your co-parent so they can link their account. They'll need to create their own Bridge account first, then use this code to connect! 🎉"
+              ? "Perfect! Share this Family Code with your co-parent so they can link their account. They'll need to create their own Bridge-it account first, then use this code to connect! 🎉"
               : "Great! I'm creating your family profile and generating a unique Family Code. Your co-parent will use this code to link their account to yours! 🔗"
             }
             position="center"
@@ -263,7 +263,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
                 <AlertDescription className="text-sm">
                   <strong>Important:</strong> Your co-parent needs to:
                   <ol className="list-decimal list-inside mt-2 space-y-1">
-                    <li>Create their own Bridge account</li>
+                    <li>Create their own Bridge-it account</li>
                     <li>Choose "Link to Existing Family"</li>
                     <li>Enter this Family Code: <strong>{generatedCode}</strong></li>
                   </ol>

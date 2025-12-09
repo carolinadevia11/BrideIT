@@ -31,7 +31,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'welcome',
       title: 'Welcome to Your Co-Parenting Journey! 🌟',
       description: 'Let me walk you through what we\'ll set up together',
-      bridgetteMessage: "Hi there! I'm Bridgette, your personal co-parenting assistant! I'm so excited to help you get started with Bridge. Let me show you exactly what we'll do together to create your perfect co-parenting setup! 🎉",
+      bridgetteMessage: "Hi there! I'm Bridge-it, your personal co-parenting assistant! I'm so excited to help you get started with Bridge-it. Let me show you exactly what we'll do together to create your perfect co-parenting setup! 🎉",
       bridgetteExpression: 'waving',
       bridgetteAnimation: 'celebrate',
       icon: Heart,
@@ -48,8 +48,8 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
     {
       id: 'account',
       title: 'Step 1: Create Your Secure Account 🔐',
-      description: 'First, we\'ll set up your personal Bridge account',
-      bridgetteMessage: "Let's start with the basics! I'll help you create a secure account with your name, email, and a strong password. This is YOUR space in Bridge - completely private and protected! 🛡️",
+      description: 'First, we\'ll set up your personal Bridge-it account',
+      bridgetteMessage: "Let's start with the basics! Bridge-it will help you create a secure account with your name, email, and a strong password. This is YOUR space in Bridge-it - completely private and protected! 🛡️",
       bridgetteExpression: 'encouraging',
       bridgetteAnimation: 'thinking',
       icon: User,
@@ -67,7 +67,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'family',
       title: 'Step 2: Connect with Your Co-Parent 👥',
       description: 'Next, we\'ll link your account with your co-parent',
-      bridgetteMessage: "Now for the magic part! I'll create a special Family Code that connects you and your co-parent while keeping your individual accounts separate. It's like having your own space that shares the important stuff! ✨",
+      bridgetteMessage: "Now for the magic part! Bridge-it will create a special Family Code that connects you and your co-parent while keeping your individual accounts separate. It's like having your own space that shares the important stuff! ✨",
       bridgetteExpression: 'happy',
       bridgetteAnimation: 'balance',
       icon: Users,
@@ -85,7 +85,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'agreements',
       title: 'Step 3: Process Your Custody Agreement 📄',
       description: 'I\'ll help organize your legal documents and agreements',
-      bridgetteMessage: "This is where I really shine! You can upload your custody agreement and I'll read through it to extract all the important dates, schedules, and rules. Or if you don't have it handy, I'll ask you some simple questions instead! 🤖📋",
+      bridgetteMessage: "This is where Bridge-it really shines! You can upload your custody agreement and Bridge-it will read through it to extract all the important dates, schedules, and rules. Or if you don't have it handy, Bridge-it will ask you some simple questions instead! 🤖📋",
       bridgetteExpression: 'thinking',
       bridgetteAnimation: 'thinking',
       icon: FileText,
@@ -103,7 +103,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'calendar',
       title: 'Step 4: Set Up Your Shared Calendar 📅',
       description: 'We\'ll create your family\'s master schedule',
-      bridgetteMessage: "Time to build your family calendar! I'll use the information from your agreement to set up custody schedules, and then we can add school events, activities, and appointments. Both parents see the same calendar - no more confusion! 🗓️✨",
+      bridgetteMessage: "Time to build your family calendar! Bridge-it will use the information from your agreement to set up custody schedules, and then you can add school events, activities, and appointments. Both parents see the same calendar - no more confusion! 🗓️✨",
       bridgetteExpression: 'encouraging',
       bridgetteAnimation: 'float',
       icon: Calendar,
@@ -121,7 +121,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'communication',
       title: 'Step 5: Configure Communication Tools 💬',
       description: 'Finally, we\'ll set up secure messaging and preferences',
-      bridgetteMessage: "Last but not least, let's set up how you and your co-parent will communicate! I'll help you choose message tones, set up notifications, and make sure everything is documented properly. Communication is key to great co-parenting! 🤝💙",
+      bridgetteMessage: "Last but not least, let's set up how you and your co-parent will communicate! Bridge-it will help you choose message tones, set up notifications, and make sure everything is documented properly. Communication is key to great co-parenting! 🤝💙",
       bridgetteExpression: 'happy',
       bridgetteAnimation: 'celebrate',
       icon: MessageSquare,
@@ -139,7 +139,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       id: 'ready',
       title: 'You\'re Ready to Begin! 🎉',
       description: 'Let\'s start building your co-parenting success story',
-      bridgetteMessage: "That's it! In just a few minutes, we'll have you completely set up with everything you need for successful co-parenting. I'll be right there with you every step of the way. Are you ready to create something amazing for your family? Let's do this! 🌟👏",
+      bridgetteMessage: "That's it! In just a few minutes, Bridge-it will have you completely set up with everything you need for successful co-parenting. Bridge-it will be right there with you every step of the way. Are you ready to create something amazing for your family? Let's do this! 🌟👏",
       bridgetteExpression: 'celebrating',
       bridgetteAnimation: 'celebrate',
       icon: CheckCircle,
@@ -148,7 +148,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
         'Complete account setup in 5-10 minutes',
         'I\'ll guide you through each step',
         'Everything is secure and private',
-        'Start using Bridge immediately',
+        'Start using Bridge-it immediately',
         'Your co-parent can join anytime'
       ],
       tip: 'Remember: Great co-parenting is a journey, and it starts with this first step!'
@@ -236,7 +236,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
                 <div className="flex items-start space-x-2">
                   <Sparkles className="w-5 h-5 text-blue-500 mt-0.5" />
                   <div>
-                    <p className="font-medium text-blue-800 text-sm">Bridgette's Tip</p>
+                    <p className="font-medium text-blue-800 text-sm">Bridge-it's Tip</p>
                     <p className="text-blue-700 text-sm">{currentStepData.tip}</p>
                   </div>
                 </div>

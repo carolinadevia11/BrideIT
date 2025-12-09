@@ -260,7 +260,7 @@ Children may video call or phone either parent freely.
 
 No parent shall block, monitor, or interfere with communication.
 
-Parents shall use the "Bridge" co-parenting app to log:
+Parents shall use the "Bridge-it" co-parenting app to log:
 
 ○
 

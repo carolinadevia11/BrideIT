@@ -333,7 +333,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
       await navigator.clipboard.writeText(familyProfile.familyCode);
       toast({
         title: 'Family code copied',
-        description: 'Share it with your co-parent when they join Bridge.',
+        description: 'Share it with your co-parent when they join Bridge-it.',
       });
     } catch (error) {
       console.error('Failed to copy family code:', error);
@@ -642,7 +642,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
             >
               <Heart className="w-4 h-4" />
-              <span className="hidden sm:inline">Bridgette</span>
+              <span className="hidden sm:inline">Bridge-it</span>
             </TabsTrigger>
             <TabsTrigger
               value="family"
@@ -814,8 +814,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       { key: 'dailyTips', label: 'Daily Co-parenting Tips', desc: 'Receive helpful daily tips and encouragement' },
                       { key: 'weeklyDigest', label: 'Weekly Summary', desc: 'Weekly digest of your co-parenting activities' },
                       { key: 'expertArticles', label: 'Expert Articles', desc: 'New articles from psychology and family experts' },
-                      { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge co-parenting community' },
-                      { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge' },
+                      { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge-it co-parenting community' },
+                      { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge-it' },
                       { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
                     ].map((item) => (
                       <div key={item.key} className="flex items-center space-x-3">
@@ -975,11 +975,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               {/* Bridgette Settings */}
               <TabsContent value="bridgette" className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridgette</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridge-it</h3>
 
                   <div className="space-y-4">
                     <div>
-                      <Label>Bridgette's Personality</Label>
+                      <Label>Bridge-it's Personality</Label>
                       <Select value={settings.bridgette.personality} onValueChange={(value) => updateSetting('bridgette', 'personality', value)}>
                         <SelectTrigger className="mt-1">
                           <SelectValue />
@@ -1010,7 +1010,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div>
                         <Label className="font-medium">Proactive Help</Label>
-                        <p className="text-sm text-gray-600">Let Bridgette offer suggestions proactively</p>
+                        <p className="text-sm text-gray-600">Let Bridge-it offer suggestions proactively</p>
                       </div>
                       <Switch
                         checked={settings.bridgette.proactiveHelp}
@@ -1090,7 +1090,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                             )}
                           </div>
                           <p className="text-xs text-gray-500 mt-3">
-                            Share this code with your co-parent when they create their own Bridge account so they can link to this family.
+                            Share this code with your co-parent when they create their own Bridge-it account so they can link to this family.
                           </p>
                         </div>
                       </>
@@ -1443,7 +1443,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
 
                           <Alert>
                             <AlertDescription className="text-xs">
-                              Bridge uses AI to automatically extract key information from your agreement, including custody schedules, expense splits, and decision-making arrangements.
+                              Bridge-it uses AI to automatically extract key information from your agreement, including custody schedules, expense splits, and decision-making arrangements.
                             </AlertDescription>
                           </Alert>
                         </div>

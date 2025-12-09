@@ -34,7 +34,7 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
 
   const steps = [
     {
-      title: "Let's Customize Bridgette!",
+      title: "Let's Customize Bridge-it!",
       description: 'How would you like me to help you?',
     },
     {
@@ -68,7 +68,7 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
           <div className="space-y-6">
             <div>
               <Label className="text-lg font-medium mb-4 block">
-                Choose Bridgette's Personality
+                Choose Bridge-it's Personality
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
@@ -306,7 +306,7 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
               showSpeechBubble={true}
               message={
                 currentStep === 0
-                  ? "Let's personalize your Bridge experience! Tell me how you would like me to help you. 🌟"
+                  ? "Let's personalize your Bridge-it experience! Tell me how you would like me to help you. 🌟"
                   : currentStep === 1
                   ? "Perfect! Now let's set up how you want to communicate with your co-parent. 💬"
                   : "Almost done! Choose how you want to stay updated on everything. 🔔"

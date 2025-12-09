@@ -42,7 +42,7 @@ app.include_router(support.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Family App API"}
+    return {"message": "Welcome to the Bridge-it API"}
 
 @app.get("/healthz")
 def health_check():

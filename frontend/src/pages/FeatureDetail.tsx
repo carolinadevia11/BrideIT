@@ -50,7 +50,7 @@ const featureContent: Record<
       {
         title: "Conflict-Free Swaps",
         description:
-          "Bridgette mediates swap requests and flags conflicts automatically so conversations stay collaborative.",
+          "Bridge-it mediates swap requests and flags conflicts automatically so conversations stay collaborative.",
       },
       {
         title: "Predictive Assistance",
@@ -63,12 +63,12 @@ const featureContent: Record<
         heading: "What Makes It Different",
         points: [
           "Color-coded, court-friendly categorization keeps obligations crystal clear.",
-          "Shared calendar feels familiar while adding Bridgette’s intelligent guidance.",
+          "Shared calendar feels familiar while adding Bridge-it's intelligent guidance.",
           "Mobile-friendly experience with optimistic updates and offline caching.",
         ],
       },
       {
-        heading: "How Bridgette Helps",
+        heading: "How Bridge-it Helps",
         points: [
           "Suggests fair trade-offs when conflicts appear on the schedule.",
           "Sends gentle reminders for pickups, drop-offs, and packing lists.",
@@ -96,7 +96,7 @@ const featureContent: Record<
       {
         title: "Tone Selection",
         description:
-          "Choose the tone you want—friendly, matter-of-fact, or neutral legal—before you send. Bridgette adjusts suggestions accordingly.",
+          "Choose the tone you want—friendly, matter-of-fact, or neutral legal—before you send. Bridge-it adjusts suggestions accordingly.",
       },
       {
         title: "Immutable Logs",
@@ -106,7 +106,7 @@ const featureContent: Record<
       {
         title: "AI Mediation",
         description:
-          "Bridgette steps in with gentle rephrasing when conversations heat up, helping both sides stay focused on the kids.",
+          "Bridge-it steps in with gentle rephrasing when conversations heat up, helping both sides stay focused on the kids.",
       },
     ],
     deepDive: [
@@ -134,7 +134,7 @@ const featureContent: Record<
     ],
     cta: {
       primary: "Send Your First Message",
-      secondary: "See Bridgette in Action",
+      secondary: "See Bridge-it in Action",
     },
   },
   "expense-tracking": {
@@ -147,7 +147,7 @@ const featureContent: Record<
       {
         title: "Automatic Splits",
         description:
-          "Bridge applies the custody agreement ratio to every expense so contributions stay equitable without spreadsheets.",
+          "Bridge-it applies the custody agreement ratio to every expense so contributions stay equitable without spreadsheets.",
       },
       {
         title: "Receipt Vault",
@@ -157,7 +157,7 @@ const featureContent: Record<
       {
         title: "Structured Resolution",
         description:
-          "If something’s disputed, Bridgette walks both parents through a calm, step-by-step resolution workflow.",
+          "If something's disputed, Bridge-it walks both parents through a calm, step-by-step resolution workflow.",
       },
     ],
     deepDive: [
@@ -191,19 +191,19 @@ const featureContent: Record<
   "document-management": {
     title: "Document Management & Audit Logs",
     summary:
-      "Upload agreements, let Bridgette parse key clauses, and maintain a sealed audit trail ready for mediators and courts.",
+      "Upload agreements, let Bridge-it parse key clauses, and maintain a sealed audit trail ready for mediators and courts.",
     icon: <FileText className="w-10 h-10 text-purple-600" />,
     heroGradient: "from-purple-100 via-indigo-100 to-purple-50",
     highlights: [
       {
         title: "AI Contract Parsing",
         description:
-          "Bridgette extracts custody schedules, decision-making rules, and expense ratios automatically from agreements.",
+          "Bridge-it extracts custody schedules, decision-making rules, and expense ratios automatically from agreements.",
       },
       {
         title: "Guided Summaries",
         description:
-          "If you don’t have a PDF handy, answer Bridgette’s guided questionnaire to capture key legal commitments.",
+          "If you don't have a PDF handy, answer Bridge-it's guided questionnaire to capture key legal commitments.",
       },
       {
         title: "Court-Ready Audit Logs",
@@ -268,7 +268,7 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
             </Link>
             <div className="flex items-center space-x-2">
               <img src="/bridge-avatar.png" alt="Bridge Logo" className="w-8 h-8" />
-              <span className="text-xl font-semibold text-slate-900">Bridge</span>
+              <span className="text-xl font-semibold text-slate-900">Bridge-it</span>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -291,7 +291,7 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
         <section className={`rounded-3xl border border-slate-200 bg-gradient-to-r ${feature.heroGradient} p-8`}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
             <div className="space-y-6 max-w-2xl">
-              <Badge className="bg-slate-900 text-white w-fit px-3 py-1 text-sm">Bridge Feature</Badge>
+              <Badge className="bg-slate-900 text-white w-fit px-3 py-1 text-sm">Bridge-it Feature</Badge>
               <h1 className="text-4xl md:text-5xl font-bold text-slate-900">{feature.title}</h1>
               <p className="text-lg text-slate-700 leading-relaxed">{feature.summary}</p>
               <div className="flex items-center space-x-3">
@@ -378,7 +378,7 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
           <div className="space-y-4">
             <h2 className="text-3xl font-bold">{feature.cta.primary}</h2>
             <p className="text-slate-200 max-w-xl">
-              Bridgette will guide you through setup, connect your co-parent with a Family Code, and keep everything organized from day one.
+              Bridge-it will guide you through setup, connect your co-parent with a Family Code, and keep everything organized from day one.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" onClick={onGetStarted}>
@@ -407,8 +407,8 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
       <footer className="bg-slate-900 text-slate-200 py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <p className="text-sm">Bridge • Fair & Balanced Co-Parenting</p>
-            <p className="text-xs text-slate-400">© {new Date().getFullYear()} Bridge. All rights reserved.</p>
+            <p className="text-sm">Bridge-it • Fair & Balanced Co-Parenting</p>
+            <p className="text-xs text-slate-400">© {new Date().getFullYear()} Bridge-it. All rights reserved.</p>
           </div>
           <div className="flex items-center space-x-3">
             <Link to="/" className="text-sm hover:text-white">

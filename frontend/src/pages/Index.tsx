@@ -589,7 +589,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             setFamilyProfile(familyData as FamilyProfile);
             setShowFamilyCodeSetup(false);
             toast({
-              title: "Welcome to Bridge!",
+              title: "Welcome to Bridge-it!",
               description: "You've been successfully linked to your family!",
             });
           } else {
@@ -615,7 +615,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           setShowContractUpload(false);
           // Go to dashboard
           toast({
-            title: "Welcome to Bridge!",
+            title: "Welcome to Bridge-it!",
             description: "Your family profile is complete!",
           });
         }}
@@ -623,7 +623,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           setShowContractUpload(false);
           // Go to dashboard
           toast({
-            title: "Welcome to Bridge!",
+            title: "Welcome to Bridge-it!",
             description: "You can upload your custody agreement later from Documents.",
           });
         }}
@@ -718,7 +718,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Bridge Admin Home</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Bridge-it Admin Home</h1>
                 <p className="text-sm text-slate-600">
                   Welcome back, {currentUser.firstName}! You have {pendingFamilyCount}{' '}
                   {pendingFamilyCount === 1 ? 'family' : 'families'} awaiting linkage.
@@ -778,7 +778,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                         Good morning, {currentUser.firstName}! ⚖️
                       </h2>
                       <p className="text-sm md:text-base text-white/90">
-                        A quick snapshot of Bridge activity: {adminStats?.totalFamilies ?? '—'} total families,
+                        A quick snapshot of Bridge-it activity: {adminStats?.totalFamilies ?? '—'} total families,
                         {` `}
                         {adminStats?.totalUsers ?? '—'} caregivers, and {pendingFamilyCount}{' '}
                         pending {pendingFamilyCount === 1 ? 'invitation' : 'invitations'} to review.
@@ -923,7 +923,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                       Recent family activity
                     </CardTitle>
                     <CardDescription className="text-slate-500">
-                      Latest families created or linked in Bridge
+                      Latest families created or linked in Bridge-it
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1000,7 +1000,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                   />
                   <QuickActionCard
                     title="View User Directory"
-                    description="See all caregivers across Bridge"
+                    description="See all caregivers across Bridge-it"
                     icon={BarChart3}
                     color="green"
                     onClick={() => navigate('/admin')}
@@ -1189,9 +1189,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                         Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
                       </h2>
                       <p className="text-bridge-black mb-4">
-                        Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
+                        Bridge-it here! I hope you're having a wonderful day. Bridge-it wanted to let you know that you have{' '}
                         {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
-                        {" "}Don't worry - I'm here to help keep everything organized and balanced!
+                        {" "}Don't worry - Bridge-it is here to help keep everything organized and balanced!
                       </p>
                       {familyProfile && familyProfile.children.length > 0 && (
                         <div className="bg-white/20 rounded-lg p-3 mb-4">
@@ -1382,11 +1382,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             <button
               className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
               onClick={() => setShowSupportChatbot(true)}
-              title="Talk to Bridgette, your friendly co-parenting assistant! 👋"
+              title="Talk to Bridge-it, your friendly co-parenting assistant! 👋"
             >
               <img
                 src="/bridgette-avatar.png"
-                alt="Bridgette"
+                alt="Bridge-it"
                 className="w-full h-full object-cover"
               />
             </button>

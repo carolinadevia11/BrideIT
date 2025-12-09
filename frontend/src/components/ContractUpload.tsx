@@ -171,7 +171,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip }) =
           <CardContent className="space-y-4">
             <Alert>
               <AlertDescription>
-                Upload your custody agreement (PDF, DOC, DOCX, or TXT). Bridge will use AI to extract key information like custody schedules, expense splits, and decision-making arrangements.
+                Upload your custody agreement (PDF, DOC, DOCX, or TXT). Bridge-it will use AI to extract key information like custody schedules, expense splits, and decision-making arrangements.
               </AlertDescription>
             </Alert>
 

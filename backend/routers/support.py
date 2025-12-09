@@ -35,7 +35,7 @@ REPAIR_PROMPTS = [
 SUGGESTED_STEPS = [
     "Jot down one clear request you'd like to make.",
     "Draft a message in Notes before sending it so you can edit for tone.",
-    "Decide on the best channel (Bridge, email, phone) before you reach out.",
+    "Decide on the best channel (Bridge-it, email, phone) before you reach out.",
     "Check the calendar so you can offer two concrete timing options.",
 ]
 
@@ -80,7 +80,7 @@ INTENT_LIBRARY = [
         "keywords": ["court", "legal", "judge", "attorney", "mediation", "lawyer"],
         "focus": "Documentation & Legal",
         "responses": [
-            "Legal stress spikes adrenaline, so stick to facts, document agreements in Bridge, and separate what needs a calm parent voice from what needs your attorney.",
+            "Legal stress spikes adrenaline, so stick to facts, document agreements in Bridge-it, and separate what needs a calm parent voice from what needs your attorney.",
             "When the legal system gets involved, calm timelines and written summaries protect you. Respond with facts, note decisions, and give yourself time to breathe before you hit send.",
         ],
         "quick_replies": [
@@ -255,7 +255,7 @@ async def start_session(
         "If you feel unsafe, reach out to emergency services.",
     ]
     greeting = (
-        f"Hi {display_name}, I’m Bridgette’s Support Coach. I’m here to help you stay calm, clear, "
+        f"Hi {display_name}, I'm Bridge-it's Support Coach. I'm here to help you stay calm, clear, "
         "and child-focused. What’s on your heart today?"
     )
     return {

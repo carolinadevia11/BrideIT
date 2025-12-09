@@ -49,7 +49,7 @@ const Signup: React.FC = () => {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800 text-center">
-            Create Your Bridge Account
+            Create Your Bridge-it Account
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">

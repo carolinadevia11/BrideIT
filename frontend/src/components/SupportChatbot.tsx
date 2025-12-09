@@ -97,7 +97,7 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
         setSessionReady(true);
       } catch (err) {
         if (!isCancelled) {
-          setError('Bridgette is offline right now. Please try again soon.');
+          setError('Bridge-it is offline right now. Please try again soon.');
         }
       } finally {
         if (!isCancelled) {

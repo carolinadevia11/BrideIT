@@ -27,7 +27,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bridgetteExpression, setBridgetteExpression] = useState<'thinking' | 'encouraging' | 'celebrating' | 'balanced' | 'mediating'>('encouraging');
-  const [bridgetteMessage, setBridgetteMessage] = useState("Hi! I'm so excited to help you set up your family profile! This will help me organize everything perfectly for your unique situation! 🌟");
+  const [bridgetteMessage, setBridgetteMessage] = useState("Hi! Bridge-it is so excited to help you set up your family profile! This will help Bridge-it organize everything perfectly for your unique situation! 🌟");
 
   const [familyData, setFamilyData] = useState<Partial<FamilyProfile>>({
     familyName: initialUserData ? `${initialUserData.lastName} Family` : '',
@@ -73,7 +73,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const steps = [
     {
       id: 'welcome',
-      title: 'Welcome to Bridge! 🌟',
+      title: 'Welcome to Bridge-it! 🌟',
       description: "Let's get to know your family"
     },
     {
@@ -203,14 +203,14 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
 
   const updateBridgetteForStep = (step: number) => {
     const messages = [
-      "Hi! I'm so excited to help you set up your family profile! This will help me organize everything perfectly for your unique situation! 🌟",
-      "Great! Let's start with the first parent's information. This helps me understand your family structure! 👤",
+      "Hi! Bridge-it is so excited to help you set up your family profile! This will help Bridge-it organize everything perfectly for your unique situation! 🌟",
+      "Great! Let's start with the first parent's information. This helps Bridge-it understand your family structure! 👤",
       "Perfect! Now let's get the second parent's information. Almost there! 👥",
-      "Understanding where everyone lives helps me manage schedules across different locations! 🗺️",
-      "Now the most important part - tell me about your wonderful children! I'll help organize everything for each of them! 👶",
-      "Understanding your custody arrangement helps me set up the calendar correctly! 📅",
-      "Let me know about any special needs or accommodations so I can help you better! ❤️",
-      "Let's review everything to make sure it's perfect! You're almost ready to start using Bridge! ✨"
+      "Understanding where everyone lives helps Bridge-it manage schedules across different locations! 🗺️",
+      "Now the most important part - tell Bridge-it about your wonderful children! Bridge-it will help organize everything for each of them! 👶",
+      "Understanding your custody arrangement helps Bridge-it set up the calendar correctly! 📅",
+      "Let Bridge-it know about any special needs or accommodations so Bridge-it can help you better! ❤️",
+      "Let's review everything to make sure it's perfect! You're almost ready to start using Bridge-it! ✨"
     ];
     setBridgetteMessage(messages[step]);
     setBridgetteExpression(step === steps.length - 1 ? 'celebrating' : 'encouraging');
@@ -220,7 +220,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
     // Don't create family in backend yet - just pass data to parent component
     // Family will be created in FamilyCodeSetup component
     setBridgetteExpression('celebrating');
-    setBridgetteMessage("Perfect! Now let's generate your Family Code! 🎉");
+    setBridgetteMessage("Perfect! Now Bridge-it will generate your Family Code! 🎉");
     
     const completedProfile: FamilyProfile = {
       id: Date.now().toString(),
@@ -277,7 +277,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to Bridge!</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to Bridge-it!</h2>
               <p className="text-gray-600 mb-6">
                 Let's set up your family profile so I can help you organize your co-parenting journey effectively.
                 This will only take a few minutes!
@@ -778,7 +778,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   <div>
                     <h4 className="font-medium text-green-800">Ready to Start!</h4>
                     <p className="text-sm text-green-700">
-                      Everything looks great! Click "Complete Setup" to start using Bridge with your family profile.
+                      Everything looks great! Click "Complete Setup" to start using Bridge-it with your family profile.
                     </p>
                   </div>
                 </div>
