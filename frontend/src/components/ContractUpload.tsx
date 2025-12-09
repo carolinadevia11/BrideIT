@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 interface ContractUploadProps {
   onComplete: (parsedData: any) => void;
   onSkip?: () => void;
+  onBack?: () => void;
 }
 
-const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip }) => {
+const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onBack }) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -228,7 +229,16 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip }) =
             </div>
 
             <div className="flex space-x-3">
-              <Button 
+              {onBack && (
+                <Button
+                  onClick={onBack}
+                  variant="outline"
+                  disabled={isUploading}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              )}
+              <Button
                 onClick={handleUpload}
                 disabled={!file || isUploading}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
@@ -247,7 +257,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip }) =
               </Button>
 
               {onSkip && (
-                <Button 
+                <Button
                   onClick={onSkip}
                   variant="outline"
                   disabled={isUploading}

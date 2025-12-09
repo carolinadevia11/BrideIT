@@ -32,6 +32,7 @@ interface IndexProps {
   onLogout: () => void;
   startOnboarding?: boolean;
   startInSettings?: boolean;
+  skipExplanation?: boolean;
 }
 
 type CurrentUser = {
@@ -69,7 +70,7 @@ type AdminFamilyRecord = {
   } | null;
 };
 
-const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startInSettings = false }) => {
+const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startInSettings = false, skipExplanation = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -110,9 +111,14 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     }
   }, [location.pathname]);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showOnboardingExplanation, setShowOnboardingExplanation] = useState(startOnboarding);
+  
+  // Logic for handling new signups vs "Get Started" from landing
+  // If skipExplanation is true (passed from App when coming from Signup), we skip the explanation
+  const shouldShowExplanation = startOnboarding && !skipExplanation;
+  
+  const [showOnboardingExplanation, setShowOnboardingExplanation] = useState(shouldShowExplanation);
   const [showAccountSetup, setShowAccountSetup] = useState(false);
-  const [showBridgettePersonalization, setShowBridgettePersonalization] = useState(false);
+  const [showBridgettePersonalization, setShowBridgettePersonalization] = useState(startOnboarding && skipExplanation);
   const [showFamilyChoice, setShowFamilyChoice] = useState(false);
   const [showFamilyCodeSetup, setShowFamilyCodeSetup] = useState(false);
   const [showContractUpload, setShowContractUpload] = useState(false);
@@ -493,12 +499,13 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       <OnboardingExplanation
         onStartJourney={() => {
           setShowOnboardingExplanation(false);
-          setShowAccountSetup(true);
+          setShowBridgettePersonalization(true); // Skip AccountSetup since they just signed up
         }}
         onCancel={() => {
-          // Skip Preview should also start the journey, not go back to dashboard
+          // Skip Preview should go to dashboard with "Complete Setup" banner
           setShowOnboardingExplanation(false);
-          setShowAccountSetup(true);
+          // Clean up location state
+          window.history.replaceState({}, document.title);
         }}
       />
     );
@@ -544,41 +551,28 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
         onCreateNew={() => {
           setFamilyCodeMode('create');
           setShowFamilyChoice(false);
-          setShowFamilyOnboarding(true);
+          // Pre-fill temp data for FamilyCodeSetup
+          setTempFamilyData({
+            familyName: `${currentUser?.lastName} Family`,
+            parent1_name: `${currentUser?.firstName} ${currentUser?.lastName}`,
+          });
+          setShowFamilyCodeSetup(true);
         }}
         onLinkExisting={() => {
           setFamilyCodeMode('join');
           setShowFamilyChoice(false);
           setShowFamilyCodeSetup(true);
         }}
-      />
-    );
-  }
-
-  // Show family onboarding to collect full family profile
-  if (showFamilyOnboarding && !familyProfile) {
-    return (
-      <FamilyOnboarding
-        initialUserData={currentUser || undefined}
-        onComplete={(profile) => {
-          // Store the complete profile for later use
-          setFamilyProfile(profile);
-          setShowFamilyOnboarding(false);
-          // After family profile, generate family code
-          setTempFamilyData({
-            ...tempFamilyData,
-            familyName: profile.familyName,
-            parent1_name: `${currentUser?.firstName} ${currentUser?.lastName}`,
-            custodyArrangement: profile.custodyArrangement,
-            children: profile.children,
-          });
-          setShowFamilyCodeSetup(true);
+        onSkip={() => {
+          setShowFamilyChoice(false);
+          // This will fall through to the dashboard view
+          // The banner will show because familyProfile is still null
         }}
       />
     );
   }
 
-  // Show Family Code Setup after family profile is complete (or for Parent 2 to link)
+  // Show Family Code Setup (Step 4: Generate Code OR Join)
   if (showFamilyCodeSetup) {
     return (
       <FamilyCodeSetup
@@ -593,39 +587,77 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               description: "You've been successfully linked to your family!",
             });
           } else {
-            // Parent 1 - Family code generated! Now show contract upload
+            // Parent 1 - Family code generated!
+            // Store the created family profile
+            setFamilyProfile(familyData as FamilyProfile);
             setShowFamilyCodeSetup(false);
+            // Next step: Contract Upload
             setShowContractUpload(true);
           }
+        }}
+        onBack={() => {
+          setShowFamilyCodeSetup(false);
+          setShowFamilyChoice(true);
         }}
         familyName={tempFamilyData?.familyName}
         parent1Name={tempFamilyData?.parent1_name}
         parent2Name={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : undefined}
-        custodyArrangement={tempFamilyData?.custodyArrangement}
-        children={tempFamilyData?.children}
       />
     );
   }
 
-  // Show Contract Upload (optional)
+  // Show Contract Upload (Step 5: Optional Contract)
   if (showContractUpload) {
     return (
       <ContractUpload
         onComplete={(parsedData) => {
           setShowContractUpload(false);
-          // Go to dashboard
-          toast({
-            title: "Welcome to Bridge!",
-            description: "Your family profile is complete!",
-          });
+          // Next step: Detailed Family Onboarding
+          setShowFamilyOnboarding(true);
         }}
         onSkip={() => {
           setShowContractUpload(false);
-          // Go to dashboard
-          toast({
-            title: "Welcome to Bridge!",
-            description: "You can upload your custody agreement later from Documents.",
-          });
+          // Next step: Detailed Family Onboarding
+          setShowFamilyOnboarding(true);
+        }}
+        onBack={() => {
+          setShowContractUpload(false);
+          setShowFamilyCodeSetup(true);
+        }}
+      />
+    );
+  }
+
+  // Show Family Onboarding (Step 6: Detailed Profile)
+  if (showFamilyOnboarding) {
+    return (
+      <FamilyOnboarding
+        initialUserData={currentUser || undefined}
+        currentFamilyProfile={familyProfile}
+        onBack={() => {
+          setShowFamilyOnboarding(false);
+          setShowContractUpload(true);
+        }}
+        onComplete={async (profile) => {
+          try {
+            // Update the existing family with detailed info
+            const updatedFamily = await familyAPI.updateFamily(profile);
+            setFamilyProfile(updatedFamily);
+            setShowFamilyOnboarding(false);
+            toast({
+              title: "Welcome to Bridge!",
+              description: "Your family profile is complete!",
+            });
+          } catch (error) {
+            console.error("Failed to update family profile:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save family profile details.",
+              variant: "destructive",
+            });
+            // Still close onboarding to let user access dashboard (data might be partially saved)
+            setShowFamilyOnboarding(false);
+          }
         }}
       />
     );
@@ -1264,7 +1296,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                         </p>
                       </div>
                       <Button
-                        onClick={() => setShowFamilyOnboarding(true)}
+                        onClick={() => setShowFamilyChoice(true)}
                         className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400"
                       >
                         <Users className="w-4 h-4 mr-2" />

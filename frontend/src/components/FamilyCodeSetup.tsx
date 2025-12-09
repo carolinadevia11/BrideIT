@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Link2, Upload, FileText, Loader2 } from 'lucide-react';
+import { Copy, Check, Link2, Upload, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { Child } from '@/types/family';
 interface FamilyCodeSetupProps {
   mode: 'create' | 'join';
   onSuccess: (familyData: any) => void;
+  onBack?: () => void;
   familyName?: string;
   parent1Name?: string;
   parent2Name?: string;
@@ -20,7 +21,7 @@ interface FamilyCodeSetupProps {
   children?: Child[];
 }
 
-const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, familyName, parent1Name, parent2Name: initialParent2Name, custodyArrangement, children }) => {
+const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, onBack, familyName, parent1Name, parent2Name: initialParent2Name, custodyArrangement, children }) => {
   const { toast } = useToast();
   const [familyCode, setFamilyCode] = useState('');
   const [parent2Name, setParent2Name] = useState(initialParent2Name || '');
@@ -28,6 +29,27 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [familyResponse, setFamilyResponse] = useState<any>(null);
+
+  // Check for existing family on mount
+  React.useEffect(() => {
+    const checkExistingFamily = async () => {
+      if (mode === 'create') {
+        try {
+          const response = await familyAPI.getFamily();
+          if (response && response.familyCode) {
+            console.log('Found existing family:', response);
+            setGeneratedCode(response.familyCode);
+            setFamilyResponse(response);
+          }
+        } catch (error) {
+          // No family found, which is expected for new users
+          console.log('No existing family found');
+        }
+      }
+    };
+    
+    checkExistingFamily();
+  }, [mode]);
 
   const handleCreateFamily = async () => {
     if (!familyName || !parent1Name) {
@@ -199,7 +221,14 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
         {!generatedCode ? (
           <Card>
             <CardHeader>
-              <CardTitle>Create Family Profile</CardTitle>
+              <div className="flex items-center gap-2">
+                {onBack && (
+                  <Button variant="ghost" size="sm" onClick={onBack} className="p-0 h-auto">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                )}
+                <CardTitle>Create Family Profile</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
@@ -300,7 +329,14 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, fami
 
       <Card>
         <CardHeader>
-          <CardTitle>Link to Existing Family</CardTitle>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <Button variant="ghost" size="sm" onClick={onBack} className="p-0 h-auto">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
+            <CardTitle>Link to Existing Family</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

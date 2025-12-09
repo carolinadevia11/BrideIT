@@ -7,9 +7,10 @@ import AnimatedBridgette from './AnimatedBridgette';
 interface FamilyChoiceProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
+  onSkip?: () => void;
 }
 
-const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting }) => {
+const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting, onSkip }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
@@ -56,7 +57,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="border-2 border-green-300 hover:border-green-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onLinkExisting}
             >
@@ -79,6 +80,14 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
                 </div>
               </CardContent>
             </Card>
+
+            {onSkip && (
+              <div className="text-center pt-4">
+                <Button variant="ghost" onClick={onSkip} className="text-gray-500 hover:text-gray-700">
+                  Skip for now
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

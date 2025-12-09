@@ -54,6 +54,23 @@ class FamilyLink(BaseModel):
     familyCode: str
     parent2_name: str
 
+class FamilyUpdate(BaseModel):
+    familyName: Optional[str] = None
+    parent1_name: Optional[str] = None
+    parent2_name: Optional[str] = None
+    parent1_email: Optional[str] = None
+    parent2_email: Optional[str] = None
+    # Additional fields for detailed profile
+    parent1: Optional[dict] = None
+    parent2: Optional[dict] = None
+    children: Optional[List[Child]] = None
+    custodyArrangement: Optional[str] = None
+    custodyNotes: Optional[str] = None
+    specialAccommodations: Optional[List[str]] = None
+    geographicalDistance: Optional[float] = None
+    differentTimezones: Optional[bool] = None
+    onboardingCompleted: Optional[bool] = None
+
 class ContractUpload(BaseModel):
     fileName: str
     fileContent: str  # Base64 encoded file content

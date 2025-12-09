@@ -5,10 +5,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import OnboardingExplanation from '@/components/OnboardingExplanation';
 
-const Signup: React.FC = () => {
+interface SignupProps {
+  onLogin?: (newSignup?: boolean) => void;
+}
+
+const Signup: React.FC<SignupProps> = ({ onLogin }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [showExplanation, setShowExplanation] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -25,13 +32,27 @@ const Signup: React.FC = () => {
         lastName,
       });
       
+      // Auto-login after signup
+      await authAPI.login(email, password);
+      
+      if (onLogin) {
+        // Pass true to indicate this is a new signup
+        onLogin(true);
+      }
+
       toast({
         title: "Success!",
-        description: "Your account has been created successfully. Please log in.",
+        description: "Your account has been created successfully!",
       });
-      // In a real app, you might automatically log the user in
-      // and redirect them to the dashboard. For now, we'll just
-      // show a success message and let them log in manually.
+      
+      // Redirect to dashboard to start onboarding
+      // Small delay to ensure state updates propagate
+      setTimeout(() => {
+        navigate('/dashboard', {
+          replace: true,
+          state: { newSignup: true }
+        });
+      }, 100);
     } catch (error) {
       console.error('Error signing up:', error);
       toast({
@@ -44,10 +65,26 @@ const Signup: React.FC = () => {
     }
   };
 
+  if (showExplanation) {
+    return (
+      <OnboardingExplanation
+        onStartJourney={() => setShowExplanation(false)}
+        onCancel={() => setShowExplanation(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader>
+          <Button
+            variant="ghost"
+            onClick={() => setShowExplanation(true)}
+            className="absolute left-4 top-4"
+          >
+            ← Back
+          </Button>
           <CardTitle className="text-2xl font-bold text-gray-800 text-center">
             Create Your Bridge Account
           </CardTitle>

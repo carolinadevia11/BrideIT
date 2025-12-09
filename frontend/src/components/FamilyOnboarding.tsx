@@ -20,9 +20,11 @@ interface FamilyOnboardingProps {
     lastName: string;
     email: string;
   };
+  currentFamilyProfile?: FamilyProfile | null;
+  onBack?: () => void;
 }
 
-const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initialUserData }) => {
+const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initialUserData, currentFamilyProfile, onBack }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +32,8 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const [bridgetteMessage, setBridgetteMessage] = useState("Hi! I'm so excited to help you set up your family profile! This will help me organize everything perfectly for your unique situation! 🌟");
 
   const [familyData, setFamilyData] = useState<Partial<FamilyProfile>>({
-    familyName: initialUserData ? `${initialUserData.lastName} Family` : '',
-    parent1: {
+    familyName: currentFamilyProfile?.familyName || (initialUserData ? `${initialUserData.lastName} Family` : ''),
+    parent1: currentFamilyProfile?.parent1 || {
       firstName: initialUserData?.firstName || '',
       lastName: initialUserData?.lastName || '',
       email: initialUserData?.email || '',
@@ -42,7 +44,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       zipCode: '',
       timezone: 'EST'
     },
-    parent2: {
+    parent2: currentFamilyProfile?.parent2 || {
       firstName: '',
       lastName: '',
       email: '',
@@ -53,10 +55,10 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       zipCode: '',
       timezone: 'EST'
     },
-    children: [],
-    differentTimezones: false,
-    specialAccommodations: [],
-    custodyArrangement: '50-50',
+    children: currentFamilyProfile?.children || [],
+    differentTimezones: currentFamilyProfile?.differentTimezones || false,
+    specialAccommodations: currentFamilyProfile?.specialAccommodations || [],
+    custodyArrangement: currentFamilyProfile?.custodyArrangement || '50-50',
     onboardingCompleted: false
   });
 
@@ -111,6 +113,16 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   const updateParent1 = (field: string, value: string) => {
+    // Validation: Only allow letters for names
+    if ((field === 'firstName' || field === 'lastName') && value) {
+      if (!/^[a-zA-Z\s\-']*$/.test(value)) return;
+    }
+    
+    // Validation: Only allow numbers and format chars for phone/zip
+    if ((field === 'zipCode' || field === 'phone') && value) {
+      if (!/^[0-9\-\+\(\)\s]*$/.test(value)) return;
+    }
+
     setFamilyData(prev => ({
       ...prev,
       parent1: {
@@ -134,6 +146,15 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
     if (!newChild.firstName || !newChild.dateOfBirth) return;
 
     const birthDate = new Date(newChild.dateOfBirth);
+    if (birthDate > new Date()) {
+      toast({
+        title: "Invalid Date",
+        description: "Date of birth cannot be in the future.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
     const child: Child = {
@@ -198,6 +219,8 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       updateBridgetteForStep(currentStep - 1);
+    } else if (onBack) {
+      onBack();
     }
   };
 
@@ -217,14 +240,19 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   };
 
   const completeOnboarding = () => {
-    // Don't create family in backend yet - just pass data to parent component
-    // Family will be created in FamilyCodeSetup component
+    // Pass updated data to parent component
     setBridgetteExpression('celebrating');
-    setBridgetteMessage("Perfect! Now let's generate your Family Code! 🎉");
+    setBridgetteMessage("Perfect! Your family profile is all set up! 🎉");
+    setIsSubmitting(true);
     
+    // Prepare children data for backend (map firstName/lastName to name)
+    // The backend expects 'name' but the frontend interface uses firstName/lastName
+    // We'll let the api.ts handle the transformation or send it as is if the backend model is updated
+    // For now, let's create the profile object matching the frontend type
     const completedProfile: FamilyProfile = {
-      id: Date.now().toString(),
+      id: currentFamilyProfile?.id || Date.now().toString(),
       familyName: familyData.familyName || `${familyData.parent1?.lastName} Family`,
+      familyCode: currentFamilyProfile?.familyCode,
       parent1: familyData.parent1!,
       parent2: familyData.parent2 || {
         firstName: '',
@@ -243,7 +271,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       specialAccommodations: familyData.specialAccommodations,
       custodyArrangement: familyData.custodyArrangement,
       custodyNotes: familyData.custodyNotes,
-      onboardingCompleted: false,
+      onboardingCompleted: true, // Mark as completed
       setupDate: new Date()
     };
 
@@ -445,16 +473,26 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
             
             <Card className="border-2 border-blue-200">
               <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <Home className="w-8 h-8 text-blue-600" />
-                  <div>
-                    <h4 className="font-medium text-gray-800">Your Address</h4>
-                    <p className="text-sm text-gray-600">
-                      {familyData.parent1?.address && `${familyData.parent1.address}, `}
-                      {familyData.parent1?.city}, {familyData.parent1?.state} {familyData.parent1?.zipCode}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Timezone: {familyData.parent1?.timezone}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Home className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <h4 className="font-medium text-gray-800">Your Address</h4>
+                      <p className="text-sm text-gray-600">
+                        {familyData.parent1?.address ? (
+                          <>
+                            {familyData.parent1.address}, {familyData.parent1?.city}, {familyData.parent1?.state} {familyData.parent1?.zipCode}
+                          </>
+                        ) : (
+                          <span className="text-gray-400 italic">No address provided</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Timezone: {familyData.parent1?.timezone}</p>
+                    </div>
                   </div>
+                  <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)}>
+                    Edit
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -527,7 +565,10 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                     <Input
                       id="child-firstName"
                       value={newChild.firstName}
-                      onChange={(e) => setNewChild(prev => ({ ...prev, firstName: e.target.value }))}
+                      onChange={(e) => {
+                        if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                        setNewChild(prev => ({ ...prev, firstName: e.target.value }))
+                      }}
                       placeholder="Emma"
                       className="mt-1"
                     />
@@ -537,7 +578,10 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                     <Input
                       id="child-lastName"
                       value={newChild.lastName}
-                      onChange={(e) => setNewChild(prev => ({ ...prev, lastName: e.target.value }))}
+                      onChange={(e) => {
+                        if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                        setNewChild(prev => ({ ...prev, lastName: e.target.value }))
+                      }}
                       placeholder={familyData.familyName || 'Johnson'}
                       className="mt-1"
                     />
@@ -550,6 +594,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                     <Input
                       id="child-dob"
                       type="date"
+                      max={new Date().toISOString().split('T')[0]}
                       value={newChild.dateOfBirth ? new Date(newChild.dateOfBirth).toISOString().split('T')[0] : ''}
                       onChange={(e) => setNewChild(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
                       className="mt-1"
@@ -736,7 +781,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                     {familyData.children?.map((child) => (
                       <div key={child.id} className="bg-gray-50 p-3 rounded flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {child.firstName[0]}
+                          {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
                         </div>
                         <div>
                           <p className="font-medium">{child.firstName} {child.lastName}</p>
@@ -819,48 +864,62 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
             />
           </div>
 
-          {/* Form Side */}
-          <Card className="w-full shadow-2xl">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-gray-800">
-                {steps[currentStep].title}
-              </CardTitle>
-              <p className="text-gray-600">{steps[currentStep].description}</p>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {renderStepContent()}
+          {isSubmitting ? (
+            <Card className="w-full shadow-2xl">
+              <CardContent className="p-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">Setting Up Your Profile...</h3>
+                  <p className="text-gray-600 text-lg">
+                    Please wait while we finalize your family settings and prepare your dashboard.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Form Side */
+            <Card className="w-full shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-gray-800">
+                  {steps[currentStep].title}
+                </CardTitle>
+                <p className="text-gray-600">{steps[currentStep].description}</p>
+              </CardHeader>
               
-              <div className="flex justify-between pt-6">
-                <Button 
-                  onClick={prevStep} 
-                  variant="outline"
-                  disabled={currentStep === 0}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
+              <CardContent className="space-y-6">
+                {renderStepContent()}
                 
-                <Button
-                  onClick={nextStep}
-                  disabled={!canProceed() || isSubmitting}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                >
-                  {currentStep === steps.length - 1 ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Complete Setup
-                    </>
-                  ) : (
-                    <>
-                      Continue
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex justify-between pt-6">
+                  <Button
+                    onClick={prevStep}
+                    variant="outline"
+                    disabled={currentStep === 0 && !onBack}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  
+                  <Button
+                    onClick={nextStep}
+                    disabled={!canProceed() || isSubmitting}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  >
+                    {currentStep === steps.length - 1 ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Complete Setup
+                      </>
+                    ) : (
+                      <>
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

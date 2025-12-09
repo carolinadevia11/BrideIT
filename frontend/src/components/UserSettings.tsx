@@ -1063,7 +1063,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                             <div className="flex space-x-2">
                               {familyProfile.children.map((child) => (
                                 <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                  {child.firstName[0]}
+                                  {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
                                 </div>
                               ))}
                             </div>
