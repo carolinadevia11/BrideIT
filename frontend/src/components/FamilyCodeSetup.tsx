@@ -30,6 +30,27 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, onBa
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [familyResponse, setFamilyResponse] = useState<any>(null);
 
+  // Check for existing family on mount
+  React.useEffect(() => {
+    const checkExistingFamily = async () => {
+      if (mode === 'create') {
+        try {
+          const response = await familyAPI.getFamily();
+          if (response && response.familyCode) {
+            console.log('Found existing family:', response);
+            setGeneratedCode(response.familyCode);
+            setFamilyResponse(response);
+          }
+        } catch (error) {
+          // No family found, which is expected for new users
+          console.log('No existing family found');
+        }
+      }
+    };
+    
+    checkExistingFamily();
+  }, [mode]);
+
   const handleCreateFamily = async () => {
     if (!familyName || !parent1Name) {
       toast({
@@ -210,7 +231,14 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, onBa
         {!generatedCode ? (
           <Card>
             <CardHeader>
-              <CardTitle>Create Family Profile</CardTitle>
+              <div className="flex items-center gap-2">
+                {onBack && (
+                  <Button variant="ghost" size="sm" onClick={onBack} className="p-0 h-auto">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                )}
+                <CardTitle>Create Family Profile</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
@@ -321,7 +349,14 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({ mode, onSuccess, onBa
 
       <Card>
         <CardHeader>
-          <CardTitle>Link to Existing Family</CardTitle>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <Button variant="ghost" size="sm" onClick={onBack} className="p-0 h-auto">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
+            <CardTitle>Link to Existing Family</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

@@ -69,7 +69,7 @@ def _serialize_change_request_document(change_doc: dict) -> ChangeRequest:
     )
 
 
-def _get_family_for_user(current_user: User) -> tuple[dict, str]:
+def _get_family_for_user(current_user: User, raise_error: bool = True) -> tuple[Optional[dict], Optional[str]]:
     family = db.families.find_one(
         {
             "$or": [
@@ -79,10 +79,12 @@ def _get_family_for_user(current_user: User) -> tuple[dict, str]:
         }
     )
     if not family:
-        raise HTTPException(
-            status_code=404,
-            detail="No family profile found. Complete onboarding before using the calendar.",
-        )
+        if raise_error:
+            raise HTTPException(
+                status_code=404,
+                detail="No family profile found. Complete onboarding before using the calendar.",
+            )
+        return None, None
     family_id = str(family.get("_id") or family.get("id"))
     return family, family_id
 
@@ -118,7 +120,10 @@ async def get_calendar_events(
     current_user: User = Depends(get_current_user),
 ):
     """Get calendar events for a specific month."""
-    _, family_id = _get_family_for_user(current_user)
+    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    
+    if not family_id:
+        return []
 
     events_cursor = db.events.find({"family_id": family_id})
     events: List[Event] = []
@@ -205,7 +210,10 @@ async def delete_calendar_event(
 @router.get("/swappable-dates", response_model=List[Event])
 async def get_swappable_dates(current_user: User = Depends(get_current_user)):
     """Get all calendar events for the current user."""
-    _, family_id = _get_family_for_user(current_user)
+    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    
+    if not family_id:
+        return []
     
     events_cursor = db.events.find({
         "family_id": family_id,
@@ -218,7 +226,11 @@ async def get_swappable_dates(current_user: User = Depends(get_current_user)):
 @router.get("/change-requests", response_model=List[ChangeRequest])
 async def get_change_requests(current_user: User = Depends(get_current_user)):
     """Get all change requests for the user's family."""
-    _, family_id = _get_family_for_user(current_user)
+    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    
+    if not family_id:
+        return []
+        
     change_requests_cursor = db.change_requests.find({"family_id": family_id})
     return [
         _serialize_change_request_document(change_doc)

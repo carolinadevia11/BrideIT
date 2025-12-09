@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Link2, ArrowLeft } from 'lucide-react';
+import { Users, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AnimatedBridgette from './AnimatedBridgette';
@@ -7,23 +7,13 @@ import AnimatedBridgette from './AnimatedBridgette';
 interface FamilyChoiceProps {
   onCreateNew: () => void;
   onLinkExisting: () => void;
-  onBack?: () => void;
+  onSkip?: () => void;
 }
 
-const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting, onBack }) => {
+const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting, onSkip }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
-        {onBack && (
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="mb-4 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">
@@ -67,7 +57,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="border-2 border-green-300 hover:border-green-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onLinkExisting}
             >
@@ -90,6 +80,14 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
                 </div>
               </CardContent>
             </Card>
+
+            {onSkip && (
+              <div className="text-center pt-4">
+                <Button variant="ghost" onClick={onSkip} className="text-gray-500 hover:text-gray-700">
+                  Skip for now
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

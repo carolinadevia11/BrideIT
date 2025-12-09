@@ -104,6 +104,28 @@ export const familyAPI = {
     });
   },
 
+  updateFamily: async (updates: any) => {
+    // transform children if present
+    const payload = { ...updates };
+    if (payload.children && Array.isArray(payload.children)) {
+      payload.children = payload.children.map((child: any) => ({
+        ...child,
+        name: child.name || `${child.firstName} ${child.lastName}`.trim(),
+        // Backend expects date string YYYY-MM-DD
+        dateOfBirth: new Date(child.dateOfBirth).toISOString().split('T')[0],
+        // Transform arrays to strings for backend
+        allergies: Array.isArray(child.allergies) ? child.allergies.join(', ') : child.allergies,
+        medications: Array.isArray(child.medicalConditions) ? child.medicalConditions.join(', ') : child.medicalConditions,
+        notes: Array.isArray(child.specialNeeds) ? child.specialNeeds.join(', ') : child.specialNeeds
+      }));
+    }
+
+    return fetchWithAuth('/api/v1/family', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
   linkToFamily: async (linkData: {
     familyCode: string;
     parent2_name: string;

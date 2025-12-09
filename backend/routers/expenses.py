@@ -60,7 +60,7 @@ async def get_expenses(current_user: User = Depends(get_current_user)):
         ]})
         
         if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+            return []
         
         family_id = str(family["_id"])
         
@@ -342,7 +342,15 @@ async def get_expense_summary(current_user: User = Depends(get_current_user)):
         ]})
         
         if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+            return {
+                "totalAmount": 0,
+                "userOwes": 0,
+                "userOwed": 0,
+                "pendingCount": 0,
+                "disputedCount": 0,
+                "approvedCount": 0,
+                "paidCount": 0,
+            }
         
         family_id = str(family["_id"])
         

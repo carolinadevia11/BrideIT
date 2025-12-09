@@ -175,7 +175,7 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {child.firstName[0]}
+                    {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-800">{child.firstName} {child.lastName}</h3>
@@ -325,7 +325,10 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
                 <Input
                   id="firstName"
                   value={formData.firstName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) => {
+                    if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                    setFormData(prev => ({ ...prev, firstName: e.target.value }))
+                  }}
                   placeholder="Emma"
                   className="mt-1"
                 />
@@ -335,7 +338,10 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
                 <Input
                   id="lastName"
                   value={formData.lastName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) => {
+                    if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                    setFormData(prev => ({ ...prev, lastName: e.target.value }))
+                  }}
                   placeholder="Johnson"
                   className="mt-1"
                 />
@@ -348,6 +354,7 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
                 <Input
                   id="dateOfBirth"
                   type="date"
+                  max={new Date().toISOString().split('T')[0]}
                   value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
                   className="mt-1"

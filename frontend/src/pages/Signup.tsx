@@ -6,10 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
 import { Link, useNavigate } from 'react-router-dom';
+import OnboardingExplanation from '@/components/OnboardingExplanation';
 
-const Signup: React.FC = () => {
+interface SignupProps {
+  onLogin?: (newSignup?: boolean) => void;
+}
+
+const Signup: React.FC<SignupProps> = ({ onLogin }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showExplanation, setShowExplanation] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -17,48 +23,6 @@ const Signup: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSignup = async () => {
-    // Basic validation
-    if (!firstName.trim()) {
-      toast({
-        title: "First name required",
-        description: "Please enter your first name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!lastName.trim()) {
-      toast({
-        title: "Last name required",
-        description: "Please enter your last name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!email.trim()) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!password.trim()) {
-      toast({
-        title: "Password required",
-        description: "Please create a password.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       await authAPI.signup({
@@ -68,15 +32,27 @@ const Signup: React.FC = () => {
         lastName,
       });
       
+      // Auto-login after signup
+      await authAPI.login(email, password);
+      
+      if (onLogin) {
+        // Pass true to indicate this is a new signup
+        onLogin(true);
+      }
+
       toast({
         title: "Success!",
-        description: "Your account has been created successfully. Redirecting to login...",
+        description: "Your account has been created successfully!",
       });
       
-      // Redirect to login page after a short delay to show success message
+      // Redirect to dashboard to start onboarding
+      // Small delay to ensure state updates propagate
       setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+        navigate('/dashboard', {
+          replace: true,
+          state: { newSignup: true }
+        });
+      }, 100);
     } catch (error) {
       console.error('Error signing up:', error);
       toast({
@@ -89,12 +65,28 @@ const Signup: React.FC = () => {
     }
   };
 
+  if (showExplanation) {
+    return (
+      <OnboardingExplanation
+        onStartJourney={() => setShowExplanation(false)}
+        onCancel={() => setShowExplanation(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader>
+          <Button
+            variant="ghost"
+            onClick={() => setShowExplanation(true)}
+            className="absolute left-4 top-4"
+          >
+            ← Back
+          </Button>
           <CardTitle className="text-2xl font-bold text-gray-800 text-center">
-            Create Your Bridge-it Account
+            Create Your Bridge Account
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -105,9 +97,7 @@ const Signup: React.FC = () => {
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First name"
-                autoComplete="given-name"
-                className="placeholder:text-gray-400"
+                placeholder="Sarah"
               />
             </div>
             <div className="space-y-2">
@@ -116,9 +106,7 @@ const Signup: React.FC = () => {
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Last name"
-                autoComplete="family-name"
-                className="placeholder:text-gray-400"
+                placeholder="Johnson"
               />
             </div>
           </div>
@@ -129,9 +117,7 @@ const Signup: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              autoComplete="email"
-              className="placeholder:text-gray-400"
+              placeholder="sarah@email.com"
             />
           </div>
           <div className="space-y-2">
@@ -141,9 +127,7 @@ const Signup: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a secure password"
-              autoComplete="new-password"
-              className="placeholder:text-gray-400"
+              placeholder="********"
             />
           </div>
           <Button onClick={handleSignup} disabled={isSubmitting} className="w-full">

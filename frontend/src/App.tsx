@@ -19,6 +19,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isNewSignup, setIsNewSignup] = useState(false);
 
   // Check for existing auth token on mount
   useEffect(() => {
@@ -33,9 +34,10 @@ const App = () => {
     setIsLoading(false);
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (newSignup = false) => {
     setIsAuthenticated(true);
     setShowOnboarding(false);
+    setIsNewSignup(newSignup);
   };
 
   const handleLogout = () => {
@@ -82,7 +84,7 @@ const App = () => {
                 isAuthenticated ? (
                   <Navigate to="/dashboard" replace />
                 ) : (
-                  <Signup />
+                  <Signup onLogin={handleLogin} />
                 )
               }
             />
@@ -102,7 +104,7 @@ const App = () => {
               path="/dashboard"
               element={
                 isAuthenticated ? (
-                  <Index onLogout={handleLogout} startOnboarding={false} />
+                  <Index onLogout={handleLogout} startOnboarding={isNewSignup} skipExplanation={isNewSignup} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
