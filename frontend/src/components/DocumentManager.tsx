@@ -163,31 +163,43 @@ const DocumentManager: React.FC = () => {
   const fetchFolders = useCallback(async () => {
     try {
       const foldersData = await documentsAPI.getFolders();
-      setFolders(foldersData);
-    } catch (error) {
-      console.error('Error fetching folders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load folders",
-        variant: "destructive",
-      });
+      // Handle empty responses gracefully - these are not errors
+      setFolders(Array.isArray(foldersData) ? foldersData : []);
+    } catch (error: any) {
+      // Only show error if it's a real error, not just empty data
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+        // Empty state - not an error
+        setFolders([]);
+      } else {
+        // Real error - log but don't show toast to avoid frustration
+        console.error('Error fetching folders:', error);
+        // Set empty state instead of showing error
+        setFolders([]);
+      }
     }
-  }, [toast]);
+  }, []);
 
   // Fetch documents
   const fetchDocuments = useCallback(async (folderId?: string) => {
     try {
       const documentsData = await documentsAPI.getDocuments(folderId);
-      setDocuments(documentsData);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load documents",
-        variant: "destructive",
-      });
+      // Handle empty responses gracefully - these are not errors
+      setDocuments(Array.isArray(documentsData) ? documentsData : []);
+    } catch (error: any) {
+      // Only show error if it's a real error, not just empty data
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No documents')) {
+        // Empty state - not an error
+        setDocuments([]);
+      } else {
+        // Real error - log but don't show toast to avoid frustration
+        console.error('Error fetching documents:', error);
+        // Set empty state instead of showing error
+        setDocuments([]);
+      }
     }
-  }, [toast]);
+  }, []);
 
   // Initial data load
   useEffect(() => {

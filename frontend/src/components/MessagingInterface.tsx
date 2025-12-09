@@ -129,14 +129,16 @@ const MessagingInterface: React.FC = () => {
       if (data.length > 0 && !activeConversation) {
         setActiveConversation(data[0].id);
       }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      if (!silent) {
-        toast({
-          title: "Error",
-          description: "Failed to load conversations",
-          variant: "destructive",
-        });
+    } catch (error: any) {
+      // Handle empty states gracefully - don't show error toasts
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No conversations')) {
+        // Empty state - not an error, just set empty array
+        setConversations([]);
+      } else {
+        console.error('Error fetching conversations:', error);
+        // Only log real errors, don't show toast
+        setConversations([]);
       }
     } finally {
       if (!silent) {
@@ -181,14 +183,16 @@ const MessagingInterface: React.FC = () => {
       setHasMore(pagination.hasMore);
       setPage(pageNum);
       
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      if (!silent) {
-        toast({
-          title: "Error",
-          description: "Failed to load messages",
-          variant: "destructive",
-        });
+    } catch (error: any) {
+      // Handle empty states gracefully - don't show error toasts
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No messages')) {
+        // Empty state - not an error, just set empty array
+        setMessages([]);
+      } else {
+        console.error('Error fetching messages:', error);
+        // Only log real errors, don't show toast
+        setMessages([]);
       }
     } finally {
       if (!silent && !append) {

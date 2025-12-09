@@ -108,19 +108,27 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
         expensesAPI.getExpenses(),
         expensesAPI.getExpenseSummary()
       ]);
-      setExpenses(expensesData);
-      setSummary(summaryData);
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load expenses",
-        variant: "destructive",
-      });
+      // Handle empty responses gracefully - these are not errors
+      setExpenses(Array.isArray(expensesData) ? expensesData : []);
+      setSummary(summaryData || null);
+    } catch (error: any) {
+      // Only show error if it's a real error, not just empty data
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No expenses')) {
+        // Empty state - not an error
+        setExpenses([]);
+        setSummary(null);
+      } else {
+        // Real error - log but don't show toast to avoid frustration
+        console.error('Error fetching expenses:', error);
+        // Set empty state instead of showing error
+        setExpenses([]);
+        setSummary(null);
+      }
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchCurrentUser();

@@ -458,14 +458,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         .filter((event): event is CalendarEvent => Boolean(event));
       
       setEvents(transformedEvents);
-    } catch (error) {
-      console.error('Error loading events:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load calendar events. Using mock data.",
-        variant: "destructive",
-      });
-      // Keep mock data on error
+    } catch (error: any) {
+      // Handle empty states gracefully - don't show error toasts
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No events')) {
+        // Empty state - not an error, just set empty array
+        setEvents([]);
+      } else {
+        console.error('Error loading events:', error);
+        // Only log real errors, don't show toast
+        setEvents([]);
+      }
     } finally {
       setIsLoadingEvents(false);
     }
@@ -481,13 +484,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         mapChangeRequestFromApi(req)
       );
       setChangeRequests(mapped);
-    } catch (error) {
-      console.error('Error loading change requests:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load change requests.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Handle empty states gracefully - don't show error toasts
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('No change requests')) {
+        // Empty state - not an error, just set empty array
+        setChangeRequests([]);
+      } else {
+        console.error('Error loading change requests:', error);
+        // Only log real errors, don't show toast
+        setChangeRequests([]);
+      }
     } finally {
       setIsLoadingRequests(false);
     }
