@@ -24,6 +24,9 @@ def _ensure_datetime(value) -> datetime:
         return value
     if isinstance(value, str):
         try:
+            # Handle Z suffix for UTC which fromisoformat might not handle in older python versions
+            if value.endswith('Z'):
+                value = value[:-1] + '+00:00'
             return datetime.fromisoformat(value)
         except ValueError:
             pass
@@ -70,7 +73,7 @@ def _serialize_change_request_document(change_doc: dict) -> ChangeRequest:
     )
 
 
-def _get_family_for_user(current_user: User, raise_error: bool = True) -> tuple[Optional[dict], Optional[str]]:
+def _get_family_for_user(current_user: User, raise_error: bool = True) -> tuple[Optional[dict], List[str]]:
     family = db.families.find_one(
         {
             "$or": [
@@ -85,31 +88,42 @@ def _get_family_for_user(current_user: User, raise_error: bool = True) -> tuple[
                 status_code=404,
                 detail="No family profile found. Complete onboarding before using the calendar.",
             )
-        return None, None
-    family_id = str(family.get("_id") or family.get("id"))
-    return family, family_id
+        return None, []
+    
+    # Robust: return ALL valid family IDs (UUID and ObjectId)
+    family_ids = []
+    if family.get("id"):
+        family_ids.append(family.get("id"))
+    if family.get("_id"):
+        family_ids.append(str(family.get("_id")))
+        
+    return family, family_ids
 
 
-def _find_event_for_family(event_id: str, family_id: str) -> dict:
+def _find_event_for_family(event_id: str, family_ids: List[str]) -> dict:
     event = db.events.find_one({"id": event_id})
     if not event:
         try:
             event = db.events.find_one({"_id": ObjectId(event_id)})
         except Exception:
             event = None
-    if not event or str(event.get("family_id")) != family_id:
+            
+    # Check if event belongs to ANY of the family IDs
+    if not event or str(event.get("family_id")) not in family_ids:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
 
 
-def _find_change_request_for_family(request_id: str, family_id: str) -> dict:
+def _find_change_request_for_family(request_id: str, family_ids: List[str]) -> dict:
     change_request = db.change_requests.find_one({"id": request_id})
     if not change_request:
         try:
             change_request = db.change_requests.find_one({"_id": ObjectId(request_id)})
         except Exception:
             change_request = None
-    if not change_request or str(change_request.get("family_id")) != family_id:
+            
+    # Check if request belongs to ANY of the family IDs
+    if not change_request or str(change_request.get("family_id")) not in family_ids:
         raise HTTPException(status_code=404, detail="Change request not found")
     return change_request
 
@@ -121,18 +135,39 @@ async def get_calendar_events(
     current_user: User = Depends(get_current_user),
 ):
     """Get calendar events for a specific month."""
-    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    family, family_ids = _get_family_for_user(current_user, raise_error=False)
     
-    if not family_id:
+    if not family:
         return []
-
-    events_cursor = db.events.find({"family_id": family_id})
+        
+    events_cursor = db.events.find({"family_id": {"$in": family_ids}})
     events: List[Event] = []
 
+    # Get events for requested month, plus some buffer for timezone overlaps
+    # A generous window (e.g., +/- 2 days) ensures we catch events that might
+    # fall into the current month depending on the user's timezone.
     for event_doc in events_cursor:
         event_obj = _serialize_event_document(event_doc)
-        if event_obj.date.year == year and event_obj.date.month == month:
+        
+        # Simple inclusion check: if the event falls in the requested month/year
+        # OR if it's very close to the start/end of the month (buffer for timezone)
+        event_year = event_obj.date.year
+        event_month = event_obj.date.month
+        
+        if event_year == year and event_month == month:
             events.append(event_obj)
+        else:
+            # Check edge cases (e.g. Nov 30th UTC might be Dec 1st locally, or vice versa)
+            # We'll send adjacent events so frontend can filter
+            is_prev_month = (month == 1 and event_month == 12 and event_year == year - 1) or \
+                            (event_month == month - 1 and event_year == year)
+            is_next_month = (month == 12 and event_month == 1 and event_year == year + 1) or \
+                            (event_month == month + 1 and event_year == year)
+            
+            if is_prev_month and event_obj.date.day >= 25:
+                events.append(event_obj)
+            elif is_next_month and event_obj.date.day <= 7:
+                events.append(event_obj)
 
     return events
 
@@ -143,12 +178,15 @@ async def create_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new calendar event."""
-    family, family_id = _get_family_for_user(current_user)
+    family, family_ids = _get_family_for_user(current_user)
+    
+    # Use the first ID (preferred UUID) for new events
+    primary_family_id = family_ids[0] if family_ids else str(family.get("_id"))
 
     event_id = str(uuid.uuid4())
     event_doc = {
         "id": event_id,
-        "family_id": family_id,
+        "family_id": primary_family_id,
         "date": _ensure_datetime(event_data.date),
         "type": event_data.type,
         "title": event_data.title,
@@ -165,12 +203,25 @@ async def create_calendar_event(
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
 
+    # Check for conflicts
+    existing_events = db.events.find_one({
+        "family_id": {"$in": family_ids},
+        "date": _ensure_datetime(event_data.date),
+        "type": "custody",
+        "id": {"$ne": event_id}
+    })
+    
+    is_conflict = False
+    if existing_events and event_data.type == "custody":
+        is_conflict = True
+
     await email_service.send_event_notification(
         recipients,
         "create",
         event_data.title,
         str(event_data.date),
-        user_name
+        user_name,
+        is_conflict=is_conflict
     )
 
     return _serialize_event_document(event_doc)
@@ -183,12 +234,12 @@ async def update_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Update an existing calendar event. Only the creator can edit directly."""
-    family, family_id = _get_family_for_user(current_user)
-    event_doc = _find_event_for_family(event_id, family_id)
+    family, family_ids = _get_family_for_user(current_user)
+    event_doc = _find_event_for_family(event_id, family_ids)
 
     # Only allow the creator to edit directly
     event_creator = event_doc.get("createdBy_email")
-    if event_creator and event_creator != current_user.email:
+    if event_creator and event_creator.lower().strip() != current_user.email.lower().strip():
         raise HTTPException(
             status_code=403,
             detail="Only the event creator can edit this event. Please use a change request instead."
@@ -210,12 +261,25 @@ async def update_calendar_event(
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
 
+    # Check for conflicts
+    existing_events = db.events.find_one({
+        "family_id": {"$in": family_ids},
+        "date": _ensure_datetime(event_data.date),
+        "type": "custody",
+        "id": {"$ne": event_id}
+    })
+    
+    is_conflict = False
+    if existing_events and event_data.type == "custody":
+        is_conflict = True
+
     await email_service.send_event_notification(
         recipients,
         "update",
         event_data.title,
         str(event_data.date),
-        user_name
+        user_name,
+        is_conflict=is_conflict
     )
 
     return _serialize_event_document(event_doc)
@@ -227,8 +291,17 @@ async def delete_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a calendar event."""
-    family, family_id = _get_family_for_user(current_user)
-    event_doc = _find_event_for_family(event_id, family_id)
+    family, family_ids = _get_family_for_user(current_user)
+    event_doc = _find_event_for_family(event_id, family_ids)
+
+    # Only allow the creator to delete directly
+    event_creator = event_doc.get("createdBy_email")
+    if event_creator and event_creator.lower().strip() != current_user.email.lower().strip():
+        raise HTTPException(
+            status_code=403,
+            detail="Only the event creator can delete this event. Please use a change request instead."
+        )
+
     db.events.delete_one({"_id": event_doc.get("_id")})
 
     # Send email notification
@@ -249,13 +322,13 @@ async def delete_calendar_event(
 @router.get("/swappable-dates", response_model=List[Event])
 async def get_swappable_dates(current_user: User = Depends(get_current_user)):
     """Get all calendar events for the current user."""
-    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    family, family_ids = _get_family_for_user(current_user, raise_error=False)
     
-    if not family_id:
+    if not family:
         return []
-    
+
     events_cursor = db.events.find({
-        "family_id": family_id,
+        "family_id": {"$in": family_ids},
         "parent": current_user.email
     })
     
@@ -265,12 +338,12 @@ async def get_swappable_dates(current_user: User = Depends(get_current_user)):
 @router.get("/change-requests", response_model=List[ChangeRequest])
 async def get_change_requests(current_user: User = Depends(get_current_user)):
     """Get all change requests for the user's family."""
-    _, family_id = _get_family_for_user(current_user, raise_error=False)
+    family, family_ids = _get_family_for_user(current_user, raise_error=False)
     
-    if not family_id:
+    if not family:
         return []
-        
-    change_requests_cursor = db.change_requests.find({"family_id": family_id})
+
+    change_requests_cursor = db.change_requests.find({"family_id": {"$in": family_ids}})
     return [
         _serialize_change_request_document(change_doc)
         for change_doc in change_requests_cursor
@@ -283,8 +356,10 @@ async def create_change_request(
     current_user: User = Depends(get_current_user),
 ):
     """Submit a change request for a calendar event."""
-    _, family_id = _get_family_for_user(current_user)
-    event_doc = _find_event_for_family(request_data.event_id, family_id)
+    family, family_ids = _get_family_for_user(current_user)
+    event_doc = _find_event_for_family(request_data.event_id, family_ids)
+    
+    primary_family_id = family_ids[0] if family_ids else str(family.get("_id"))
 
     change_request_id = str(uuid.uuid4())
     change_type = request_data.requestType
@@ -293,7 +368,7 @@ async def create_change_request(
 
     change_request_doc = {
         "id": change_request_id,
-        "family_id": family_id,
+        "family_id": primary_family_id,
         "event_id": event_doc.get("id"),
         "requestedBy_email": current_user.email,
         "status": "pending",
@@ -317,7 +392,7 @@ async def create_change_request(
             raise HTTPException(
                 status_code=400, detail="swapEventId is required for a swap request."
             )
-        swap_event_doc = _find_event_for_family(request_data.swapEventId, family_id)
+        swap_event_doc = _find_event_for_family(request_data.swapEventId, family_ids)
         change_request_doc["swapEventId"] = swap_event_doc.get("id")
         change_request_doc["swapEventTitle"] = swap_event_doc.get("title")
         change_request_doc["swapEventDate"] = _ensure_datetime(swap_event_doc.get("date"))
@@ -327,7 +402,7 @@ async def create_change_request(
     db.change_requests.insert_one(change_request_doc)
 
     # Send email notification to both parents about the request
-    family, _ = _get_family_for_user(current_user)
+    # family already fetched at start
     
     # Determine requester and recipient
     requester_email = current_user.email
@@ -352,8 +427,8 @@ async def update_change_request(
     current_user: User = Depends(get_current_user),
 ):
     """Approve or reject a change request."""
-    family, family_id = _get_family_for_user(current_user)
-    change_request_doc = _find_change_request_for_family(request_id, family_id)
+    family, family_ids = _get_family_for_user(current_user)
+    change_request_doc = _find_change_request_for_family(request_id, family_ids)
 
     if update_data.status not in ["approved", "rejected"]:
         raise HTTPException(
@@ -399,8 +474,8 @@ async def update_change_request(
                     status_code=400,
                     detail="Swap request missing swapEventId.",
                 )
-            event_doc = _find_event_for_family(change_request_doc.get("event_id"), family_id)
-            swap_event_doc = _find_event_for_family(swap_event_id, family_id)
+            event_doc = _find_event_for_family(change_request_doc.get("event_id"), family_ids)
+            swap_event_doc = _find_event_for_family(swap_event_id, family_ids)
 
             event_date = _ensure_datetime(event_doc.get("date"))
             swap_date = _ensure_datetime(swap_event_doc.get("date"))
@@ -421,7 +496,7 @@ async def update_change_request(
                     detail="Modify request missing newDate.",
                 )
             event_doc = _find_event_for_family(
-                change_request_doc.get("event_id"), family_id
+                change_request_doc.get("event_id"), family_ids
             )
             updated_date = _ensure_datetime(new_date)
             db.events.update_one(
@@ -430,7 +505,7 @@ async def update_change_request(
             )
         elif request_type == "cancel":
             event_doc = _find_event_for_family(
-                change_request_doc.get("event_id"), family_id
+                change_request_doc.get("event_id"), family_ids
             )
             db.events.delete_one({"_id": event_doc.get("_id")})
 

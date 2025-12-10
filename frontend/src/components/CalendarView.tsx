@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign, Trash2 } from 'lucide-react';
 import { calendarAPI, expensesAPI, documentsAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -168,6 +178,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [isEditingMode, setIsEditingMode] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const today = new Date().getDate();
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -442,6 +454,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   useEffect(() => {
     loadChangeRequests();
   }, [familyProfile]);
+
+  // Auto-refresh data every 5 seconds to ensure real-time sync
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadEvents();
+      loadChangeRequests();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMonth]);
 
   const loadEvents = async () => {
     setIsLoadingEvents(true);
@@ -1140,6 +1163,38 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         variant: "destructive",
       });
       return;
+    }
+
+    // Client-side conflict detection
+    const day = parsedDate.getDate();
+    // Ensure we are checking the correct month/year
+    const isSameMonth = parsedDate.getMonth() === currentMonth.getMonth() &&
+                        parsedDate.getFullYear() === currentMonth.getFullYear();
+    
+    if (isSameMonth) {
+      const dayEvents = getEventsForDay(day);
+      const isCustodyEvent = newEventType === 'custody';
+      
+      // Check for overlapping custody events
+      if (isCustodyEvent) {
+        const existingCustody = dayEvents.find(e =>
+          e.type === 'custody' &&
+          (!isEditingMode || e.id !== editingEvent?.id)
+        );
+        
+        if (existingCustody) {
+          const proceed = window.confirm(
+            `Possible Conflict: There is already a custody event for ${existingCustody.parent ? getParentDisplayName(existingCustody.parent) : 'a parent'} on this date.\n\nDo you want to proceed with adding this event?`
+          );
+          
+          if (!proceed) return;
+        }
+      }
+      
+      // Check for general schedule density (warn if > 3 events)
+      if (dayEvents.length >= 3 && (!isEditingMode || dayEvents.find(e => e.id === editingEvent?.id))) {
+         // Just a soft check, maybe don't block, but good to know logic is possible here
+      }
     }
 
     setCreatingEvent(true);
@@ -2159,14 +2214,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               <Separator />
               <div className="flex gap-2 pt-2">
                 {isEventCreator(selectedEvent) ? (
-                  // Creator can edit directly
-                  <Button
-                    onClick={() => openEditEventModal(selectedEvent)}
-                    className="flex-1"
-                  >
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit Event
-                  </Button>
+                  // Creator can edit/delete directly
+                  <div className="flex-1 flex gap-2">
+                    <Button
+                      onClick={() => openEditEventModal(selectedEvent)}
+                      className="flex-1"
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setEventToDelete(selectedEvent);
+                        setDeleteConfirmationOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ) : selectedEvent.isSwappable ? (
                   // Other parent can request change
                   <Button
@@ -2189,6 +2255,49 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={deleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the event "{eventToDelete?.title}" from the calendar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setEventToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                if (eventToDelete) {
+                  try {
+                    await calendarAPI.deleteEvent(eventToDelete.id);
+                    toast({
+                      title: "Event deleted",
+                      description: "The event has been removed from the calendar.",
+                    });
+                    await loadEvents();
+                    setShowEventDetails(false);
+                  } catch (error) {
+                    console.error("Error deleting event:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to delete event.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setDeleteConfirmationOpen(false);
+                    setEventToDelete(null);
+                  }
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Change Request Dialog */}
       <Dialog open={showChangeRequest} onOpenChange={setShowChangeRequest}>

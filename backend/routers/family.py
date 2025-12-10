@@ -481,7 +481,7 @@ async def parse_and_update_contract(
             {"$set": {"custodyAgreement": agreement_dict}}
         )
         
-        # Generate calendar events
+        # Clean up auto-generated events (we no longer generate 365 days of events)
         generate_custody_events(family_id, agreement_dict)
         
     except Exception as e:
@@ -529,9 +529,13 @@ async def upload_contract(
         file_bytes = base64.b64decode(contract.fileContent)
         
         # Start background task
+        # Pass the original string ID (user_family['id']) which is what calendar_generator expects
+        # The calendar generator will handle lookup by both id and _id
+        family_id_str = user_family.get("id") or str(user_family.get("_id"))
+        
         background_tasks.add_task(
             parse_and_update_contract,
-            user_family["id"],
+            family_id_str,
             file_bytes,
             contract.fileType,
             contract,
@@ -793,7 +797,8 @@ async def save_manual_custody(
             {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
         )
         
-        # Generate calendar events from the new agreement in background
+        # Clean up auto-generated events from the new agreement in background
+        # (We rely on frontend rendering for the schedule now, not individual event objects)
         from services.calendar_generator import generate_custody_events
         
         async def update_events_background(family_id, agreement_data, family_oid):
@@ -814,9 +819,13 @@ async def save_manual_custody(
                     }}
                 )
 
+        # Pass the original string ID (user_family['id']) which is what calendar_generator expects
+        # The calendar generator will handle lookup by both id and _id
+        family_id_str = user_family.get("id") or str(user_family.get("_id"))
+
         background_tasks.add_task(
             update_events_background,
-            user_family["id"],
+            family_id_str,
             custody_agreement.model_dump(),
             user_family["_id"]
         )
@@ -859,8 +868,13 @@ async def delete_contract(current_user: User = Depends(get_current_user)):
         )
         
         # Delete future custody events
+        # The events created by calendar_generator use family_id=user_family['id'] (UUID string)
+        # But we should check both to be safe as manual events might use OID
+        family_id_uuid = user_family.get("id")
+        family_id_oid = str(user_family.get("_id"))
+        
         db.events.delete_many({
-            "family_id": user_family["id"],
+            "family_id": {"$in": [family_id_uuid, family_id_oid]},
             "type": "custody"
         })
 

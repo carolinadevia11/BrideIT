@@ -69,7 +69,7 @@ class EmailService:
         </html>
         """
 
-    async def send_event_notification(self, recipients: List[str], action: str, event_title: str, event_date: str, performed_by_name: str):
+    async def send_event_notification(self, recipients: List[str], action: str, event_title: str, event_date: str, performed_by_name: str, is_conflict: bool = False):
         """
         Sends an email notification for event creation, update, or deletion.
         """
@@ -96,8 +96,17 @@ class EmailService:
         display_action = action_map.get(action, "Calendar Update")
         subject = f"{display_action}: {event_title}"
         
+        conflict_warning = ""
+        if is_conflict:
+            conflict_warning = """
+            <div style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffeeba;">
+                <strong>⚠️ Potential Schedule Conflict:</strong> This event overlaps with an existing custody arrangement or event.
+            </div>
+            """
+
         content = f"""
         <p><strong>{performed_by_name}</strong> has {verb_map.get(action, 'modified an event')} in the family calendar.</p>
+        {conflict_warning}
         <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0; margin-bottom: 5px;"><strong>Event:</strong> {event_title}</p>
             <p style="margin: 0;"><strong>Date:</strong> {event_date}</p>

@@ -47,6 +47,11 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}, allow404: b
     throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
 
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 };
 
@@ -348,6 +353,11 @@ export const calendarAPI = {
     return fetchWithAuth(`/api/v1/calendar/events/${eventId}`, {
       method: 'PUT',
       body: JSON.stringify(eventData),
+    });
+  },
+  deleteEvent: async (eventId: string) => {
+    return fetchWithAuth(`/api/v1/calendar/events/${eventId}`, {
+      method: 'DELETE',
     });
   },
 
