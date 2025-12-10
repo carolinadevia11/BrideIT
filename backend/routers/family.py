@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List
 import uuid
 import random
@@ -11,6 +11,7 @@ import re
 from models import Family, FamilyCreate, FamilyLink, FamilyUpdate, ContractUpload, CustodyAgreement, Child, ChildCreate, ChildUpdate, User, CustodyManualData
 from routers.auth import get_current_user
 from database import db
+from services.email_service import email_service
 
 router = APIRouter()
 
@@ -407,19 +408,14 @@ def parse_contract_with_ai(file_content: str, file_type: str):
 
 from services.calendar_generator import generate_custody_events
 
-@router.post("/api/v1/family/contract")
-async def upload_contract(contract: ContractUpload, current_user: User = Depends(get_current_user)):
-    """Upload and parse custody agreement document."""
-    # Find the user's family
-    user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
-    
-    if not user_family:
-        raise HTTPException(status_code=404, detail="Family profile not found")
-    
+async def parse_and_update_contract(
+    family_id: str,
+    file_bytes: bytes,
+    file_type: str,
+    contract_data: ContractUpload,
+    family_object_id: str
+):
     try:
-        # Decode base64 content to bytes (not text - PDFs/DOCs are binary)
-        file_bytes = base64.b64decode(contract.fileContent)
-        
         # Try to use the new DocumentParser service
         try:
             # Check if we have necessary API keys
@@ -434,7 +430,7 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
             )
             
             # Parse document (extracts text and uses AI)
-            parsed_info = await parser.parse_document(file_bytes, contract.fileType)
+            parsed_info = await parser.parse_document(file_bytes, file_type)
             
             # Map parsed data to expected format
             custody_schedule = parsed_info.get("custodySchedule", "Extracted from agreement")
@@ -444,10 +440,7 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
             
         except (ImportError, ValueError, Exception) as e:
             print(f"Warning: Advanced parsing failed, falling back to basic parsing. Error: {str(e)}")
-            # Fallback to simulation/mock data for now if real parsing fails
-            # In a real production app, we might want to fail hard, but for this demo/MVP, we want to allow uploads to proceed
-            
-            # Create a mock parsed response based on filenames or just defaults
+            # Fallback to simulation/mock data
             parsed_info = {
                 "custodySchedule": "Standard 50/50 Schedule",
                 "holidaySchedule": "Alternating Holidays",
@@ -465,32 +458,100 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
             decision_making = parsed_info["decisionMaking"]
             expense_split = parsed_info["expenseSplit"]
         
-        # Create custody agreement object (store original file for download)
+        # Create custody agreement object
         custody_agreement = CustodyAgreement(
             uploadDate=datetime.utcnow(),
-            fileName=contract.fileName,
-            fileType=contract.fileType,
-            fileContent=contract.fileContent,  # Store base64 for download
+            fileName=contract_data.fileName,
+            fileType=contract_data.fileType,
+            fileContent=contract_data.fileContent,
             custodySchedule=custody_schedule,
             holidaySchedule=holiday_schedule,
             decisionMaking=decision_making,
             expenseSplit=expense_split,
-            parsedData=parsed_info.get("parsedData", parsed_info)
+            parsedData=parsed_info.get("parsedData", parsed_info),
+            status="completed" # Add status field to CustodyAgreement model or update dictionary directly
         )
         
-        # Update family with custody agreement
+        # Update family with custody agreement and status
+        agreement_dict = custody_agreement.model_dump()
+        agreement_dict["status"] = "completed"
+        
+        db.families.update_one(
+            {"_id": family_object_id},
+            {"$set": {"custodyAgreement": agreement_dict}}
+        )
+        
+        # Generate calendar events
+        generate_custody_events(family_id, agreement_dict)
+        
+    except Exception as e:
+        print(f"Error in background parsing: {e}")
+        # Update status to failed
+        db.families.update_one(
+            {"_id": family_object_id},
+            {"$set": {
+                "custodyAgreement.status": "failed",
+                "custodyAgreement.error": str(e)
+            }}
+        )
+
+@router.post("/api/v1/family/contract")
+async def upload_contract(
+    contract: ContractUpload,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
+    """Upload and parse custody agreement document."""
+    # Find the user's family
+    user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
+    
+    if not user_family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+    
+    try:
+        # Initial placeholder agreement
+        initial_agreement = {
+            "uploadDate": datetime.utcnow(),
+            "fileName": contract.fileName,
+            "fileType": contract.fileType,
+            "fileContent": contract.fileContent,
+            "status": "processing",
+            "parsedData": None
+        }
+
+        # Update family with initial placeholder
         db.families.update_one(
             {"_id": user_family["_id"]},
-            {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
+            {"$set": {"custodyAgreement": initial_agreement}}
         )
         
-        # Generate calendar events from the new agreement
-        generate_custody_events(user_family["id"], custody_agreement.model_dump())
+        # Decode base64 content to bytes
+        file_bytes = base64.b64decode(contract.fileContent)
+        
+        # Start background task
+        background_tasks.add_task(
+            parse_and_update_contract,
+            user_family["id"],
+            file_bytes,
+            contract.fileType,
+            contract,
+            user_family["_id"]
+        )
+
+        # Send email notification
+        recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
+        user_name = f"{current_user.firstName} {current_user.lastName}"
+        
+        await email_service.send_contract_notification(
+            recipients,
+            "upload",
+            user_name
+        )
         
         return {
-            "message": "Contract uploaded and parsed successfully",
-            "custodyAgreement": custody_agreement,
-            "aiAnalysis": parsed_info.get("parsedData", parsed_info)
+            "message": "Contract upload started",
+            "status": "processing",
+            "custodyAgreement": initial_agreement
         }
         
     except ValueError as e:
@@ -498,8 +559,26 @@ async def upload_contract(contract: ContractUpload, current_user: User = Depends
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error parsing document: {str(e)}"
+            detail=f"Error initiating upload: {str(e)}"
         )
+
+@router.get("/api/v1/family/contract/status")
+async def get_contract_status(current_user: User = Depends(get_current_user)):
+    """Check status of contract processing."""
+    user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
+    
+    if not user_family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+        
+    agreement = user_family.get("custodyAgreement")
+    if not agreement:
+        return {"status": "none"}
+        
+    return {
+        "status": agreement.get("status", "completed"), # Default to completed for old records
+        "custodyAgreement": agreement,
+        "aiAnalysis": agreement.get("parsedData")
+    }
 
 @router.get("/api/v1/family/contract")
 async def get_contract(current_user: User = Depends(get_current_user)):
@@ -668,7 +747,11 @@ async def get_custody_distribution(period: str = "yearly", current_user: User = 
     }
 
 @router.post("/api/v1/family/custody-manual")
-async def save_manual_custody(data: CustodyManualData, current_user: User = Depends(get_current_user)):
+async def save_manual_custody(
+    data: CustodyManualData,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """Save manually entered custody agreement information."""
     # Find the user's family
     user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
@@ -700,7 +783,8 @@ async def save_manual_custody(data: CustodyManualData, current_user: User = Depe
                     "parent1": data.expenseParent1,
                     "parent2": data.expenseParent2
                 }
-            }
+            },
+            status="processing"
         )
         
         # Update family with custody agreement
@@ -709,12 +793,46 @@ async def save_manual_custody(data: CustodyManualData, current_user: User = Depe
             {"$set": {"custodyAgreement": custody_agreement.model_dump()}}
         )
         
-        # Generate calendar events from the new agreement
+        # Generate calendar events from the new agreement in background
         from services.calendar_generator import generate_custody_events
-        generate_custody_events(user_family["id"], custody_agreement.model_dump())
+        
+        async def update_events_background(family_id, agreement_data, family_oid):
+            try:
+                generate_custody_events(family_id, agreement_data)
+                # Update status to completed
+                db.families.update_one(
+                    {"_id": family_oid},
+                    {"$set": {"custodyAgreement.status": "completed"}}
+                )
+            except Exception as e:
+                print(f"Error generating manual custody events: {e}")
+                db.families.update_one(
+                    {"_id": family_oid},
+                    {"$set": {
+                        "custodyAgreement.status": "failed",
+                        "custodyAgreement.error": str(e)
+                    }}
+                )
+
+        background_tasks.add_task(
+            update_events_background,
+            user_family["id"],
+            custody_agreement.model_dump(),
+            user_family["_id"]
+        )
+
+        # Send email notification
+        recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
+        user_name = f"{current_user.firstName} {current_user.lastName}"
+        
+        await email_service.send_contract_notification(
+            recipients,
+            "upload",
+            user_name
+        )
         
         return {
-            "message": "Custody information saved successfully",
+            "message": "Custody information saved, generating calendar...",
             "custodyAgreement": custody_agreement
         }
         
@@ -745,6 +863,16 @@ async def delete_contract(current_user: User = Depends(get_current_user)):
             "family_id": user_family["id"],
             "type": "custody"
         })
+
+        # Send email notification
+        recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
+        user_name = f"{current_user.firstName} {current_user.lastName}"
+        
+        await email_service.send_contract_notification(
+            recipients,
+            "delete",
+            user_name
+        )
         
         return {"message": "Custody agreement and associated events deleted successfully"}
         

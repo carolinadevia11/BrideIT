@@ -76,40 +76,62 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
         setUploadProgress(50);
         setIsParsing(true);
 
-        // Simulate parsing progress
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => Math.min(prev + 5, 95));
-        }, 200);
-
         try {
-          const response = await familyAPI.uploadContract({
+          // Initial upload
+          const uploadResponse = await familyAPI.uploadContract({
             fileName: file.name,
             fileContent: base64Data,
             fileType: file.name.split('.').pop() || 'pdf'
           });
 
-          clearInterval(progressInterval);
-          setUploadProgress(100);
+          // Start polling for status
+          const pollInterval = setInterval(async () => {
+            try {
+              const statusResponse = await familyAPI.getContractStatus();
+              
+              if (statusResponse.status === 'completed') {
+                clearInterval(pollInterval);
+                setUploadProgress(100);
+                
+                // Combine upload response with status response to match expected format
+                const finalData = {
+                  ...uploadResponse,
+                  ...statusResponse,
+                  aiAnalysis: statusResponse.aiAnalysis || statusResponse.custodyAgreement?.parsedData
+                };
 
-          setParsedData(response);
-          
-          toast({
-            title: "Success!",
-            description: "Contract uploaded and parsed successfully",
-          });
+                setParsedData(finalData);
+                setIsParsing(false);
+                setIsUploading(false);
+                
+                toast({
+                  title: "Success!",
+                  description: "Contract uploaded and parsed successfully",
+                });
 
-          setTimeout(() => {
-            onComplete(response);
-          }, 2000);
+                setTimeout(() => {
+                  onComplete(finalData);
+                }, 2000);
+              } else if (statusResponse.status === 'failed') {
+                clearInterval(pollInterval);
+                throw new Error(statusResponse.custodyAgreement?.error || "Analysis failed");
+              } else {
+                // Still processing
+                setUploadProgress(prev => Math.min(prev + 2, 95));
+              }
+            } catch (error) {
+              // Ignore polling errors unless it's a hard failure
+              console.warn("Polling error:", error);
+            }
+          }, 2000); // Check every 2 seconds
+
         } catch (error) {
-          clearInterval(progressInterval);
           console.error('Error uploading contract:', error);
           toast({
             title: "Error",
             description: error instanceof Error ? error.message : "Failed to upload contract",
             variant: "destructive",
           });
-        } finally {
           setIsParsing(false);
           setIsUploading(false);
         }

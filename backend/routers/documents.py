@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Response, Query, Header, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -15,6 +15,7 @@ from routers.auth import get_current_user
 from database import db, fs
 from services.document_parser import DocumentParser
 from services.calendar_generator import generate_custody_events
+from services.email_service import email_service
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
@@ -499,6 +500,7 @@ async def get_documents(
 @router.post("/upload", response_model=dict)
 async def upload_document(
     document_data: DocumentUpload,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user)
 ):
     """Upload a new document"""
@@ -589,13 +591,33 @@ async def upload_document(
 
         # If custody agreement, parse and create events
         if document_type == "custody-agreement":
-            await create_custody_events(
+            # Set status to analyzing
+            db.documents.update_one(
+                {"id": document_id},
+                {"$set": {"status": "analyzing"}}
+            )
+            
+            background_tasks.add_task(
+                create_custody_events,
                 document_data.file_content,
                 file_type,
                 family,
-                current_user
+                current_user,
+                document_id
             )
         
+        # Send email notification
+        recipients = [family.get("parent1_email"), family.get("parent2_email")]
+        user_name = f"{current_user.firstName} {current_user.lastName}"
+        
+        await email_service.send_document_notification(
+            recipients,
+            "upload",
+            document_data.name,
+            user_name,
+            document_type
+        )
+
         return {
             "id": document_id,
             "name": document_data.name,
@@ -675,6 +697,18 @@ async def delete_document(
             ]
         })
         
+        # Send email notification
+        recipients = [family.get("parent1_email"), family.get("parent2_email")]
+        user_name = f"{current_user.firstName} {current_user.lastName}"
+        
+        await email_service.send_document_notification(
+            recipients,
+            "delete",
+            document.get("name"),
+            user_name,
+            document.get("type", "document")
+        )
+
         return {"message": "Document deleted successfully"}
         
     except HTTPException:
@@ -768,13 +802,26 @@ async def create_custody_events(
     file_content: str,
     file_type: str,
     family: dict,
-    current_user: User
+    current_user: User,
+    document_id: str
 ):
     """Parse custody agreement and create calendar events"""
     try:
         parser = DocumentParser()
         decoded_content = base64.b64decode(file_content)
         parsed_data = await parser.parse_document(decoded_content, file_type)
+
+        # Update document with analysis results
+        update_data = {
+            "ai_analysis": parsed_data,
+            "status": "analyzed_with_events" if parsed_data and parsed_data.get("custodySchedule") else "analyzed_no_events",
+            "updated_at": datetime.utcnow()
+        }
+        
+        db.documents.update_one(
+            {"id": document_id},
+            {"$set": update_data}
+        )
 
         if parsed_data and parsed_data.get("custodySchedule"):
             family_id = str(family["_id"])
@@ -784,6 +831,9 @@ async def create_custody_events(
 
     except Exception as e:
         print(f"Error creating custody events: {e}")
-        # We don't re-raise the exception to avoid failing the whole upload
-        # if calendar generation fails. This can be handled async later.
+        # Update document status to failed
+        db.documents.update_one(
+            {"id": document_id},
+            {"$set": {"status": "analysis_failed", "analysis_error": str(e)}}
+        )
 

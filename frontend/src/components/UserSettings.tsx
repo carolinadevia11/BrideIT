@@ -564,6 +564,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
         custodySchedule = `Custom schedule: ${familyProfile?.parent1?.firstName || 'Parent 1'} has custody on ${p1Days}. ${familyProfile?.parent2?.firstName || 'Parent 2'} has custody on ${p2Days}.`;
       }
 
+      // Initial save request
       const response = await familyAPI.saveManualCustody({
         custodySchedule,
         holidaySchedule: manualData.holidaySchedule || undefined,
@@ -573,6 +574,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
         expenseParent2: manualData.expenseParent2,
       });
 
+      // Immediately close modal and show success (optimistic UI)
       setCustodyAgreement(response.custodyAgreement || response);
       setShowManualEntry(false);
       
@@ -588,12 +590,32 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
       });
 
       toast({
-        title: "Success!",
-        description: "Custody information saved successfully",
+        title: "Saved!",
+        description: "Custody information saved. Calendar is updating in the background.",
       });
+      
+      setSavingManualEntry(false);
 
-      // Refresh custody distribution
-      loadCustodyDistribution(custodyViewPeriod);
+      // Poll for completion to update stats
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await familyAPI.getContractStatus();
+          if (statusResponse.status === 'completed') {
+            clearInterval(pollInterval);
+            loadCustodyDistribution(custodyViewPeriod);
+            toast({
+              title: "Calendar Updated",
+              description: "Your custody calendar is fully generated.",
+            });
+          } else if (statusResponse.status === 'failed') {
+            clearInterval(pollInterval);
+            console.error("Calendar generation failed");
+          }
+        } catch (e) {
+          console.warn("Polling error:", e);
+        }
+      }, 2000);
+
     } catch (error) {
       console.error('Error saving manual entry:', error);
       toast({
@@ -601,7 +623,6 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
         description: error instanceof Error ? error.message : "Failed to save custody information",
         variant: "destructive",
       });
-    } finally {
       setSavingManualEntry(false);
     }
   };

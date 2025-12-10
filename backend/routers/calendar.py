@@ -14,6 +14,7 @@ from models import (
 )
 from routers.auth import get_current_user
 from database import db
+from services.email_service import email_service
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
 
@@ -142,7 +143,7 @@ async def create_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new calendar event."""
-    _, family_id = _get_family_for_user(current_user)
+    family, family_id = _get_family_for_user(current_user)
 
     event_id = str(uuid.uuid4())
     event_doc = {
@@ -159,6 +160,19 @@ async def create_calendar_event(
     }
 
     db.events.insert_one(event_doc)
+
+    # Send email notification
+    recipients = [family.get("parent1_email"), family.get("parent2_email")]
+    user_name = f"{current_user.firstName} {current_user.lastName}"
+
+    await email_service.send_event_notification(
+        recipients,
+        "create",
+        event_data.title,
+        str(event_data.date),
+        user_name
+    )
+
     return _serialize_event_document(event_doc)
 
 
@@ -169,7 +183,7 @@ async def update_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Update an existing calendar event. Only the creator can edit directly."""
-    _, family_id = _get_family_for_user(current_user)
+    family, family_id = _get_family_for_user(current_user)
     event_doc = _find_event_for_family(event_id, family_id)
 
     # Only allow the creator to edit directly
@@ -192,6 +206,18 @@ async def update_calendar_event(
     db.events.update_one({"_id": event_doc.get("_id")}, {"$set": update_fields})
     event_doc.update(update_fields)
 
+    # Send email notification
+    recipients = [family.get("parent1_email"), family.get("parent2_email")]
+    user_name = f"{current_user.firstName} {current_user.lastName}"
+
+    await email_service.send_event_notification(
+        recipients,
+        "update",
+        event_data.title,
+        str(event_data.date),
+        user_name
+    )
+
     return _serialize_event_document(event_doc)
 
 
@@ -201,9 +227,22 @@ async def delete_calendar_event(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a calendar event."""
-    _, family_id = _get_family_for_user(current_user)
+    family, family_id = _get_family_for_user(current_user)
     event_doc = _find_event_for_family(event_id, family_id)
     db.events.delete_one({"_id": event_doc.get("_id")})
+
+    # Send email notification
+    recipients = [family.get("parent1_email"), family.get("parent2_email")]
+    user_name = f"{current_user.firstName} {current_user.lastName}"
+
+    await email_service.send_event_notification(
+        recipients,
+        "delete",
+        event_doc.get("title"),
+        str(event_doc.get("date")),
+        user_name
+    )
+
     return Response(status_code=204)
 
 
@@ -286,6 +325,23 @@ async def create_change_request(
         change_request_doc["newDate"] = None
 
     db.change_requests.insert_one(change_request_doc)
+
+    # Send email notification to both parents about the request
+    family, _ = _get_family_for_user(current_user)
+    
+    # Determine requester and recipient
+    requester_email = current_user.email
+    recipient_email = family.get("parent1_email") if family.get("parent2_email") == requester_email else family.get("parent2_email")
+    requester_name = f"{current_user.firstName} {current_user.lastName}"
+
+    await email_service.send_swap_request_created(
+        requester_email,
+        recipient_email,
+        requester_name,
+        event_doc.get("title"),
+        str(event_doc.get("date"))
+    )
+
     return _serialize_change_request_document(change_request_doc)
 
 
@@ -320,6 +376,17 @@ async def update_change_request(
     db.change_requests.update_one(
         {"_id": change_request_doc.get("_id")},
         {"$set": {"status": update_data.status, "resolvedBy_email": current_user.email}},
+    )
+
+    # Send email notification to both parents about the resolution
+    recipients = [family.get("parent1_email"), family.get("parent2_email")]
+    user_name = f"{current_user.firstName} {current_user.lastName}"
+
+    await email_service.send_swap_resolution_notification(
+        recipients,
+        change_request_doc.get("eventTitle"),
+        update_data.status,
+        user_name
     )
 
     # If approved, apply the requested date change

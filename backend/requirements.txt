@@ -11,3 +11,4 @@ certifi>=2024.8.30
 pdfplumber
 python-docx
 openai
+fastapi-mail

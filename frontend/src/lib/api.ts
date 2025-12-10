@@ -176,6 +176,9 @@ export const familyAPI = {
   getContract: async () => {
     return fetchWithAuth('/api/v1/family/contract');
   },
+  getContractStatus: async () => {
+    return fetchWithAuth('/api/v1/family/contract/status', {}, true);
+  },
 
   downloadContract: async () => {
     const token = getAuthToken();
