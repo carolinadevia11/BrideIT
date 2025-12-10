@@ -214,6 +214,14 @@ async def create_calendar_event(
     is_conflict = False
     if existing_events and event_data.type == "custody":
         is_conflict = True
+        # STRICT CONFLICT PREVENTION:
+        # If a custody event already exists on this date, we do NOT allow another one.
+        # This prevents accidental overwrites or duplicate custody assignments.
+        # Users should use "Swap" or "Modify" requests to change custody days.
+        raise HTTPException(
+            status_code=409,
+            detail=f"A custody event already exists on this date. Please use a Swap or Change Request to modify the schedule."
+        )
 
     await email_service.send_event_notification(
         recipients,
@@ -272,6 +280,11 @@ async def update_calendar_event(
     is_conflict = False
     if existing_events and event_data.type == "custody":
         is_conflict = True
+        # STRICT CONFLICT PREVENTION for Updates:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A custody event already exists on this date. Please use a Swap or Change Request to modify the schedule."
+        )
 
     await email_service.send_event_notification(
         recipients,
