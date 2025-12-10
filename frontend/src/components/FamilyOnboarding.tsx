@@ -463,6 +463,47 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Co-Parent Information (Optional)</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Adding your co-parent's name now helps personalize the calendar and other features before they join.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="p2-firstName">First Name</Label>
+                  <Input
+                    id="p2-firstName"
+                    value={familyData.parent2?.firstName}
+                    onChange={(e) => updateParent2('firstName', e.target.value)}
+                    placeholder="Michael"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="p2-lastName">Last Name</Label>
+                  <Input
+                    id="p2-lastName"
+                    value={familyData.parent2?.lastName}
+                    onChange={(e) => updateParent2('lastName', e.target.value)}
+                    placeholder="Smith"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label htmlFor="p2-email">Email (for invitation)</Label>
+                <Input
+                  id="p2-email"
+                  type="email"
+                  value={familyData.parent2?.email}
+                  onChange={(e) => updateParent2('email', e.target.value)}
+                  placeholder="michael@email.com"
+                  className="mt-1"
+                />
+              </div>
+            </div>
           </div>
         );
 

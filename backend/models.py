@@ -39,6 +39,8 @@ class Family(BaseModel):
     parent2_email: Optional[str] = None  # Reference to user email
     parent1_name: Optional[str] = None
     parent2_name: Optional[str] = None
+    parent1: Optional[dict] = None
+    parent2: Optional[dict] = None
     children: List[Child] = []
     custodyArrangement: Optional[str] = None
     custodyAgreement: Optional[CustodyAgreement] = None
@@ -48,6 +50,7 @@ class Family(BaseModel):
 class FamilyCreate(BaseModel):
     familyName: str
     parent1_name: str
+    parent2_name: Optional[str] = None
     parent2_email: Optional[str] = None
     custodyArrangement: Optional[str] = None
 

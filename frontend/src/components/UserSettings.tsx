@@ -555,7 +555,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
       if (manualData.scheduleType === 'week-on-week-off') {
         custodySchedule = 'Week-on/week-off alternating schedule';
       } else if (manualData.scheduleType === '2-2-3') {
-        custodySchedule = '2-2-3 schedule (2 days parent 1, 2 days parent 2, 3 days parent 1, then alternates)';
+        const p1Name = familyProfile?.parent1?.firstName || 'Parent 1';
+        const p2Name = familyProfile?.parent2?.firstName || 'Parent 2';
+        custodySchedule = `2-2-3 schedule (2 days ${p1Name}, 2 days ${p2Name}, 3 days ${p1Name}, then alternates)`;
       } else {
         const p1Days = manualData.customDays.parent1.join(', ');
         const p2Days = manualData.customDays.parent2.join(', ');

@@ -204,13 +204,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const getParentDisplayName = (role: 'mom' | 'dad'): string => {
     if (!familyProfile) {
+      // If no family profile yet, assume current user is Parent 1 (mom/primary)
+      if (role === 'mom' && currentUser?.firstName) {
+        return currentUser.firstName;
+      }
       return role === 'mom' ? 'Parent 1' : 'Parent 2';
     }
     const parent =
       role === 'mom' ? familyProfile.parent1 : familyProfile.parent2;
-    const first = parent?.firstName || (role === 'mom' ? 'Parent 1' : 'Parent 2');
-    const last = parent?.lastName || '';
-    return `${first} ${last}`.trim();
+    
+    if (parent?.firstName) {
+      return `${parent.firstName} ${parent.lastName || ''}`.trim();
+    }
+    
+    // Fallback if parent record exists but missing name (shouldn't happen with valid profile)
+    if (role === 'mom' && currentUser?.email === familyProfile.parent1?.email && currentUser?.firstName) {
+      return currentUser.firstName;
+    }
+    
+    return role === 'mom' ? 'Parent 1' : 'Parent 2';
   };
 
   const getParentEmailAddress = (role: 'mom' | 'dad'): string | undefined => {
@@ -973,7 +985,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
 
     // Week-on/week-off or alternating weeks
-    if (custodySchedule.includes('week-on') || custodySchedule.includes('week off') || 
+    if (custodySchedule.includes('week-on') || custodySchedule.includes('week off') ||
         custodySchedule.includes('alternat') || custodySchedule.includes('week-on/week-off')) {
       const referenceDate = new Date(date.getFullYear(), 0, 1); // January 1st
       const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -997,6 +1009,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       const dayName = dayNames[dayOfWeek];
       
       // Check if this day is mentioned for parent 1 or parent 2
+      // Use "parent 2" as delimiter but handle if real names are used (less robust without NLP but simple check)
       const parent1Section = custodySchedule.split('parent 2')[0] || custodySchedule;
       const parent2Section = custodySchedule.split('parent 2')[1] || '';
       
@@ -1717,10 +1730,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-gray-600 mb-3">
-                {custodyAgreement.custodySchedule.toLowerCase().includes('2-2-3') 
-                  ? '2 days parent 1 → 2 days parent 2 → 3 days parent 1, then alternates (14-day cycle)'
+                {custodyAgreement.custodySchedule.toLowerCase().includes('2-2-3')
+                  ? `2 days ${getParentDisplayName('mom')} → 2 days ${getParentDisplayName('dad')} → 3 days ${getParentDisplayName('mom')}, then alternates (14-day cycle)`
                   : custodyAgreement.custodySchedule.toLowerCase().includes('week-on') || custodyAgreement.custodySchedule.toLowerCase().includes('alternat')
-                  ? 'Parents alternate full weeks with the children'
+                  ? `${getParentDisplayName('mom')} and ${getParentDisplayName('dad')} alternate full weeks with the children`
                   : 'Schedule based on your custody agreement'}
               </p>
               <div className="flex flex-wrap gap-6 text-sm">

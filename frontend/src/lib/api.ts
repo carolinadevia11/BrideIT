@@ -95,6 +95,7 @@ export const familyAPI = {
   createFamily: async (familyData: {
     familyName: string;
     parent1_name: string;
+    parent2_name?: string;
     parent2_email?: string;
     custodyArrangement?: string;
   }) => {

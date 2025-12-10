@@ -25,6 +25,54 @@ def generate_family_code():
         if not db.families.find_one({"familyCode": code}):
             return code
 
+def _enrich_family_with_parents(family_doc: dict) -> dict:
+    """Ensure parent1 and parent2 dictionary fields are populated for frontend."""
+    # Populate parent1 if missing but have name/email
+    if not family_doc.get("parent1") and family_doc.get("parent1_email"):
+        p1_name = family_doc.get("parent1_name", "") or "Parent 1"
+        parts = p1_name.split(" ", 1)
+        first = parts[0]
+        last = parts[1] if len(parts) > 1 else ""
+        family_doc["parent1"] = {
+            "firstName": first,
+            "lastName": last,
+            "email": family_doc.get("parent1_email"),
+            "phone": "",
+            "address": "",
+            "city": "",
+            "state": "",
+            "zipCode": "",
+            "timezone": ""
+        }
+    
+    # Populate parent2 if missing but have name/email
+    if not family_doc.get("parent2"):
+        p2_name = family_doc.get("parent2_name", "")
+        p2_email = family_doc.get("parent2_email", "")
+        
+        # Only populate if we have at least a name or email
+        if p2_name or p2_email:
+            # Default name if empty but email exists
+            display_name = p2_name or "Parent 2"
+            
+            parts = display_name.split(" ", 1)
+            first = parts[0]
+            last = parts[1] if len(parts) > 1 else ""
+            
+            family_doc["parent2"] = {
+                "firstName": first,
+                "lastName": last,
+                "email": p2_email,
+                "phone": "",
+                "address": "",
+                "city": "",
+                "state": "",
+                "zipCode": "",
+                "timezone": ""
+            }
+        
+    return family_doc
+
 @router.post("/api/v1/family", response_model=Family)
 async def create_family(family_data: FamilyCreate, current_user: User = Depends(get_current_user)):
     """Create a new family profile for the current user and generate a Family Code."""
@@ -35,13 +83,52 @@ async def create_family(family_data: FamilyCreate, current_user: User = Depends(
     family_id = str(uuid.uuid4())
     family_code = generate_family_code()
     
+    # Create initial parent structure
+    p1_parts = family_data.parent1_name.split(" ", 1)
+    p1_first = p1_parts[0]
+    p1_last = p1_parts[1] if len(p1_parts) > 1 else ""
+    
+    parent1_obj = {
+        "firstName": p1_first,
+        "lastName": p1_last,
+        "email": current_user.email,
+        "phone": "",
+        "address": "",
+        "city": "",
+        "state": "",
+        "zipCode": "",
+        "timezone": ""
+    }
+
+    # Handle Parent 2 if name provided
+    parent2_obj = None
+    if family_data.parent2_name:
+        p2_parts = family_data.parent2_name.split(" ", 1)
+        p2_first = p2_parts[0]
+        p2_last = p2_parts[1] if len(p2_parts) > 1 else ""
+        
+        parent2_obj = {
+            "firstName": p2_first,
+            "lastName": p2_last,
+            "email": family_data.parent2_email or "",
+            "phone": "",
+            "address": "",
+            "city": "",
+            "state": "",
+            "zipCode": "",
+            "timezone": ""
+        }
+
     family = Family(
         id=family_id,
         familyName=family_data.familyName,
         familyCode=family_code,
         parent1_email=current_user.email,
         parent1_name=family_data.parent1_name,
+        parent1=parent1_obj,
         parent2_email=family_data.parent2_email,
+        parent2_name=family_data.parent2_name,
+        parent2=parent2_obj,
         children=[],
         custodyArrangement=family_data.custodyArrangement,
         createdAt=datetime.utcnow()
@@ -84,7 +171,7 @@ async def update_family(family_data: FamilyUpdate, current_user: User = Depends(
     )
 
     updated_family = db.families.find_one({"_id": user_family["_id"]})
-    return Family(**updated_family)
+    return Family(**_enrich_family_with_parents(updated_family))
 
 @router.post("/api/v1/family/link", response_model=Family)
 async def link_to_family(link_data: FamilyLink, current_user: User = Depends(get_current_user)):
@@ -103,6 +190,23 @@ async def link_to_family(link_data: FamilyLink, current_user: User = Depends(get
     if family.get("parent2_email"):
         raise HTTPException(status_code=400, detail="This family already has two parents linked")
     
+    # Create parent2 object
+    p2_parts = link_data.parent2_name.split(" ", 1)
+    p2_first = p2_parts[0]
+    p2_last = p2_parts[1] if len(p2_parts) > 1 else ""
+    
+    parent2_obj = {
+        "firstName": p2_first,
+        "lastName": p2_last,
+        "email": current_user.email,
+        "phone": "",
+        "address": "",
+        "city": "",
+        "state": "",
+        "zipCode": "",
+        "timezone": ""
+    }
+
     # Link the current user as parent2
     db.families.update_one(
         {"familyCode": link_data.familyCode},
@@ -110,20 +214,21 @@ async def link_to_family(link_data: FamilyLink, current_user: User = Depends(get
             "$set": {
                 "parent2_email": current_user.email,
                 "parent2_name": link_data.parent2_name,
+                "parent2": parent2_obj,
                 "linkedAt": datetime.utcnow()
             }
         }
     )
     
     updated_family = db.families.find_one({"familyCode": link_data.familyCode})
-    return Family(**updated_family)
+    return Family(**_enrich_family_with_parents(updated_family))
 
 @router.get("/api/v1/family", response_model=Family)
 async def get_family(current_user: User = Depends(get_current_user)):
     """Get the current user's family profile."""
     family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
     if family:
-        return Family(**family)
+        return Family(**_enrich_family_with_parents(family))
     
     raise HTTPException(status_code=404, detail="Family profile not found")
 

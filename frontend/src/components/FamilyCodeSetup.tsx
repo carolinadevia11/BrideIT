@@ -34,6 +34,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
   const { toast } = useToast();
   const [familyCode, setFamilyCode] = useState('');
   const [parent2Name, setParent2Name] = useState(initialParent2Name || '');
+  const [coParentName, setCoParentName] = useState('');
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
@@ -98,6 +99,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
       response = await familyAPI.createFamily({
         familyName,
         parent1_name: parent1Name,
+        parent2_name: coParentName,
         custodyArrangement: custodyArrangement || '50-50'
       });
 
@@ -262,8 +264,22 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                       </div>
                     </div>
 
-                    <Button 
-                      onClick={handleCreateFamily} 
+                    <div className="space-y-2">
+                      <Label htmlFor="coParentName" className="text-blue-900">Co-Parent's Name (Optional)</Label>
+                      <Input
+                        id="coParentName"
+                        value={coParentName}
+                        onChange={(e) => setCoParentName(e.target.value)}
+                        placeholder="e.g. Michael"
+                        className="bg-white border-blue-200 focus-visible:ring-blue-400"
+                      />
+                      <p className="text-xs text-blue-700/70">
+                        Adding their name now helps personalize the calendar before they join.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handleCreateFamily}
                       disabled={isSubmitting}
                       className="w-full h-12 text-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
