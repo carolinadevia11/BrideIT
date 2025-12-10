@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign, Trash2, Loader2 } from 'lucide-react';
 import { calendarAPI, expensesAPI, documentsAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -161,8 +161,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [generatedEmail, setGeneratedEmail] = useState<EmailNotification | null>(null);
   const [declinedRequest, setDeclinedRequest] = useState<ChangeRequest | null>(null);
   const [bridgetteAlternatives, setBridgetteAlternatives] = useState<BridgetteAlternative[]>([]);
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [isLoadingCustody, setIsLoadingCustody] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventDate, setNewEventDate] = useState(() =>
@@ -214,7 +215,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return 'dad';
   };
 
-  const getParentDisplayName = (role: 'mom' | 'dad'): string => {
+  const getParentDisplayName = (role: 'mom' | 'dad' | 'both'): string => {
+    if (role === 'both') return 'Both Parents';
+
     if (!familyProfile) {
       // If no family profile yet, assume current user is Parent 1 (mom/primary)
       if (role === 'mom' && currentUser?.firstName) {
@@ -458,16 +461,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   // Auto-refresh data every 5 seconds to ensure real-time sync
   useEffect(() => {
     const intervalId = setInterval(() => {
-      loadEvents();
-      loadChangeRequests();
+      loadEvents(true);
+      loadChangeRequests(true);
     }, 5000);
 
     return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMonth]);
 
-  const loadEvents = async () => {
-    setIsLoadingEvents(true);
+  const loadEvents = async (background = false) => {
+    if (!background) setIsLoadingEvents(true);
     try {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1; // API expects 1-12
@@ -505,14 +508,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         setEvents([]);
       }
     } finally {
-      setIsLoadingEvents(false);
+      if (!background) setIsLoadingEvents(false);
     }
   };
 
 
 
-  const loadChangeRequests = async () => {
-    setIsLoadingRequests(true);
+  const loadChangeRequests = async (background = false) => {
+    if (!background) setIsLoadingRequests(true);
     try {
       const response = await calendarAPI.getChangeRequests();
       const mapped: ChangeRequest[] = response.map((req: any) =>
@@ -531,7 +534,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         setChangeRequests([]);
       }
     } finally {
-      setIsLoadingRequests(false);
+      if (!background) setIsLoadingRequests(false);
     }
   };
 
@@ -962,6 +965,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const loadCustodyAgreement = async () => {
       if (!familyProfile) return;
       
+      setIsLoadingCustody(true);
       try {
         const agreement = await familyAPI.getContract();
         setCustodyAgreement(agreement);
@@ -973,6 +977,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         } else {
           console.error('Error loading custody agreement:', error);
         }
+      } finally {
+        setIsLoadingCustody(false);
       }
     };
 
@@ -1514,6 +1520,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Loading Banner */}
+      {(isLoadingEvents || isLoadingRequests || isLoadingCustody) && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+          <AlertDescription className="text-blue-800">
+            Syncing calendar data...
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Email History Alert */}
       {emailHistory.length > 0 && (
         <Alert className="border-[hsl(160,80%,80%)] bg-[hsl(160,80%,95%)]">
