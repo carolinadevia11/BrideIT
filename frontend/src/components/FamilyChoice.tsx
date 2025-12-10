@@ -33,7 +33,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
               Let's Set Up Your Family
             </h2>
 
-            <Card 
+            <Card
               className="border-2 border-blue-300 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onCreateNew}
             >
@@ -58,13 +58,13 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
             </Card>
 
             <Card
-              className="border-2 border-green-300 hover:border-green-500 hover:shadow-lg transition-all cursor-pointer"
+              className="border-2 border-purple-300 hover:border-purple-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onLinkExisting}
             >
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <Link2 className="w-8 h-8 text-green-600" />
+                  <div className="bg-purple-100 p-3 rounded-lg">
+                    <Link2 className="w-8 h-8 text-purple-600" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-800 mb-2">
@@ -73,7 +73,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
                     <p className="text-gray-600 mb-4">
                       My co-parent already created our family profile. I have a Family Code to link my account.
                     </p>
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
                       Enter Family Code
                     </Button>
                   </div>

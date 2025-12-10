@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft, Shield, Sparkles, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import AnimatedBridgette from './AnimatedBridgette';
@@ -146,184 +146,227 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <AnimatedBridgette
-          size="md"
-          expression={parsedData ? "celebrating" : isParsing ? "thinking" : "encouraging"}
-          animation={parsedData ? "celebrate" : isParsing ? "thinking" : "float"}
-          showSpeechBubble={true}
-          message={
-            parsedData 
-              ? "Excellent! I've analyzed your custody agreement and extracted the key terms. This will help me set up your schedules and expense splits automatically! 📋✨"
-              : isParsing
-              ? "I'm reading through your agreement and extracting all the important details... This might take a moment! 🤔📄"
-              : "Upload your custody agreement and I'll use AI to extract all the important information - custody schedules, expense splits, decision-making rules, and more! This makes setup so much easier! 🤖"
-          }
-          position="center"
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Bridgette Side */}
+          <div className="text-center lg:text-left order-first lg:order-last">
+            <AnimatedBridgette
+              size="xl"
+              expression={parsedData ? "celebrating" : isParsing ? "thinking" : "encouraging"}
+              animation={parsedData ? "celebrate" : isParsing ? "thinking" : "float"}
+              showSpeechBubble={true}
+              message={
+                parsedData 
+                  ? "Analysis complete! I've extracted the key terms from your agreement. This will help me keep your co-parenting on track automatically! 📋✨"
+                  : isParsing
+                  ? "I'm analyzing your document now... Looking for schedules, holiday rules, and expense arrangements. Almost done! 🤔📄"
+                  : "Upload your custody agreement and I'll use AI to organize everything for you. It's the easiest way to ensure we never miss a detail! 🤖"
+              }
+              position="center"
+            />
+          </div>
 
-      {!parsedData ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Custody Agreement</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                Upload your custody agreement (PDF, DOC, DOCX, or TXT). Bridge-it will use AI to extract key information like custody schedules, expense splits, and decision-making arrangements.
-              </AlertDescription>
-            </Alert>
+          {/* Upload Side */}
+          <div className="w-full">
+            {onBack && (
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="mb-4 text-gray-600 hover:text-gray-900 pl-0"
+                disabled={isUploading}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            )}
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileSelect}
-                accept=".pdf,.doc,.docx,.txt"
-                className="hidden"
-                id="file-upload"
-              />
-              
-              {!file ? (
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    PDF, DOC, DOCX, or TXT (max 10MB)
-                  </p>
-                </label>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center space-x-3">
-                    <FileText className="w-8 h-8 text-blue-500" />
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+            {!parsedData ? (
+              <Card className="w-full shadow-xl border-blue-100">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl pb-8">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                    <Scale className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <CardTitle className="text-2xl text-blue-900">Upload Custody Agreement</CardTitle>
+                  <CardDescription className="text-blue-700">
+                    Let AI organize your schedule and terms
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">Private & Secure Analysis</p>
+                      <p>Your document is analyzed securely to help setup your calendar and expenses. We protect your privacy at every step.</p>
                     </div>
+                  </div>
+
+                  <div className={`
+                    border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200
+                    ${file 
+                      ? 'border-blue-400 bg-blue-50/50' 
+                      : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
+                    }
+                  `}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileSelect}
+                      accept=".pdf,.doc,.docx,.txt"
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    
+                    {!file ? (
+                      <label htmlFor="file-upload" className="cursor-pointer block">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Upload className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-900 mb-2">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          PDF, DOC, DOCX, or TXT (max 10MB)
+                        </p>
+                      </label>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100 flex items-center gap-4">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{file.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          {!isUploading && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearFile}
+                              className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {isUploading && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-medium text-blue-700">
+                              <span>{isParsing ? 'Analyzing content...' : 'Uploading file...'}</span>
+                              <span>{Math.round(uploadProgress)}%</span>
+                            </div>
+                            <Progress value={uploadProgress} className="h-2 bg-blue-100" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    {onSkip && (
+                      <Button
+                        onClick={onSkip}
+                        variant="ghost"
+                        className="text-gray-500 hover:text-gray-700"
+                        disabled={isUploading}
+                      >
+                        Skip for now
+                      </Button>
+                    )}
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearFile}
-                      className="ml-auto"
+                      onClick={handleUpload}
+                      disabled={!file || isUploading}
+                      className="flex-1 h-12 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg transition-all"
                     >
-                      <X className="w-4 h-4" />
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          {isParsing ? 'Analyzing...' : 'Uploading...'}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Upload & Parse
+                        </>
+                      )}
                     </Button>
                   </div>
-
-                  {isUploading && (
-                    <div className="space-y-2">
-                      <Progress value={uploadProgress} className="h-2" />
-                      <p className="text-xs text-gray-600">
-                        {isParsing ? 'Analyzing document with AI...' : 'Uploading...'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex space-x-3">
-              {onBack && (
-                <Button
-                  onClick={onBack}
-                  variant="outline"
-                  disabled={isUploading}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              )}
-              <Button
-                onClick={handleUpload}
-                disabled={!file || isUploading}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isParsing ? 'Parsing...' : 'Uploading...'}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload & Parse
-                  </>
-                )}
-              </Button>
-
-              {onSkip && (
-                <Button
-                  onClick={onSkip}
-                  variant="outline"
-                  disabled={isUploading}
-                >
-                  Skip for Now
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-2 border-green-400 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-green-800">
-              <CheckCircle className="w-6 h-6 mr-2" />
-              Contract Parsed Successfully!
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                I've extracted the following key information from your custody agreement:
-              </AlertDescription>
-            </Alert>
-
-            <div className="bg-white rounded-lg p-4 space-y-3">
-              <h4 className="font-semibold text-gray-900 mb-2">Extracted Terms:</h4>
-              
-              {parsedData.aiAnalysis?.extractedTerms?.map((term: any, index: number) => (
-                <div key={index} className="flex items-start space-x-2 p-2 bg-gray-50 rounded">
-                  <FileCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{term.term}</p>
-                    <p className="text-sm text-gray-600">{term.value}</p>
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {(term.confidence * 100).toFixed(0)}% confidence
-                    </Badge>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="w-full shadow-xl border-green-200 ring-4 ring-green-50">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl pb-6">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
                   </div>
-                </div>
-              ))}
+                  <CardTitle className="text-2xl text-green-900">Analysis Complete!</CardTitle>
+                  <CardDescription className="text-green-700">
+                    We've successfully extracted key terms from your agreement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <Alert className="bg-green-50 border-green-200">
+                    <Sparkles className="w-4 h-4 text-green-600" />
+                    <AlertTitle className="text-green-800 font-semibold">AI Summary</AlertTitle>
+                    <AlertDescription className="text-green-700">
+                      Here are the key details extracted. These will be used to configure your dashboard automatically.
+                    </AlertDescription>
+                  </Alert>
 
-              {parsedData.custodyAgreement?.expenseSplit && (
-                <div className="flex items-start space-x-2 p-2 bg-gray-50 rounded">
-                  <FileCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Expense Split</p>
-                    <p className="text-sm text-gray-600">
-                      {parsedData.custodyAgreement.expenseSplit.ratio} 
-                      {' '}(Parent 1: {parsedData.custodyAgreement.expenseSplit.parent1}%, 
-                      Parent 2: {parsedData.custodyAgreement.expenseSplit.parent2}%)
-                    </p>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {parsedData.aiAnalysis?.extractedTerms?.map((term: any, index: number) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
+                        <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FileCheck className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">{term.term}</p>
+                          <p className="text-sm text-gray-600 mt-1">{term.value}</p>
+                          <Badge variant="secondary" className="mt-2 text-xs bg-gray-100 text-gray-600 font-normal">
+                            {(term.confidence * 100).toFixed(0)}% confidence
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+
+                    {parsedData.custodyAgreement?.expenseSplit && (
+                      <div className="flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
+                        <div className="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Scale className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">Expense Split</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {parsedData.custodyAgreement.expenseSplit.ratio} Split
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                              Parent 1: {parsedData.custodyAgreement.expenseSplit.parent1}%
+                            </Badge>
+                            <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                              Parent 2: {parsedData.custodyAgreement.expenseSplit.parent2}%
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
 
-            <p className="text-center text-sm text-gray-600">
-              Continuing in 2 seconds...
-            </p>
-          </CardContent>
-        </Card>
-      )}
+                  <p className="text-center text-sm text-gray-500 animate-pulse">
+                    Redirecting to next step...
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default ContractUpload;
-
-
