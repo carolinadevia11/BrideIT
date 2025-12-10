@@ -75,66 +75,79 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader>
+        <CardHeader className="relative px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
           <Button
             variant="ghost"
             onClick={() => setShowExplanation(true)}
-            className="absolute left-4 top-4"
+            size="sm"
+            className="absolute left-2 sm:left-4 top-3 sm:top-4 text-xs sm:text-sm px-2 sm:px-4"
           >
             ← Back
           </Button>
-          <CardTitle className="text-2xl font-bold text-gray-800 text-center">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800 text-center pt-6 sm:pt-0">
             Create Your Bridge Account
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
               <Input
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Sarah"
+                placeholder="First name"
+                autoComplete="given-name"
+                className="h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName" className="text-sm sm:text-base">Last Name</Label>
               <Input
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Johnson"
+                placeholder="Last name"
+                autoComplete="family-name"
+                className="h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="sarah@email.com"
+              placeholder="Enter your email address"
+              autoComplete="email"
+              className="h-10 sm:h-11 text-sm sm:text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="********"
+              placeholder="Create a secure password"
+              autoComplete="new-password"
+              className="h-10 sm:h-11 text-sm sm:text-base"
             />
           </div>
-          <Button onClick={handleSignup} disabled={isSubmitting} className="w-full">
+          <Button 
+            onClick={handleSignup} 
+            disabled={isSubmitting} 
+            className="w-full h-10 sm:h-11 text-sm sm:text-base"
+          >
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </Button>
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Already have an account?{' '}
               <Link to="/login" className="font-medium text-blue-600 hover:underline">
                 Log in

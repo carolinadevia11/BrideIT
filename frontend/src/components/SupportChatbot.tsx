@@ -161,8 +161,8 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/10">
-      <div className="mb-6 mr-6 w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/10 sm:bg-black/20">
+      <div className="mb-0 sm:mb-6 mr-0 sm:mr-6 w-full sm:w-full sm:max-w-md h-full sm:h-auto rounded-t-2xl sm:rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col">
         <div className="border-b border-slate-100 px-5 py-3 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
           </div>
         )}
 
-        <div className="max-h-[420px] space-y-3 overflow-y-auto px-5 py-4">
+        <div className="max-h-[calc(100vh-280px)] sm:max-h-[420px] space-y-3 overflow-y-auto px-4 sm:px-5 py-3 sm:py-4 flex-1">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -239,13 +239,13 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
           )}
         </div>
 
-        <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="border-t border-slate-100 px-4 sm:px-5 py-3 sm:py-4 dark:border-slate-800">
           {error && <p className="mb-2 text-xs text-rose-500">{error}</p>}
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Share how you're feeling or what happened…"
-            className="mb-3 resize-none"
+            className="mb-2 sm:mb-3 resize-none text-sm sm:text-base"
             rows={3}
             disabled={!sessionReady || isThinking}
             onKeyDown={(event) => {
@@ -255,14 +255,14 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
               }
             }}
           />
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1">
-              <Shield className="h-3.5 w-3.5" />
-              <span>Conversations stay private on your device.</span>
+              <Shield className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="text-[10px] sm:text-xs">Conversations stay private on your device.</span>
             </div>
-            <Button size="sm" onClick={() => handleSend()} disabled={!draft.trim() || !sessionReady || isThinking}>
+            <Button size="sm" onClick={() => handleSend()} disabled={!draft.trim() || !sessionReady || isThinking} className="w-full sm:w-auto text-xs sm:text-sm">
               Send
-              <Send className="ml-2 h-4 w-4" />
+              <Send className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

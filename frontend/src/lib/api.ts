@@ -5,6 +5,16 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('authToken');
 };
 
+// Helper function to handle 401 redirects
+const handleUnauthorized = () => {
+  // Clear auth token
+  localStorage.removeItem('authToken');
+  // Redirect to login page
+  if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+    window.location.href = '/login';
+  }
+};
+
 // Helper function to make authenticated requests
 const fetchWithAuth = async (url: string, options: RequestInit = {}, allow404: boolean = false) => {
   const token = getAuthToken();
@@ -23,6 +33,12 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}, allow404: b
   });
 
   if (!response.ok) {
+    // Handle 401 Unauthorized - token expired or invalid
+    if (response.status === 401) {
+      handleUnauthorized();
+      throw new Error('Session expired. Please login again.');
+    }
+    
     // For 404 errors on family/activity endpoints, return null instead of throwing
     if (allow404 && response.status === 404) {
       return null;
@@ -63,6 +79,11 @@ export const authAPI = {
     });
 
     if (!response.ok) {
+      // Handle 401 Unauthorized
+      if (response.status === 401) {
+        handleUnauthorized();
+        throw new Error("Invalid email or password");
+      }
       const error = await response
         .json()
         .catch(() => ({ detail: "Login failed" }));
@@ -524,6 +545,11 @@ export const documentsAPI = {
     });
 
     if (!response.ok) {
+      // Handle 401 Unauthorized
+      if (response.status === 401) {
+        handleUnauthorized();
+        throw new Error('Session expired. Please login again.');
+      }
       throw new Error('Failed to fetch document');
     }
 

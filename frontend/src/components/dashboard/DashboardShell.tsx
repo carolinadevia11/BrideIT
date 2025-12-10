@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   Baby,
   Bell,
   CircleHelp,
+  HelpCircle,
   LucideIcon,
   LogOut,
   MessageSquarePlus,
@@ -30,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type DashboardNavItem = {
@@ -50,6 +52,7 @@ type DashboardShellProps = {
   onOpenChildren?: () => void;
   onCreateQuickAction?: () => void;
   onOpenMessages?: () => void;
+  onStartTour?: () => void;
   currentUser?: { firstName: string; lastName: string; email: string } | null;
   heroSubtitle?: string;
 };
@@ -109,6 +112,7 @@ const DashboardShell = ({
   onOpenChildren,
   onCreateQuickAction,
   onOpenMessages,
+  onStartTour,
   currentUser,
   heroSubtitle = "Fair & balanced co-parenting",
 }: DashboardShellProps) => {
@@ -121,26 +125,57 @@ const DashboardShell = ({
     "B"
     : "B";
 
+  // Control sidebar state based on screen size
+  // 769px-1093px: collapsed (hamburger)
+  // Above 1093px: expanded
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 1093;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      // Above 1093px, sidebar should be open
+      if (width > 1093) {
+        setSidebarOpen(true);
+      } else if (width >= 769) {
+        // 769px-1093px, sidebar should be closed (hamburger)
+        setSidebarOpen(false);
+      }
+      // Below 769px, keep current state (mobile behavior)
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Listen for resize events
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <SidebarProvider defaultOpen>
-      <div className="bg-slate-50 text-slate-900">
-        <Sidebar className="bg-white text-slate-700 border-r border-slate-200 shadow-sm">
-          <SidebarHeader className="px-4 pt-5 pb-3">
-            <div className="flex items-center gap-3">
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <div className="bg-slate-50 text-slate-900 overflow-x-hidden">
+        <Sidebar className="bg-white text-slate-700 border-r border-slate-200 shadow-sm flex flex-col h-full">
+          <SidebarHeader className="px-3 sm:px-4 pt-4 sm:pt-5 pb-2 sm:pb-3 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3">
               <img
                 src="/bridgette-avatar.png"
                 alt="Bridge-it"
-                className="h-12 w-12 rounded-full bg-white/10 p-1 object-contain"
+                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 p-1 object-contain flex-shrink-0"
               />
-              <div>
-                <p className="text-base font-semibold tracking-tight text-slate-900">
+              <div className="min-w-0">
+                <p className="text-sm sm:text-base font-semibold tracking-tight text-slate-900 truncate">
                   Bridge-it
                 </p>
-                <p className="text-xs text-slate-500">{heroSubtitle}</p>
+                <p className="text-[10px] sm:text-xs text-slate-500 truncate">{heroSubtitle}</p>
               </div>
             </div>
           </SidebarHeader>
-          <SidebarContent className="gap-6">
+          <SidebarContent className="gap-6 flex-1 min-h-0 overflow-y-auto">
             <DashboardNavigation
               navItems={navItems}
               activeItem={activeItem}
@@ -173,7 +208,7 @@ const DashboardShell = ({
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="p-3 border-t border-slate-100">
+          <SidebarFooter className="p-3 border-t border-slate-100 flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
@@ -199,66 +234,88 @@ const DashboardShell = ({
         </Sidebar>
       </div>
       <SidebarInset className="bg-slate-50">
-        <header className="flex h-16 items-center border-b border-slate-200 bg-white px-4 md:px-8">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="text-slate-600 hover:text-slate-900" />
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+        <header className="flex h-14 sm:h-16 items-center border-b border-slate-200 bg-white px-3 sm:px-4 md:px-8">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <SidebarTrigger className="text-slate-600 hover:text-slate-900 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-slate-400 truncate">
                 Bridge-it workspace
               </p>
-              <h1 className="text-lg font-semibold text-slate-900">
+              <h1 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
                 {activeLabel}
               </h1>
             </div>
           </div>
-          <div className="ml-6 hidden flex-1 items-center gap-2 rounded-xl bg-slate-100 px-3 py-1 md:flex">
+          <div className="ml-2 sm:ml-6 hidden flex-1 items-center gap-2 rounded-xl bg-slate-100 px-3 py-1 lg:flex max-w-md">
             <Input
               placeholder="Search calendar, expenses, or documents"
               className="h-8 border-none bg-transparent text-sm shadow-none focus-visible:ring-0"
             />
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {onStartTour && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      data-tour-button
+                      className="text-slate-600 hover:text-blue-700 h-8 w-8 sm:h-9 sm:w-9"
+                      onClick={() => onStartTour()}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      <span className="sr-only">Take a Tour</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Take a Tour</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <Button
               variant="outline"
               size="sm"
-              className="hidden md:inline-flex border-slate-200 text-slate-700"
+              className="hidden lg:inline-flex border-slate-200 text-slate-700 text-xs sm:text-sm"
               onClick={() => onCreateQuickAction?.()}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Quick add
+              <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xl:inline">Quick add</span>
             </Button>
             {onOpenChildren && (
               <Button
                 variant="outline"
                 size="sm"
-                className="border-green-200 text-green-700"
+                className="border-green-200 text-green-700 text-xs sm:text-sm px-2 sm:px-3"
                 onClick={onOpenChildren}
               >
-                <Baby className="mr-2 h-4 w-4" />
-                Manage kids
+                <Baby className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Manage kids</span>
+                <span className="sm:hidden">Kids</span>
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="text-slate-600"
+              className="text-slate-600 h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => onOpenMessages?.()}
             >
               <Bell className="h-4 w-4" />
               <span className="sr-only">Notifications</span>
             </Button>
             <Avatar
-              className="h-9 w-9 border border-slate-100 cursor-pointer hover:ring-2 hover:ring-slate-300 transition-all"
+              className="h-8 w-8 sm:h-9 sm:w-9 border border-slate-100 cursor-pointer hover:ring-2 hover:ring-slate-300 transition-all flex-shrink-0"
               onClick={onOpenSettings}
             >
-              <AvatarFallback className="bg-slate-900 text-white text-sm">
+              <AvatarFallback className="bg-slate-900 text-white text-xs sm:text-sm">
                 {initials.toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-6 md:px-8">
-          <div className="mx-auto w-full max-w-6xl space-y-6">{children}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 px-3 sm:px-4 py-4 sm:py-6 md:px-8">
+          <div className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6">{children}</div>
         </div>
       </SidebarInset>
     </SidebarProvider>

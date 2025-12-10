@@ -610,7 +610,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="w-full">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-slate-100 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-slate-100 p-0.5 sm:p-1 rounded-lg overflow-x-auto">
             <TabsTrigger
               value="profile"
               className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
@@ -678,9 +678,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
                     <Input
                       id="firstName"
                       value={settings.profile.firstName}

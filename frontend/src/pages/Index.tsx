@@ -23,6 +23,7 @@ import UserSettings from '@/components/UserSettings';
 import FamilyOnboarding from '@/components/FamilyOnboarding';
 import ChildManagement from '@/components/ChildManagement';
 import RecentActivity from '@/components/RecentActivity';
+import ProductTour from '@/components/ProductTour';
 import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
 import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI } from '@/lib/api';
@@ -127,6 +128,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [showChildManagement, setShowChildManagement] = useState(false);
   const [showSupportChatbot, setShowSupportChatbot] = useState(false);
   const [isFirstTime, setIsFirstTime] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const [familyProfile, setFamilyProfile] = useState<FamilyProfile | null>(null);
   const [familyCodeMode, setFamilyCodeMode] = useState<'create' | 'join'>('create');
   const [tempFamilyData, setTempFamilyData] = useState<{
@@ -328,6 +330,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           };
 
           setCurrentUser(normalizedUser);
+          
+          // Check if user needs to see the tour (tourCompleted is false or undefined)
+          const needsTour = userProfile.tourCompleted === false || userProfile.tourCompleted === undefined;
 
           if (userProfile.role === 'admin') {
             setFamilyProfile(null);
@@ -387,6 +392,14 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
               // If family profile exists, clear onboarding state
               localStorage.removeItem('onboardingState');
+              
+              // Show tour if user hasn't completed it and has a family profile (onboarding complete)
+              if (needsTour && !showOnboarding) {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                  setShowTour(true);
+                }, 500);
+              }
             } else {
               setFamilyProfile(null);
             }
@@ -1056,6 +1069,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       onOpenChildren={familyProfile ? () => setShowChildManagement(true) : undefined}
       onCreateQuickAction={handleQuickAdd}
       onOpenMessages={handleOpenMessages}
+      onStartTour={() => setShowTour(true)}
       currentUser={currentUser}
       heroSubtitle={familyProfile?.familyName || 'Fair & Balanced Co-Parenting'}
     >
@@ -1183,72 +1197,97 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
         }
        `}</style>
 
-        <div className="space-y-6">
-          <Tabs value={activeTab} onValueChange={changeTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 bg-white rounded-xl shadow-sm p-1 border-2 border-gray-200">
-              <TabsTrigger value="dashboard" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white">
-                <Calendar className="w-4 h-4" />
-                <span className="hidden sm:inline">Calendar</span>
-              </TabsTrigger>
-              <TabsTrigger value="messages" className="flex items-center space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black">
-                <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">Messages</span>
-              </TabsTrigger>
-              <TabsTrigger value="expenses" className="flex items-center space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white">
-                <DollarSign className="w-4 h-4" />
-                <span className="hidden sm:inline">Expenses</span>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white">
-                <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">Documents</span>
-              </TabsTrigger>
-              <TabsTrigger value="resources" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white">
-                <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Resources</span>
-              </TabsTrigger>
-            </TabsList>
+        <div className="space-y-4 sm:space-y-6">
+          <Tabs value={activeTab} onValueChange={changeTab} className="space-y-4 sm:space-y-6">
+            <div className="w-full overflow-hidden sm:overflow-visible">
+              <TabsList className="grid w-full grid-cols-6 bg-white rounded-lg sm:rounded-xl shadow-sm p-0.5 sm:p-0.5 lg:p-1 border-2 border-gray-200 h-auto lg:min-w-max" data-tour="navigation-tabs">
+                <TabsTrigger 
+                  value="dashboard" 
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <Home className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="calendar" 
+                  data-tour="calendar-tab"
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-green data-[state=active]:text-white px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Calendar</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="messages" 
+                  data-tour="messages-tab"
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <MessageSquare className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Messages</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="expenses" 
+                  data-tour="expenses-tab"
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-red data-[state=active]:text-white px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <DollarSign className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Expenses</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="documents" 
+                  data-tour="documents-tab"
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-gray-600 data-[state=active]:text-white px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Documents</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="resources" 
+                  data-tour="resources-tab"
+                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                >
+                  <BookOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <span className="truncate">Resources</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <TabsContent value="dashboard" className="space-y-6">
-              <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 pr-6 speech-bubble">
-                      <h2 className="text-2xl font-bold mb-3 text-bridge-black">
+            <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
+              <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden" data-tour="dashboard-welcome">
+                <CardContent className="p-3 sm:p-5">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 speech-bubble">
+                      <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-bridge-black">
                         Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
                       </h2>
-                      <p className="text-bridge-black mb-4">
+                      <p className="text-xs sm:text-sm text-bridge-black mb-3 sm:mb-4">
                         Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
                         {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
                         {" "}Don't worry - I'm here to help keep everything organized and balanced!
                       </p>
                       {familyProfile && familyProfile.children.length > 0 && (
-                        <div className="bg-white/20 rounded-lg p-3 mb-4">
-                          <p className="text-bridge-black text-sm font-medium mb-2">
+                        <div className="bg-white/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                          <p className="text-bridge-black text-xs sm:text-sm font-medium mb-2">
                             👶 Your children:
                           </p>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
                             {familyProfile.children.map((child) => (
-                              <span key={child.id} className="bg-white/30 px-3 py-1 rounded-full text-sm text-bridge-black">
+                              <span key={child.id} className="bg-white/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm text-bridge-black">
                                 {child.firstName}, {child.age}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      <div className="bg-white/20 rounded-lg p-3 mb-4">
-                        <p className="text-bridge-black text-sm font-medium mb-2">
+                      <div className="bg-white/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                        <p className="text-bridge-black text-xs sm:text-sm font-medium mb-2">
                           📋 Quick items for your attention:
                         </p>
-                        <ul className="text-bridge-black text-sm space-y-1">
+                        <ul className="text-bridge-black text-xs sm:text-sm space-y-1">
                           {dashboardMetricsLoaded ? (
                             <>
                               {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
                                 dashboardMetrics.pendingExpenseDetails.map((expense) => (
-                                  <li key={expense.id}>
+                                  <li key={expense.id} className="break-words">
                                     • {expense.description}
                                     {typeof expense.amount === 'number' && (
                                       <> (${expense.amount.toFixed(2)})</>
@@ -1262,7 +1301,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                                 <li>• No expenses need your review right now 🎉</li>
                               )}
                               {dashboardMetrics.upcomingEventDetails.length > 0 && (
-                                <li key="upcoming-event">
+                                <li key="upcoming-event" className="break-words">
                                   • Next event:{' '}
                                   {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
                                   {dashboardMetrics.upcomingEventDetails[0].dateLabel}
@@ -1276,7 +1315,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                       </div>
                       <Button
                         onClick={() => changeTab('expenses')}
-                        className="bg-bridge-red hover:bg-red-600 text-white font-medium"
+                        className="bg-bridge-red hover:bg-red-600 text-white font-medium text-sm sm:text-base w-full sm:w-auto"
                       >
                         Review Now
                       </Button>
@@ -1287,17 +1326,17 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
               {!familyProfileLoading && !familyProfile && (
                 <Card className="border-2 border-yellow-200 bg-yellow-50">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
-                        <p className="text-bridge-black text-sm">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-base font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
+                        <p className="text-bridge-black text-xs sm:text-sm">
                           Add information about your family to get personalized organization and support
                         </p>
                       </div>
                       <Button
                         onClick={() => setShowFamilyChoice(true)}
-                        className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400"
+                        className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400 text-sm sm:text-base w-full sm:w-auto"
                       >
                         <Users className="w-4 h-4 mr-2" />
                         Set Up Family Profile
@@ -1307,7 +1346,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </Card>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <ProgressBar
                   progress={85}
                   title="Co-parenting Balance"
@@ -1322,9 +1361,9 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 />
               </div>
 
-              <div>
-                <h3 className="text-xl font-bold text-bridge-black mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div data-tour="quick-actions">
+                <h3 className="text-base sm:text-lg font-bold text-bridge-black mb-3 sm:mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <QuickActionCard
                     title="Schedule Event"
                     description="Add to shared calendar"
@@ -1359,17 +1398,19 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </div>
               </div>
 
-              <RecentActivity
-                onNavigateToExpenses={() => changeTab('expenses')}
-                onNavigateToCalendar={() => changeTab('calendar')}
-                onNavigateToMessages={() => changeTab('messages')}
-              />
+              <div data-tour="recent-activity">
+                <RecentActivity
+                  onNavigateToExpenses={() => changeTab('expenses')}
+                  onNavigateToCalendar={() => changeTab('calendar')}
+                  onNavigateToMessages={() => changeTab('messages')}
+                />
+              </div>
 
               <Card className="border-2 border-bridge-blue bg-blue-50">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-5">
                   <div>
-                    <h3 className="font-semibold text-bridge-black mb-2">⚖️ Daily Balance Tip</h3>
-                    <p className="text-bridge-black text-sm mb-3">
+                    <h3 className="font-semibold text-sm sm:text-base text-bridge-black mb-2">⚖️ Daily Balance Tip</h3>
+                    <p className="text-bridge-black text-xs sm:text-sm mb-3">
                       Remember, fair doesn't always mean equal. Consider each parent's circumstances
                       when making decisions. Focus on what's best for your children's wellbeing.
                     </p>
@@ -1410,7 +1451,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               <EducationalResources currentUserName={currentUser?.firstName} />
             </TabsContent>
           </Tabs>
-          <div className="fixed bottom-6 right-6 hidden md:block">
+          <div className="fixed bottom-6 right-6 hidden md:block" data-tour="support-chatbot">
             <button
               className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
               onClick={() => setShowSupportChatbot(true)}
@@ -1428,6 +1469,18 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           isOpen={showSupportChatbot}
           onClose={() => setShowSupportChatbot(false)}
           parentName={currentUser?.firstName}
+        />
+        <ProductTour
+          run={showTour}
+          onComplete={async () => {
+            setShowTour(false);
+            // Update user's tourCompleted status
+            try {
+              await authAPI.updateUserProfile({ tourCompleted: true });
+            } catch (error) {
+              console.error('Error updating tour completion status:', error);
+            }
+          }}
         />
       </>
     </DashboardShell>

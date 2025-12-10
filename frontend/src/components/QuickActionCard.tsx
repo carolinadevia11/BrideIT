@@ -33,7 +33,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`relative w-full p-6 rounded-2xl ${colorClasses[color]} ${textColor} shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-left group`}
+      className={`relative w-full p-4 sm:p-6 rounded-xl sm:rounded-2xl ${colorClasses[color]} ${textColor} shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-left group`}
     >
       {badge && (
         <div className="absolute -top-2 -right-2 bg-bridge-red text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
@@ -43,10 +43,10 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
       
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-semibold text-lg mb-1">{title}</h3>
-          <p className={`${color === 'yellow' ? 'text-gray-800' : 'text-white/90'} text-sm`}>{description}</p>
+          <h3 className="font-semibold text-base sm:text-lg mb-1">{title}</h3>
+          <p className={`${color === 'yellow' ? 'text-gray-800' : 'text-white/90'} text-xs sm:text-sm`}>{description}</p>
         </div>
-        <Icon className={`w-8 h-8 ${color === 'yellow' ? 'text-gray-800' : 'text-white/90'} group-hover:scale-110 transition-transform duration-200`} />
+        <Icon className={`w-7 h-7 sm:w-8 sm:h-8 ${color === 'yellow' ? 'text-gray-800' : 'text-white/90'} group-hover:scale-110 transition-transform duration-200`} />
       </div>
       
       {urgent && (

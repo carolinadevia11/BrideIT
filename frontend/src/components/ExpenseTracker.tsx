@@ -366,16 +366,16 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total This Month</CardTitle>
+          <CardHeader className="pb-2 p-4 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Total This Month</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">
               {formatCurrency(summary?.totalAmount || 0)}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Across all categories</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Across all categories</p>
           </CardContent>
         </Card>
 
@@ -430,22 +430,22 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
                   Add Expense
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
                 <DialogHeader>
-                  <DialogTitle>Add New Expense</DialogTitle>
+                  <DialogTitle className="text-lg sm:text-xl">Add New Expense</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 mt-4">
+                <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
                   <div>
-                    <Label htmlFor="description">Description *</Label>
+                    <Label htmlFor="description" className="text-sm sm:text-base">Description *</Label>
                     <Input
                       id="description"
                       value={newExpense.description}
                       onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
                       placeholder="e.g., Soccer cleats and uniform"
-                      className="mt-1"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label htmlFor="amount">Amount ($) *</Label>
                       <Input

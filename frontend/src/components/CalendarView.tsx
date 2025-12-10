@@ -1575,19 +1575,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
 
         {/* Day Names */}
-        <div className="grid grid-cols-7 gap-2 mb-4">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 sm:mb-4">
           {dayNames.map(day => (
-            <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+            <div key={day} className="text-center text-xs sm:text-sm font-medium text-gray-500 py-1.5 sm:py-2">
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2 auto-rows-fr">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 auto-rows-fr">
           {getDaysInMonth().map((day, index) => {
             if (day === null) {
-              return <div key={index} className="min-h-[120px]"></div>;
+              return <div key={index} className="min-h-[80px] sm:min-h-[120px]"></div>;
             }
 
             const dayEvents = getEventsForDay(day);
@@ -1647,28 +1647,30 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             return (
               <div
                 key={day}
-                className={`min-h-[120px] p-1.5 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex flex-col ${dayBackgroundClass} ${
+                className={`min-h-[85px] sm:min-h-[120px] p-1.5 sm:p-2 border border-gray-200 sm:border-gray-300 rounded-md sm:rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all cursor-pointer flex flex-col ${dayBackgroundClass} ${
                   pendingRequests.length > 0 ? 'ring-2 ring-[hsl(45,100%,80%)]' : ''
-                }`}
+                } ${isToday ? 'ring-2 ring-[hsl(217,92%,39%)] shadow-md' : ''}`}
                 onClick={() =>
                   openCreateEventModal(
                     new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
                   )
                 }
               >
-                <div className={`text-xs font-semibold mb-1 flex items-center justify-between flex-shrink-0 ${
+                <div className={`text-xs sm:text-sm font-semibold mb-1 sm:mb-1.5 flex items-center justify-between flex-shrink-0 ${
                   isToday ? 'text-[hsl(217,92%,39%)]' : 'text-gray-700'
                 }`}>
                   <span className="flex items-center gap-1">
-                    {day}
-                    {isToday && <span className="text-[10px] font-normal">Today</span>}
+                    <span className={`${isToday ? 'bg-[hsl(217,92%,39%)] text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-bold' : ''}`}>
+                      {day}
+                    </span>
+                    {isToday && <span className="text-[10px] sm:text-xs font-normal text-[hsl(217,92%,39%)] hidden sm:inline">Today</span>}
                   </span>
                   {pendingRequests.length > 0 && (
-                    <Clock className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 flex-shrink-0" />
                   )}
                 </div>
                 
-                <div className="flex-1 overflow-hidden space-y-0.5">
+                <div className="flex-1 overflow-hidden space-y-1 min-h-0">
                   {allItems.map((item) => {
                     if (item.type === 'event') {
                       const event = item.data as CalendarEvent;
@@ -1679,14 +1681,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                             eventObj.stopPropagation();
                             handleEventClick(event);
                           }}
-                          className={`text-[10px] px-1.5 py-0.5 rounded border ${eventColors[event.type]} truncate cursor-pointer hover:opacity-80 ${
+                          className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 sm:py-1.5 rounded-md border ${eventColors[event.type]} truncate cursor-pointer hover:opacity-90 hover:shadow-sm transition-all ${
                             pendingRequests.some(r => r.originalEvent.id === event.id) ? 'ring-1 ring-orange-300' : ''
                           }`}
                           title={event.title}
                         >
-                          <span className="truncate block">{event.title}</span>
+                          <span className="truncate block font-medium">{event.title}</span>
                           {event.hasTime && (
-                            <span className="text-[9px] opacity-75 block truncate">
+                            <span className="text-[9px] sm:text-[10px] opacity-75 block truncate mt-0.5">
                               {formatTimeOnly(event.fullDate)}
                             </span>
                           )}
@@ -1699,7 +1701,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   {totalRemaining > 0 && (
                     <div 
                       onClick={(e) => e.stopPropagation()}
-                      className="text-[9px] text-gray-500 px-1.5 py-0.5 font-medium"
+                      className="text-[9px] sm:text-[10px] text-gray-500 px-1.5 sm:px-2 py-1 font-medium bg-gray-100 rounded-md"
                       title={`${remainingEvents} events`}
                     >
                       +{totalRemaining} more
@@ -1715,11 +1717,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="mt-6 space-y-3">
           {/* Custody Schedule Legend */}
           {custodyAgreement?.custodySchedule ? (
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
-              <div className="font-bold text-gray-800 text-base mb-3 flex items-center gap-2 flex-wrap">
+            <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
+              <div className="font-bold text-gray-800 text-sm sm:text-base mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <span className="text-blue-600">📅</span>
                 <span>Custody Schedule:</span>
-                <span className="text-sm font-semibold text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                <span className="text-xs sm:text-sm font-semibold text-blue-700 bg-blue-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                   {custodyAgreement.custodySchedule.toLowerCase().includes('2-2-3') || custodyAgreement.custodySchedule.toLowerCase().includes('two-two-three') 
                     ? '2-2-3 Schedule'
                     : custodyAgreement.custodySchedule.toLowerCase().includes('week-on') || custodyAgreement.custodySchedule.toLowerCase().includes('week off') || custodyAgreement.custodySchedule.toLowerCase().includes('alternat')
@@ -1729,40 +1731,40 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     : custodyAgreement.custodySchedule}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 mb-3">
+              <p className="text-xs text-gray-600 mb-2 sm:mb-3">
                 {custodyAgreement.custodySchedule.toLowerCase().includes('2-2-3')
                   ? `2 days ${getParentDisplayName('mom')} → 2 days ${getParentDisplayName('dad')} → 3 days ${getParentDisplayName('mom')}, then alternates (14-day cycle)`
                   : custodyAgreement.custodySchedule.toLowerCase().includes('week-on') || custodyAgreement.custodySchedule.toLowerCase().includes('alternat')
                   ? `${getParentDisplayName('mom')} and ${getParentDisplayName('dad')} alternate full weeks with the children`
                   : 'Schedule based on your custody agreement'}
               </p>
-              <div className="flex flex-wrap gap-6 text-sm">
+              <div className="flex flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm">
                 <div className="flex items-center">
-                  <div className="w-6 h-6 bg-[hsl(214,100%,96%)] border-2 border-[hsl(214,100%,21%)] rounded mr-2"></div>
+                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-[hsl(214,100%,96%)] border-2 border-[hsl(214,100%,21%)] rounded mr-1.5 sm:mr-2"></div>
                   <span className="font-medium">{getParentDisplayName('mom')} Days</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-6 h-6 bg-[hsl(47,100%,96%)] border-2 border-[hsl(47,100%,50%)] rounded mr-2"></div>
+                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-[hsl(47,100%,96%)] border-2 border-[hsl(47,100%,50%)] rounded mr-1.5 sm:mr-2"></div>
                   <span className="font-medium">{getParentDisplayName('dad')} Days</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-6 h-6 bg-[hsl(160,80%,98%)] border-2 border-[hsl(160,80%,70%)] rounded mr-2"></div>
+                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-[hsl(160,80%,98%)] border-2 border-[hsl(160,80%,70%)] rounded mr-1.5 sm:mr-2"></div>
                   <span className="font-medium">Both Parents</span>
                 </div>
               </div>
             </div>
           ) : (familyProfile?.custodyArrangement === '50-50' || familyProfile?.custodyArrangement === 'primary-secondary') && (
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200">
-              <div className="font-bold text-amber-800 text-base mb-2 flex items-center gap-2">
+            <div className="p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200">
+              <div className="font-bold text-amber-800 text-sm sm:text-base mb-2 flex items-center gap-1.5 sm:gap-2">
                 <span>⚠️</span>
                 <span>No Custody Schedule Configured</span>
               </div>
-              <p className="text-sm text-amber-700 mb-3">
+              <p className="text-xs sm:text-sm text-amber-700 mb-2 sm:mb-3">
                 Configure your custody schedule to see color-coded days on the calendar showing which parent has custody.
               </p>
               <a 
                 href="/settings" 
-                className="inline-flex items-center px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-sm font-medium transition-colors"
+                className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs sm:text-sm font-medium transition-colors"
               >
                 📝 Configure Custody Schedule in Settings
               </a>
@@ -1770,7 +1772,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           )}
           
           {/* Event Type Legend */}
-          <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-[hsl(217,92%,80%)] rounded mr-2"></div>
               <span>Custody Events</span>
@@ -1815,20 +1817,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           setIsEditingMode(false);
         }
       }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>{isEditingMode ? 'Edit Calendar Event' : 'Add Calendar Event'}</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">{isEditingMode ? 'Edit Calendar Event' : 'Add Calendar Event'}</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={handleCreateEventSubmit}>
+          <form className="space-y-3 sm:space-y-4" onSubmit={handleCreateEventSubmit}>
             <div className="space-y-2">
-              <Label>Title</Label>
+              <Label className="text-sm sm:text-base">Title</Label>
               <Input
                 placeholder="e.g., Mom's Weekend"
                 value={newEventTitle}
                 onChange={(e) => setNewEventTitle(e.target.value)}
+                className="text-sm sm:text-base"
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label>Date</Label>
                 <Input
@@ -1903,16 +1906,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowCreateEvent(false)}
                 disabled={creatingEvent}
+                className="w-full sm:w-auto text-sm sm:text-base"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={creatingEvent}>
+              <Button type="submit" disabled={creatingEvent} className="w-full sm:w-auto text-sm sm:text-base">
                 {creatingEvent 
                   ? (isEditingMode ? "Updating..." : "Creating...") 
                   : (isEditingMode ? "Update Event" : "Create Event")}
@@ -1924,13 +1928,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Event Details Dialog */}
       <Dialog open={showEventDetails} onOpenChange={setShowEventDetails}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Event Details</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Event Details</DialogTitle>
           </DialogHeader>
           
           {selectedEvent && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Event Title and Type */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -2188,9 +2192,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Change Request Dialog */}
       <Dialog open={showChangeRequest} onOpenChange={setShowChangeRequest}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Request Schedule Change</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Request Schedule Change</DialogTitle>
           </DialogHeader>
           
           {selectedEvent && (
@@ -2377,9 +2381,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Pending Requests Dialog */}
       <Dialog open={showPendingRequests} onOpenChange={setShowPendingRequests}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Pending Schedule Change Requests</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Pending Schedule Change Requests</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -2514,9 +2518,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Bridgette Alternatives Dialog */}
       <Dialog open={showBridgetteAlternatives} onOpenChange={setShowBridgetteAlternatives}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
+            <DialogTitle className="flex items-center text-lg sm:text-xl">
               <Lightbulb className="w-5 h-5 mr-2 text-yellow-500" />
               Bridge-it's Alternative Solutions
             </DialogTitle>
@@ -2654,9 +2658,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Email Preview Dialog */}
       <Dialog open={showEmailPreview} onOpenChange={setShowEmailPreview}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
+            <DialogTitle className="flex items-center text-lg sm:text-xl">
               <Mail className="w-5 h-5 mr-2 text-green-600" />
               Automated Documentation Email
             </DialogTitle>

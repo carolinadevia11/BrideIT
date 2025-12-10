@@ -145,7 +145,7 @@ const MessagingInterface: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [activeConversation, toast]);
+  }, [activeConversation]);
 
   const fetchMessages = useCallback(async (conversationId: string, pageNum: number = 1, options: { silent?: boolean; append?: boolean } = {}) => {
     const { silent = false, append = false } = options;
@@ -489,23 +489,23 @@ const MessagingInterface: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="bg-white rounded-2xl shadow-lg h-[700px] flex">
+      <div className="bg-white rounded-2xl shadow-lg h-[600px] sm:h-[700px] flex flex-col sm:flex-row">
         {/* Conversations Sidebar */}
-        <div className="w-1/3 border-r border-gray-200 flex flex-col">
+        <div className="w-full sm:w-1/3 border-r-0 sm:border-r border-gray-200 border-b sm:border-b-0 flex flex-col h-1/2 sm:h-auto">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Messages</h2>
+          <div className="p-3 sm:p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Messages</h2>
               <Dialog open={showNewConversation} onOpenChange={setShowNewConversation}>
                 <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New
+                  <Button size="sm" className="text-xs sm:text-sm">
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">New</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 sm:mx-auto">
                   <DialogHeader>
-                    <DialogTitle>Start New Conversation</DialogTitle>
+                    <DialogTitle className="text-lg sm:text-xl">Start New Conversation</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
@@ -670,20 +670,20 @@ const MessagingInterface: React.FC = () => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col h-1/2 sm:h-auto">
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-800">{activeConv.subject}</h2>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge className={categoryColors[activeConv.category]}>
+                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-800 truncate">{activeConv.subject}</h2>
+                      <div className="flex items-center space-x-2 mt-1 flex-wrap">
+                        <Badge className={`${categoryColors[activeConv.category]} text-xs`}>
                           {activeConv.category}
                         </Badge>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-xs sm:text-sm text-gray-600">
                           {activeConv.messageCount} messages
                         </span>
                       </div>

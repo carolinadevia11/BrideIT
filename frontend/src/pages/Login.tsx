@@ -74,10 +74,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
         {/* Bridge-it Welcome */}
-        <div className="text-center">
+        <div className="text-center order-2 md:order-1">
           <AnimatedBridgette
             size="xl"
             expression="encouraging"
@@ -89,16 +89,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* Login Form */}
-        <Card className="w-full shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-gray-800 text-center">
+        <Card className="w-full shadow-2xl order-1 md:order-2">
+          <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
               Welcome to Bridge-it! 👋
             </CardTitle>
-            <p className="text-center text-gray-500">Fair & Balanced Co-Parenting</p>
+            <p className="text-center text-sm sm:text-base text-gray-500 mt-1">Fair & Balanced Co-Parenting</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -108,11 +108,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 placeholder="Enter your email address"
                 autoComplete="email"
                 autoFocus
-                className="placeholder:text-gray-400"
+                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -121,15 +121,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="Enter your password"
                 autoComplete="current-password"
-                className="placeholder:text-gray-400"
+                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
-            <Button onClick={handleLogin} disabled={isSubmitting} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+            <Button 
+              onClick={handleLogin} 
+              disabled={isSubmitting} 
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-10 sm:h-11 text-sm sm:text-base"
+            >
               {isSubmitting ? 'Logging in...' : 'Login'}
             </Button>
             <Separator />
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/signup" className="font-medium text-blue-600 hover:underline">
                   Create one now

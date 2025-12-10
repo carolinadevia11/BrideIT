@@ -133,15 +133,15 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   if (loading) {
     return (
       <Card className="border-2 border-bridge-blue">
-        <CardHeader>
-          <CardTitle className="flex items-center text-bridge-black">
-            <Users className="w-5 h-5 mr-2 text-bridge-blue" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
             Recent Activity
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bridge-blue"></div>
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="flex items-center justify-center py-6 sm:py-8">
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-bridge-blue"></div>
           </div>
         </CardContent>
       </Card>
@@ -151,14 +151,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   if (activities.length === 0) {
     return (
       <Card className="border-2 border-bridge-blue">
-        <CardHeader>
-          <CardTitle className="flex items-center text-bridge-black">
-            <Users className="w-5 h-5 mr-2 text-bridge-blue" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
             Recent Activity
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-500 text-sm text-center py-4">
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <p className="text-gray-500 text-xs sm:text-sm text-center py-4">
             No recent activity to display
           </p>
         </CardContent>
@@ -168,14 +168,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 
   return (
     <Card className="border-2 border-bridge-blue">
-      <CardHeader>
-        <CardTitle className="flex items-center text-bridge-black">
-          <Users className="w-5 h-5 mr-2 text-bridge-blue" />
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
+          <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
           Recent Activity
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <div className="space-y-3 sm:space-y-4">
           {activities.map((activity) => {
             const colorClasses = getColorClasses(activity.color);
             const Icon = getActivityIcon(activity.type);
@@ -184,24 +184,26 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
             return (
               <div
                 key={activity.id}
-                className={`flex items-center space-x-3 p-3 ${colorClasses.bg} rounded-lg border-l-4 ${colorClasses.border}`}
+                className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 ${colorClasses.bg} rounded-lg border-l-4 ${colorClasses.border}`}
               >
-                <div
-                  className={`w-2 h-2 ${colorClasses.dot} rounded-full ${isPulsing ? 'animate-pulse' : ''}`}
-                ></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-bridge-black">
-                    {activity.type === 'expense_pending' && (
-                      <span className="text-bridge-red font-semibold">PENDING: </span>
-                    )}
-                    {activity.title}
-                  </p>
-                  <p className="text-xs text-gray-500">{activity.relativeTime}</p>
+                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div
+                    className={`w-2 h-2 ${colorClasses.dot} rounded-full flex-shrink-0 ${isPulsing ? 'animate-pulse' : ''}`}
+                  ></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-bridge-black break-words">
+                      {activity.type === 'expense_pending' && (
+                        <span className="text-bridge-red font-semibold">PENDING: </span>
+                      )}
+                      {activity.title}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{activity.relativeTime}</p>
+                  </div>
                 </div>
                 {activity.actionRequired && (
                   <Button
                     size="sm"
-                    className={`${
+                    className={`w-full sm:w-auto text-xs sm:text-sm ${
                       activity.color === 'red'
                         ? 'bg-bridge-red hover:bg-red-600 text-white'
                         : 'bg-bridge-blue hover:bg-blue-600 text-white'

@@ -514,33 +514,33 @@ const DocumentManager: React.FC = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <Label htmlFor="folderName">Folder Name *</Label>
+              <Label htmlFor="folderName" className="text-sm sm:text-base">Folder Name *</Label>
               <Input
                 id="folderName"
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="e.g., Sports & Activities, Travel Plans..."
-                className="mt-1"
+                className="mt-1 text-sm sm:text-base"
               />
             </div>
             
             <div>
-              <Label htmlFor="folderDescription">Description</Label>
+              <Label htmlFor="folderDescription" className="text-sm sm:text-base">Description</Label>
               <Input
                 id="folderDescription"
                 value={newFolderDescription}
                 onChange={(e) => setNewFolderDescription(e.target.value)}
                 placeholder="Brief description of what you'll store here"
-                className="mt-1"
+                className="mt-1 text-sm sm:text-base"
               />
             </div>
           </div>
 
           <div>
-            <Label>Choose an Icon</Label>
-            <div className="grid grid-cols-5 gap-3 mt-2">
+            <Label className="text-sm sm:text-base">Choose an Icon</Label>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3 mt-2">
               {availableIcons.map((iconData) => {
                 const IconComponent = iconData.icon;
                 return (
@@ -562,8 +562,8 @@ const DocumentManager: React.FC = () => {
           </div>
 
           <div>
-            <Label>Choose a Color Theme</Label>
-            <div className="grid grid-cols-4 gap-3 mt-2">
+            <Label className="text-sm sm:text-base">Choose a Color Theme</Label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mt-2">
               {availableColors.map((colorData) => (
                 <button
                   key={colorData.name}
@@ -857,7 +857,7 @@ const DocumentManager: React.FC = () => {
           </Card>
 
           {/* Folders Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {folders.map((folder) => (
               <Card 
                 key={folder.id} 
@@ -970,11 +970,11 @@ const DocumentManager: React.FC = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
             <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">{documents.length}</div>
-                <div className="text-sm text-gray-600">Total Documents</div>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{documents.length}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Total Documents</div>
               </CardContent>
             </Card>
             <Card>

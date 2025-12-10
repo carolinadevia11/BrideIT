@@ -12,11 +12,11 @@ interface FamilyChoiceProps {
 
 const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting, onSkip }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-5xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-center">
           {/* Bridgette Side */}
-          <div className="text-center lg:text-left">
+          <div className="text-center lg:text-left order-2 lg:order-1">
             <AnimatedBridgette
               size="xl"
               expression="encouraging"
@@ -28,8 +28,8 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
           </div>
 
           {/* Choice Cards */}
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold text-gray-800 text-center lg:text-left mb-6">
+          <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center lg:text-left mb-4 sm:mb-6">
               Let's Set Up Your Family
             </h2>
 
@@ -37,19 +37,19 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
               className="border-2 border-blue-300 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onCreateNew}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Users className="w-8 h-8 text-blue-600" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                  <div className="bg-blue-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                    <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
                       Create New Family Profile
                     </h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                       I'm the first parent setting up our family. I'll create our profile and get a Family Code to share with my co-parent.
                     </p>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base">
                       Create Family Profile
                     </Button>
                   </div>
@@ -61,19 +61,19 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
               className="border-2 border-purple-300 hover:border-purple-500 hover:shadow-lg transition-all cursor-pointer"
               onClick={onLinkExisting}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <Link2 className="w-8 h-8 text-purple-600" />
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                  <div className="bg-purple-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                    <Link2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
                       Link to Existing Family
                     </h3>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                       My co-parent already created our family profile. I have a Family Code to link my account.
                     </p>
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700 text-sm sm:text-base">
                       Enter Family Code
                     </Button>
                   </div>
