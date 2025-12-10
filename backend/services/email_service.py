@@ -8,7 +8,7 @@ load_dotenv()
 
 class EmailService:
     def __init__(self):
-        self.suppress_emails = os.getenv("SUPPRESS_EMAILS", "false").lower() == "true"
+        self.suppress_emails = False
         
         # Ensure environment variables are loaded or provide defaults/handling
         self.conf = ConnectionConfig(
@@ -111,7 +111,7 @@ class EmailService:
             <p style="margin: 0; margin-bottom: 5px;"><strong>Event:</strong> {event_title}</p>
             <p style="margin: 0;"><strong>Date:</strong> {event_date}</p>
         </div>
-        <p>Please log in to your dashboard to view the full details.</p>
+        <p>This event is relevant to both parents and has been added to the shared calendar.</p>
         """
 
         try:
@@ -179,7 +179,7 @@ class EmailService:
             except Exception as e:
                 print(f"Failed to send email to recipient: {e}")
 
-    async def send_swap_resolution_notification(self, recipients: List[str], event_title: str, status: str, resolved_by_name: str):
+    async def send_swap_resolution_notification(self, recipients: List[str], event_title: str, status: str, resolved_by_name: str, details: dict = None):
         """Sends an email to both parents when a swap is approved or rejected."""
         if self.suppress_emails:
             print(f"Email suppressed (Swap Resolution): {event_title} - Status: {status}")
@@ -189,12 +189,34 @@ class EmailService:
         if not valid_recipients:
             return
 
-        subject = f"Swap Request {status.capitalize()}"
+        subject = f"Schedule Change Request {status.capitalize()}"
         status_color = "#10B981" if status == "approved" else "#EF4444"
         
+        details_html = ""
+        if details:
+            event_date = details.get('event_date', '')
+            request_type = details.get('request_type', 'modify')
+            
+            change_desc = ""
+            if request_type == 'swap':
+                change_desc = f"Swap with event: <strong>{details.get('swap_title', 'Event')}</strong> on {details.get('swap_date', '')}"
+            elif request_type == 'modify':
+                change_desc = f"Reschedule to: {details.get('new_date', '')}"
+            elif request_type == 'cancel':
+                change_desc = "Cancellation of event"
+
+            details_html = f"""
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0; margin-bottom: 5px;"><strong>Subject Event:</strong> {event_title}</p>
+                <p style="margin: 0; margin-bottom: 5px;"><strong>Original Date:</strong> {event_date}</p>
+                <p style="margin: 0; margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 10px;"><strong>Requested Change:</strong> {change_desc}</p>
+            </div>
+            """
+
         content = f"""
-        <p>The swap request for event <strong>{event_title}</strong> has been <span style="color: {status_color}; font-weight: bold;">{status}</span> by {resolved_by_name}.</p>
-        <p>The family calendar has been updated to reflect this change.</p>
+        <p>The request for event <strong>{event_title}</strong> has been <span style="color: {status_color}; font-weight: bold;">{status}</span> by {resolved_by_name}.</p>
+        {details_html}
+        <p>This email serves as a formal record of the schedule change. The family calendar has been automatically updated.</p>
         """
 
         try:

@@ -457,11 +457,24 @@ async def update_change_request(
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
 
+    request_type = change_request_doc.get("requestType", "modify")
+    details = {
+        "event_date": str(change_request_doc.get("eventDate")),
+        "request_type": request_type
+    }
+    
+    if request_type == "swap":
+        details["swap_date"] = str(change_request_doc.get("swapEventDate"))
+        details["swap_title"] = change_request_doc.get("swapEventTitle")
+    elif request_type == "modify":
+        details["new_date"] = str(change_request_doc.get("newDate"))
+
     await email_service.send_swap_resolution_notification(
         recipients,
         change_request_doc.get("eventTitle"),
         update_data.status,
-        user_name
+        user_name,
+        details
     )
 
     # If approved, apply the requested date change

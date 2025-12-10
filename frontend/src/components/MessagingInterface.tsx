@@ -62,6 +62,12 @@ const MessagingInterface: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeConversationRef = useRef<string | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   
@@ -126,7 +132,7 @@ const MessagingInterface: React.FC = () => {
       setConversations(data);
       
       // Select first conversation if none is selected
-      if (data.length > 0 && !activeConversation) {
+      if (data.length > 0 && !activeConversationRef.current) {
         setActiveConversation(data[0].id);
       }
     } catch (error: any) {
@@ -145,7 +151,7 @@ const MessagingInterface: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [activeConversation]);
+  }, []);
 
   const fetchMessages = useCallback(async (conversationId: string, pageNum: number = 1, options: { silent?: boolean; append?: boolean } = {}) => {
     const { silent = false, append = false } = options;
@@ -258,16 +264,12 @@ const MessagingInterface: React.FC = () => {
            setIsTyping(false); // Clear typing indicator on new message
            
            // If it belongs to the active conversation, add it
-           // Use functional state update to access latest activeConversation
-           setActiveConversation(currentActive => {
-             if (currentActive === data.conversationId) {
-               setMessages(prev => {
-                 if (prev.some(m => m.id === data.id)) return prev;
-                 return [...prev, data];
-               });
-             }
-             return currentActive;
-           });
+           if (activeConversationRef.current === data.conversationId) {
+             setMessages(prev => {
+               if (prev.some(m => m.id === data.id)) return prev;
+               return [...prev, data];
+             });
+           }
            
            // Also refresh conversations list to update unread counts/order
            fetchConversations({ silent: true });
