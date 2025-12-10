@@ -261,17 +261,19 @@ const MessagingInterface: React.FC = () => {
 
         // New Message
         if (data.type === 'new_message' || data.id) {
-           setIsTyping(false); // Clear typing indicator on new message
+           // Clear typing indicator on new message
+           setIsTyping(false);
            
-           // If it belongs to the active conversation, add it
-           if (activeConversationRef.current === data.conversationId) {
-             setMessages(prev => {
-               if (prev.some(m => m.id === data.id)) return prev;
-               return [...prev, data];
-             });
+           // Check if message belongs to active conversation
+           const msgConvId = data.conversationId || data.conversation_id;
+           
+           if (activeConversationRef.current && activeConversationRef.current === msgConvId) {
+             // Refresh messages for the active conversation to ensure we have the latest state
+             // This is safer than manual appending as it handles formatting and optimistic states correctly
+             fetchMessages(msgConvId, 1, { silent: true });
            }
            
-           // Also refresh conversations list to update unread counts/order
+           // Always refresh conversations list to update unread counts and ordering in sidebar
            fetchConversations({ silent: true });
         }
       } catch (e) {
@@ -287,7 +289,7 @@ const MessagingInterface: React.FC = () => {
     return () => {
       ws.close();
     };
-  }, [currentUser, fetchConversations]);
+  }, [currentUser, fetchConversations, fetchMessages]);
 
   // Fetch messages when active conversation changes
   useEffect(() => {
