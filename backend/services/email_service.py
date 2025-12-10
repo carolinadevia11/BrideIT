@@ -8,6 +8,8 @@ load_dotenv()
 
 class EmailService:
     def __init__(self):
+        self.suppress_emails = os.getenv("SUPPRESS_EMAILS", "false").lower() == "true"
+        
         # Ensure environment variables are loaded or provide defaults/handling
         self.conf = ConnectionConfig(
             MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
@@ -71,6 +73,10 @@ class EmailService:
         """
         Sends an email notification for event creation, update, or deletion.
         """
+        if self.suppress_emails:
+            print(f"Email suppressed (Event Notification): {event_title} - Action: {action}")
+            return
+
         valid_recipients = [r for r in recipients if r]
         if not valid_recipients:
             return
@@ -116,6 +122,10 @@ class EmailService:
         1. Confirmation to the requester.
         2. Action request to the recipient.
         """
+        if self.suppress_emails:
+            print(f"Email suppressed (Swap Request): {event_title}")
+            return
+
         # 1. Email to requester
         if requester_email:
             try:
@@ -162,6 +172,10 @@ class EmailService:
 
     async def send_swap_resolution_notification(self, recipients: List[str], event_title: str, status: str, resolved_by_name: str):
         """Sends an email to both parents when a swap is approved or rejected."""
+        if self.suppress_emails:
+            print(f"Email suppressed (Swap Resolution): {event_title} - Status: {status}")
+            return
+
         valid_recipients = [r for r in recipients if r]
         if not valid_recipients:
             return
@@ -187,6 +201,10 @@ class EmailService:
 
     async def send_document_notification(self, recipients: List[str], action: str, document_name: str, performed_by_name: str, document_type: str = "document"):
         """Sends email when a document is added or deleted."""
+        if self.suppress_emails:
+            print(f"Email suppressed (Document Notification): {document_name} - Action: {action}")
+            return
+
         valid_recipients = [r for r in recipients if r]
         if not valid_recipients:
             return
@@ -214,6 +232,10 @@ class EmailService:
 
     async def send_contract_notification(self, recipients: List[str], action: str, performed_by_name: str):
         """Sends email when a custody agreement/contract is uploaded or deleted."""
+        if self.suppress_emails:
+            print(f"Email suppressed (Contract Notification) - Action: {action}")
+            return
+
         valid_recipients = [r for r in recipients if r]
         if not valid_recipients:
             return
