@@ -40,7 +40,7 @@ class EmailService:
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <!-- Header -->
                 <div style="text-align: center; margin-bottom: 30px; padding-top: 20px;">
-                    <h1 style="color: #4F46E5; margin: 0; font-size: 28px; font-weight: 700;">Bridge</h1>
+                    <h1 style="color: #4F46E5; margin: 0; font-size: 28px; font-weight: 700;">Bridge-it</h1>
                     <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Co-parenting made simple</p>
                 </div>
 
@@ -54,15 +54,15 @@ class EmailService:
 
                     {f'''
                     <div style="text-align: center; margin-top: 30px;">
-                        <a href="{action_url}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">Open Bridge</a>
+                        <a href="{action_url}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">Open Bridge-it</a>
                     </div>
                     ''' if action_url else ''}
                 </div>
 
                 <!-- Footer -->
                 <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #9ca3af;">
-                    <p style="margin: 0;">This is an automated notification from Bridge.</p>
-                    <p style="margin: 5px 0 0 0;">&copy; {os.getenv('YEAR', '2025')} Bridge. All rights reserved.</p>
+                    <p style="margin: 0;">This is an automated notification from Bridge-it.</p>
+                    <p style="margin: 5px 0 0 0;">&copy; {os.getenv('YEAR', '2025')} Bridge-it. All rights reserved.</p>
                 </div>
             </div>
         </body>
