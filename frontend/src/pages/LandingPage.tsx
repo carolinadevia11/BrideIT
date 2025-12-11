@@ -4,11 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, MessageSquare, DollarSign, FileText, Shield, Heart, Users, BookOpen, CheckCircle, ArrowRight, Sparkles, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface LandingPageProps {
-  onGetStarted: () => void;
-}
-
-const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
       {/* Header */}
@@ -42,14 +38,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                   <span className="sm:hidden">Login</span>
                 </Button>
               </Link>
-              <Button 
-                onClick={onGetStarted}
-                size="sm"
-                className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green text-xs sm:text-sm px-2 sm:px-4"
-              >
-                <span className="hidden sm:inline">Get Started Free</span>
-                <span className="sm:hidden">Start</span>
-              </Button>
+              <Link to="/signup">
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green text-xs sm:text-sm px-2 sm:px-4"
+                >
+                  <span className="hidden sm:inline">Get Started Free</span>
+                  <span className="sm:hidden">Start</span>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -100,14 +97,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </div>
 
             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-2">
-              <Button 
-                onClick={onGetStarted}
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 via-blue-600 to-green-500 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto"
-              >
-                Start Your Journey
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
-              </Button>
+              <Link to="/signup">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 via-blue-600 to-green-500 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto"
+                >
+                  Start Your Journey
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                </Button>
+              </Link>
               <Link to="/login" className="w-full sm:w-auto">
                 <Button 
                   size="lg"
@@ -394,14 +392,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             Join thousands of parents who are making co-parenting easier, fairer, and more child-focused.
           </p>
           <div className="flex justify-center">
-            <Button 
-              onClick={onGetStarted}
-              size="lg"
-              className="bg-white text-bridge-blue hover:bg-gray-100 text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
-            </Button>
+            <Link to="/signup">
+              <Button
+                size="lg"
+                className="bg-white text-bridge-blue hover:bg-gray-100 text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto"
+              >
+                Get Started Free
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

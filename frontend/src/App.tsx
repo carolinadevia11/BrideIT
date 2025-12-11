@@ -18,7 +18,6 @@ const queryClient = new QueryClient();
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isNewSignup, setIsNewSignup] = useState(false);
 
   // Check for existing auth token on mount
@@ -36,17 +35,12 @@ const App = () => {
 
   const handleLogin = (newSignup = false) => {
     setIsAuthenticated(true);
-    setShowOnboarding(false);
     setIsNewSignup(newSignup);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     setIsAuthenticated(false);
-  };
-
-  const handleGetStarted = () => {
-    setShowOnboarding(true);
   };
 
   // Show loading state while checking auth
@@ -93,10 +87,8 @@ const App = () => {
               element={
                 isAuthenticated ? (
                   <Navigate to="/dashboard" replace />
-                ) : showOnboarding ? (
-                  <Index onLogout={handleLogout} startOnboarding={true} />
                 ) : (
-                  <LandingPage onGetStarted={handleGetStarted} />
+                  <LandingPage />
                 )
               }
             />
@@ -170,7 +162,7 @@ const App = () => {
                 )
               }
             />
-            <Route path="/features/:slug" element={<FeatureDetail onGetStarted={handleGetStarted} />} />
+            <Route path="/features/:slug" element={<FeatureDetail />} />
             <Route
               path="/admin"
               element={

@@ -241,11 +241,7 @@ const featureContent: Record<
   },
 };
 
-interface FeatureDetailProps {
-  onGetStarted?: () => void;
-}
-
-const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
+const FeatureDetail: React.FC = () => {
   const { slug } = useParams<{ slug: FeatureSlug }>();
 
   const feature = useMemo(() => {
@@ -277,12 +273,13 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
                 Log In
               </Button>
             </Link>
-            <Button
-              onClick={onGetStarted}
-              className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green"
-            >
-              Get Started Free
-            </Button>
+            <Link to="/signup">
+              <Button
+                className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green"
+              >
+                Get Started Free
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -381,9 +378,11 @@ const FeatureDetail: React.FC<FeatureDetailProps> = ({ onGetStarted }) => {
               Bridge-it will guide you through setup, connect your co-parent with a Family Code, and keep everything organized from day one.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100" onClick={onGetStarted}>
-                {feature.cta.primary}
-              </Button>
+              <Link to="/signup">
+                <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
+                  {feature.cta.primary}
+                </Button>
+              </Link>
               <Link to="/">
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
                   {feature.cta.secondary}
