@@ -35,7 +35,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'waving',
       bridgetteAnimation: 'celebrate',
       icon: Heart,
-      color: 'from-pink-400 to-purple-600',
+      color: 'from-bridge-blue to-bridge-blue/80',
       details: [
         'I\'ll guide you through every single step',
         'Everything is secure and private',
@@ -53,7 +53,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'encouraging',
       bridgetteAnimation: 'thinking',
       icon: User,
-      color: 'from-blue-400 to-blue-600',
+      color: 'from-bridge-blue to-cyan-600',
       details: [
         'Enter your name and email address',
         'Create a secure password',
@@ -71,7 +71,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'happy',
       bridgetteAnimation: 'balance',
       icon: Users,
-      color: 'from-green-400 to-green-600',
+      color: 'from-bridge-green to-emerald-600',
       details: [
         'I\'ll generate your unique Family Code',
         'Share the code with your co-parent',
@@ -89,7 +89,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'thinking',
       bridgetteAnimation: 'thinking',
       icon: FileText,
-      color: 'from-purple-400 to-purple-600',
+      color: 'from-bridge-blue to-indigo-600',
       details: [
         'Upload your custody agreement (optional)',
         'I\'ll extract key dates and schedules',
@@ -107,7 +107,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'encouraging',
       bridgetteAnimation: 'float',
       icon: Calendar,
-      color: 'from-orange-400 to-orange-600',
+      color: 'from-bridge-yellow to-orange-500',
       details: [
         'Import custody schedule automatically',
         'Add school and medical appointments',
@@ -125,7 +125,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'happy',
       bridgetteAnimation: 'celebrate',
       icon: MessageSquare,
-      color: 'from-indigo-400 to-indigo-600',
+      color: 'from-bridge-blue to-indigo-500',
       details: [
         'Choose your preferred communication tone',
         'Set up message templates and suggestions',
@@ -143,7 +143,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
       bridgetteExpression: 'celebrating',
       bridgetteAnimation: 'celebrate',
       icon: CheckCircle,
-      color: 'from-yellow-400 to-pink-600',
+      color: 'from-bridge-yellow to-bridge-green',
       details: [
         'Complete account setup in 5-10 minutes',
         'I\'ll guide you through each step',
@@ -173,7 +173,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
   const isLastStep = currentStep === steps.length - 1;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
         {/* Progress Bar */}
         <div className="mb-8">
@@ -266,7 +266,7 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
                   ) : (
                     <Button 
                       onClick={onStartJourney}
-                      className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 flex items-center space-x-2 text-lg px-8 py-3"
+                      className="bg-bridge-green hover:bg-bridge-green/90 flex items-center space-x-2 text-lg px-8 py-3"
                     >
                       <CheckCircle className="w-5 h-5" />
                       <span>Start My Journey!</span>

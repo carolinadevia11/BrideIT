@@ -75,18 +75,18 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4 sm:p-6">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="relative px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
+        <CardHeader className="relative px-4 sm:px-6 pt-4 sm:pt-6 pb-4 flex items-center justify-center">
           <Button
             variant="ghost"
             onClick={() => setShowExplanation(true)}
             size="sm"
-            className="absolute left-2 sm:left-4 top-3 sm:top-4 text-xs sm:text-sm px-2 sm:px-4"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-xs sm:text-sm px-2 sm:px-4 text-gray-500 hover:text-gray-800"
           >
             ← Back
           </Button>
-          <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800 text-center pt-6 sm:pt-0">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
             Create Your Bridge Account
           </CardTitle>
         </CardHeader>

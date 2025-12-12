@@ -568,7 +568,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                          <div className="w-12 h-12 bg-bridge-green rounded-full flex items-center justify-center text-white font-bold">
                             {child.firstName[0]}
                           </div>
                           <div>
@@ -821,7 +821,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   <div className="space-y-2">
                     {familyData.children?.map((child) => (
                       <div key={child.id} className="bg-gray-50 p-3 rounded flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 bg-bridge-green rounded-full flex items-center justify-center text-white font-bold">
                           {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
                         </div>
                         <div>
@@ -879,7 +879,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
         {/* Progress Bar */}
         <div className="mb-8">
@@ -943,7 +943,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   <Button
                     onClick={nextStep}
                     disabled={!canProceed() || isSubmitting}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    className="bg-bridge-blue hover:bg-bridge-blue/90"
                   >
                     {currentStep === steps.length - 1 ? (
                       <>

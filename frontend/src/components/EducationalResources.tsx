@@ -438,7 +438,7 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
     
     return (
       <div className={`w-full h-32 ${colorClass} rounded-t-lg flex items-center justify-center relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-white/10"></div>
         <IconComponent className="w-12 h-12 text-white drop-shadow-lg" />
         <div className="absolute top-2 right-2">
           <Badge className="bg-white/20 text-white border-white/30">
@@ -459,7 +459,7 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-12 h-12 bg-bridge-blue rounded-full flex items-center justify-center text-white font-bold">
                 {selectedProfessional.name.split(' ').map(n => n[0]).join('')}
               </div>
               <div>
@@ -647,17 +647,17 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
   };
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 space-y-8 rounded-xl">
       {/* Bridgette Helper */}
-      <Card className="border-2 border-blue-200 bg-blue-50">
+      <Card className="border-2 border-bridge-blue/20 bg-white/80 backdrop-blur-sm shadow-md">
         <CardContent className="p-4">
           <div className="flex items-center space-x-4">
             <BridgetteAvatar size="md" expression="encouraging" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800">
+              <p className="text-sm font-bold text-bridge-blue">
                 Hey {greetingName}, I'm here to help. Ask anything!
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 I've curated these evidence-based resources from trusted experts! Need help finding a therapist or mediator? I can help you find the perfect professional for your situation! 📚👥
               </p>
             </div>
@@ -703,11 +703,11 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
       </div>
 
       {/* Information Recommended for You Carousel */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-100">
+      <Card className="bg-white border-2 border-bridge-blue/10 shadow-lg">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
-              <Brain className="w-6 h-6 mr-2 text-blue-600" />
+            <CardTitle className="text-xl font-bold text-bridge-black flex items-center">
+              <Brain className="w-6 h-6 mr-2 text-bridge-blue" />
               Information Recommended for You
             </CardTitle>
             <div className="flex space-x-2">
@@ -799,16 +799,16 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
 
       {/* Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white rounded-xl shadow-sm p-1">
-          <TabsTrigger value="articles" className="flex items-center space-x-2">
+        <TabsList className="grid w-full grid-cols-3 bg-white/50 backdrop-blur-sm rounded-xl shadow-sm p-1 border border-gray-200">
+          <TabsTrigger value="articles" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white transition-all">
             <BookOpen className="w-4 h-4" />
             <span>Articles</span>
           </TabsTrigger>
-          <TabsTrigger value="videos" className="flex items-center space-x-2">
+          <TabsTrigger value="videos" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white transition-all">
             <Play className="w-4 h-4" />
             <span>Videos</span>
           </TabsTrigger>
-          <TabsTrigger value="professionals" className="flex items-center space-x-2">
+          <TabsTrigger value="professionals" className="flex items-center space-x-2 data-[state=active]:bg-bridge-blue data-[state=active]:text-white transition-all">
             <Users className="w-4 h-4" />
             <span>Find Professionals</span>
           </TabsTrigger>
@@ -866,7 +866,7 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
               return (
                 <Card key={video.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleVideoClick(video)}>
                   <div className={`w-full h-32 ${colorClass} rounded-t-lg flex items-center justify-center relative overflow-hidden`}>
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                    <div className="absolute inset-0 bg-white/10"></div>
                     <div className="relative">
                       <IconComponent className="w-8 h-8 text-white drop-shadow-lg" />
                       <Play className="w-6 h-6 text-white absolute -bottom-1 -right-1 bg-black/30 rounded-full p-1" />
@@ -982,7 +982,7 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-10 h-10 bg-bridge-blue rounded-full flex items-center justify-center text-white font-bold text-sm">
                                   {professional.name.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div>
@@ -1041,7 +1041,7 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="w-12 h-12 bg-bridge-blue rounded-full flex items-center justify-center text-white font-bold">
                           {professional.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>

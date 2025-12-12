@@ -35,8 +35,8 @@
     --muted: 0 0% 96%;                /* Update: theme.neutral.muted */
     --muted-foreground: 0 0% 45%;     /* Update: theme.neutral.muted-foreground */
 
-    /* Accent Colors - Maps to theme.accent (Light Parrot) */
-    --accent: 160 80% 50%;            /* Update: theme.accent.DEFAULT */
+    /* Accent Colors - Maps to theme.accent (Emerald Green) */
+    --accent: 159 96% 39%;            /* Update: theme.accent.DEFAULT */
     --accent-foreground: 0 0% 100%;    /* Update: theme.accent.foreground */
 
     /* Destructive/Error Colors - Maps to theme.error */
@@ -48,7 +48,7 @@
     --input: 0 0% 90%;                 /* Update: theme.neutral.input */
     --ring: 214 100% 21%;              /* Update: theme.primary.DEFAULT */
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
     /* Sidebar Colors */
     --sidebar-background: 0 0% 98%;
@@ -64,7 +64,7 @@
     --bridge-red: 0 84% 60%;           /* Update: theme.bridge.red */
     --bridge-yellow: 47 100% 50%;      /* Update: theme.bridge.yellow (#ffc800) */
     --bridge-blue: 214 100% 21%;       /* Update: theme.bridge.blue (#002f6c) */
-    --bridge-green: 160 80% 50%;      /* Update: theme.bridge.green (Light Parrot) */
+    --bridge-green: 159 96% 39%;      /* Update: theme.bridge.green (Emerald Green) */
     --bridge-black: 0 0% 0%;           /* Update: theme.bridge.black */
   }
 
@@ -87,7 +87,7 @@
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 160 80% 55%;
+    --accent: 159 96% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 55%;

@@ -27,12 +27,12 @@ export const theme = {
     dark: "47 100% 40%",          // Dark variant
   },
 
-  // Accent Colors - Light Parrot (Teal/Green)
+  // Accent Colors - Emerald Green
   accent: {
-    DEFAULT: "160 80% 50%",      // Accent color (light parrot/teal)
+    DEFAULT: "159 96% 39%",      // Emerald Green (#10b981)
     foreground: "0 0% 100%",     // Text on accent
-    light: "160 80% 95%",         // Light variant
-    dark: "160 80% 35%",         // Dark variant
+    light: "159 96% 95%",        // Light variant
+    dark: "159 96% 25%",         // Dark variant
   },
 
   // Semantic Colors
@@ -159,7 +159,7 @@ export const theme = {
     red: "0 84% 60%",              // Error/Alert red
     yellow: "47 100% 50%",         // Secondary (#ffc800)
     blue: "214 100% 21%",          // Primary (#002f6c)
-    green: "160 80% 50%",          // Light Parrot/Teal
+    green: "159 96% 39%",          // Emerald Green
     black: "0 0% 0%",              // Black
   },
 } as const;

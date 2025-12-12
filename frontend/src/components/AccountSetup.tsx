@@ -19,7 +19,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bridgetteExpression, setBridgetteExpression] = useState<'happy' | 'thinking' | 'encouraging' | 'celebrating' | 'waving'>('waving');
+  const [bridgetteExpression, setBridgetteExpression] = useState<'happy' | 'thinking' | 'encouraging' | 'celebrating' | 'waving' | 'balanced' | 'mediating'>('waving');
   const [bridgetteMessage, setBridgetteMessage] = useState("Hi there! Bridge-it is so excited to help you create your Bridge-it account! Let's get started! 🌟");
 
   const [formData, setFormData] = useState({
@@ -443,7 +443,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
               {/* Progress Bar */}
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500"
+                  className="bg-bridge-blue h-3 rounded-full transition-all duration-500"
                   style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
                 />
               </div>
@@ -461,10 +461,10 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                   Back
                 </Button>
                 
-                <Button 
+                <Button
                   onClick={nextStep}
                   disabled={!canProceed() || isSubmitting}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  className="bg-bridge-blue hover:bg-bridge-blue/90"
                 >
                   {isSubmitting ? 'Creating Account...' : currentStep === steps.length - 1 ? 'Create Account!' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />

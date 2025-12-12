@@ -32,7 +32,6 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
       disableOverlayClose: true,
       spotlightClicks: false,
       disableScrolling: false,
-      scrollOffset: 150,
     },
     {
       target: '[data-tour="navigation-tabs"]',
@@ -50,7 +49,6 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
       placement: 'bottom',
       disableOverlayClose: true,
       disableScrolling: false,
-      scrollOffset: 100,
     },
     {
       target: '[data-tour="calendar-tab"]',
@@ -163,7 +161,6 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
       placement: 'top',
       disableOverlayClose: true,
       disableScrolling: false,
-      scrollOffset: 200,
     },
     {
       target: '[data-tour="quick-actions"]',
@@ -183,7 +180,6 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
       placement: 'top',
       disableOverlayClose: true,
       disableScrolling: false,
-      scrollOffset: 150,
     },
     {
       target: '[data-tour="support-chatbot"]',
@@ -203,7 +199,6 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
       placement: 'top',
       disableOverlayClose: true,
       disableScrolling: false,
-      scrollOffset: 200,
     },
   ]);
 
@@ -299,14 +294,14 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
         }
 
         .react-joyride__button--primary {
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          background: hsl(214, 100%, 21%);
           color: white;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+          box-shadow: 0 4px 12px rgba(0, 47, 108, 0.4);
         }
 
         .react-joyride__button--primary:hover {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+          background: hsl(214, 100%, 15%);
+          box-shadow: 0 6px 16px rgba(0, 47, 108, 0.5);
           transform: translateY(-1px);
         }
 
@@ -443,7 +438,7 @@ const ProductTour: React.FC<ProductTourProps> = ({ run, onComplete }) => {
         }
 
         .react-joyride__progress__bar {
-          background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+          background: hsl(214, 100%, 21%);
           height: 100%;
           border-radius: 2px;
           transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);

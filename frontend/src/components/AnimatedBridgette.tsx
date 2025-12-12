@@ -3,7 +3,7 @@ import { Heart, Sparkles, Scale, Star } from 'lucide-react';
 
 interface AnimatedBridgetteProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  expression?: 'balanced' | 'thinking' | 'encouraging' | 'celebrating' | 'mediating';
+  expression?: 'balanced' | 'thinking' | 'encouraging' | 'celebrating' | 'mediating' | 'happy' | 'waving';
   animation?: 'bounce' | 'float' | 'balance' | 'celebrate' | 'thinking' | 'idle';
   showSpeechBubble?: boolean;
   message?: string;

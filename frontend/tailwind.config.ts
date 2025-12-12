@@ -62,6 +62,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        bridge: {
+          blue: "hsl(var(--bridge-blue))",
+          green: "hsl(var(--bridge-green))",
+          yellow: {
+            DEFAULT: "hsl(var(--bridge-yellow))",
+            dark: "hsl(45 100% 45%)", // Slightly darker for text/icons on light backgrounds
+          },
+          red: "hsl(var(--bridge-red))",
+          black: "hsl(var(--bridge-black))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

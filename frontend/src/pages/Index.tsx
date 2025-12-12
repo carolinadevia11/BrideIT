@@ -644,35 +644,37 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   // Show Family Onboarding (Step 6: Detailed Profile)
   if (showFamilyOnboarding) {
     return (
-      <FamilyOnboarding
-        initialUserData={currentUser || undefined}
-        currentFamilyProfile={familyProfile}
-        onBack={() => {
-          setShowFamilyOnboarding(false);
-          setShowContractUpload(true);
-        }}
-        onComplete={async (profile) => {
-          try {
-            // Update the existing family with detailed info
-            const updatedFamily = await familyAPI.updateFamily(profile);
-            setFamilyProfile(updatedFamily);
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10">
+        <FamilyOnboarding
+          initialUserData={currentUser || undefined}
+          currentFamilyProfile={familyProfile}
+          onBack={() => {
             setShowFamilyOnboarding(false);
-            toast({
-              title: "Welcome to Bridge!",
-              description: "Your family profile is complete!",
-            });
-          } catch (error) {
-            console.error("Failed to update family profile:", error);
-            toast({
-              title: "Error",
-              description: "Failed to save family profile details.",
-              variant: "destructive",
-            });
-            // Still close onboarding to let user access dashboard (data might be partially saved)
-            setShowFamilyOnboarding(false);
-          }
-        }}
-      />
+            setShowContractUpload(true);
+          }}
+          onComplete={async (profile) => {
+            try {
+              // Update the existing family with detailed info
+              const updatedFamily = await familyAPI.updateFamily(profile);
+              setFamilyProfile(updatedFamily);
+              setShowFamilyOnboarding(false);
+              toast({
+                title: "Welcome to Bridge!",
+                description: "Your family profile is complete!",
+              });
+            } catch (error) {
+              console.error("Failed to update family profile:", error);
+              toast({
+                title: "Error",
+                description: "Failed to save family profile details.",
+                variant: "destructive",
+              });
+              // Still close onboarding to let user access dashboard (data might be partially saved)
+              setShowFamilyOnboarding(false);
+            }
+          }}
+        />
+      </div>
     );
   }
 
@@ -758,7 +760,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
   if (currentUser?.role === 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-bridge-blue/5 to-bridge-green/5">
         <header className="bg-white shadow-sm border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
@@ -815,7 +817,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </div>
               )}
 
-              <Card className="mb-6 bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 text-white shadow-lg border-none">
+              <Card className="mb-6 bg-gradient-to-r from-bridge-blue to-bridge-blue/80 text-white shadow-lg border-none">
                 <CardContent className="p-6 md:p-8">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                     <div>
@@ -1252,7 +1254,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             </div>
 
             <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
-              <Card className="bg-gradient-to-r from-bridge-blue to-bridge-green border-2 border-bridge-blue overflow-hidden" data-tour="dashboard-welcome">
+              <Card className="bg-bridge-blue/5 border-2 border-bridge-blue/20 overflow-hidden" data-tour="dashboard-welcome">
                 <CardContent className="p-3 sm:p-5">
                   <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div className="flex-1 min-w-0 speech-bubble">

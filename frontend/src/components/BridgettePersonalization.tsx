@@ -294,7 +294,7 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
@@ -348,7 +348,7 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
                 </Button>
                 <Button
                   onClick={handleNext}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600"
+                  className="bg-bridge-blue hover:bg-bridge-blue/90"
                 >
                   {currentStep === steps.length - 1 ? 'Complete' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />

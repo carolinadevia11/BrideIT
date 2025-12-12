@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye, Trash2, Edit } from 'lucide-react';
+import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye, Trash2, Edit, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -628,55 +628,55 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 md:p-8">
+      <div className="w-full max-w-6xl mx-auto">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-slate-100 p-0.5 sm:p-1 rounded-lg overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-white/50 backdrop-blur-sm p-1 rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
             <TabsTrigger
               value="profile"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
             <TabsTrigger
               value="preferences"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
               <Heart className="w-4 h-4" />
               <span className="hidden sm:inline">Preferences</span>
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
             <TabsTrigger
               value="privacy"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Privacy</span>
             </TabsTrigger>
             <TabsTrigger
               value="bridgette"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
-              <Heart className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Bridge-it</span>
             </TabsTrigger>
             <TabsTrigger
               value="family"
-              className="flex items-center justify-center space-x-2 rounded-md py-2 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
             >
-              <Globe className="w-4 h-4" />
+              <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Family</span>
             </TabsTrigger>
           </TabsList>
 
-          <Card className="shadow-2xl">
+          <Card className="shadow-xl border-bridge-blue/10 bg-white/90 backdrop-blur-sm">
 
             <CardContent className="pt-6">
 

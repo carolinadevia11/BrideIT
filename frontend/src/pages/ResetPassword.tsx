@@ -89,7 +89,7 @@ const ResetPassword = () => {
 
   if (!token) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
             <Card className="w-full max-w-md shadow-xl">
                 <CardHeader>
                     <CardTitle className="text-red-600 text-center">Invalid Link</CardTitle>
@@ -106,7 +106,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
         {/* Bridge-it Welcome */}
         <div className="text-center order-2 md:order-1">
@@ -156,10 +156,10 @@ const ResetPassword = () => {
                 className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
               />
             </div>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isSubmitting} 
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-10 sm:h-11 text-sm sm:text-base"
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full bg-bridge-blue hover:bg-bridge-blue/90 h-10 sm:h-11 text-sm sm:text-base transition-all duration-200"
             >
               {isSubmitting ? 'Resetting...' : 'Reset Password'}
             </Button>

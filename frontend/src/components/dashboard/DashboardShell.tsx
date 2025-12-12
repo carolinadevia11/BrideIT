@@ -314,7 +314,7 @@ const DashboardShell = ({
             </Avatar>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 px-3 sm:px-4 py-4 sm:py-6 md:px-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-bridge-blue/5 px-3 sm:px-4 py-4 sm:py-6 md:px-8">
           <div className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6">{children}</div>
         </div>
       </SidebarInset>

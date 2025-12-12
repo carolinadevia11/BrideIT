@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10">
       {/* Header */}
       <header className="bg-white shadow-sm border-b-2 border-bridge-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,7 +41,7 @@ const LandingPage: React.FC = () => {
               <Link to="/signup">
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green text-xs sm:text-sm px-2 sm:px-4"
+                  className="bg-bridge-yellow hover:bg-bridge-yellow/90 text-bridge-blue border-2 border-bridge-yellow font-bold text-xs sm:text-sm px-2 sm:px-4 transition-all hover:scale-105"
                 >
                   <span className="hidden sm:inline">Get Started Free</span>
                   <span className="sm:hidden">Start</span>
@@ -100,7 +100,7 @@ const LandingPage: React.FC = () => {
               <Link to="/signup">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 via-blue-600 to-green-500 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto"
+                  className="bg-bridge-blue hover:bg-bridge-blue/90 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto transition-all hover:scale-105"
                 >
                   Start Your Journey
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
@@ -167,11 +167,11 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Core Features Section */}
-      <section className="bg-white py-12 sm:py-20">
+      <section className="py-12 sm:py-20 bg-gradient-to-b from-white via-blue-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-bridge-black mb-3 sm:mb-4 px-2">
-              Everything You Need in One Place
+              Everything You Need in <span className="text-bridge-blue">One Place</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 px-2">
               Comprehensive tools to simplify co-parenting
@@ -180,25 +180,25 @@ const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
             {/* Smart Custody Calendar */}
-            <Card className="border-2 border-green-300 hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
+            <Card className="border-2 border-bridge-green/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-bridge-green/10">
                 <CardTitle className="flex items-center text-bridge-black">
-                  <Calendar className="w-6 h-6 mr-3 text-green-600" />
+                  <Calendar className="w-6 h-6 mr-3 text-bridge-green" />
                   Smart Custody Calendar
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-green mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Color-coded events for custody days, holidays, school events, and medical appointments</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-green mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Shared visibility—both parents always on the same page</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-green mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">AI-powered conflict resolution for scheduling disputes</span>
                   </li>
                 </ul>
@@ -206,25 +206,25 @@ const LandingPage: React.FC = () => {
             </Card>
 
             {/* Secure Messaging */}
-            <Card className="border-2 border-yellow-300 hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50">
+            <Card className="border-2 border-bridge-yellow/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-bridge-yellow/10">
                 <CardTitle className="flex items-center text-bridge-black">
-                  <MessageSquare className="w-6 h-6 mr-3 text-yellow-600" />
+                  <MessageSquare className="w-6 h-6 mr-3 text-bridge-yellow-dark" />
                   Secure Messaging System
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-yellow-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-yellow-dark mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Tone selection (matter-of-fact, friendly, or neutral legal)</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-yellow-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-yellow-dark mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Bridge-it mediates and suggests improvements to messages</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-yellow-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-yellow-dark mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Immutable logging for court documentation</span>
                   </li>
                 </ul>
@@ -232,25 +232,25 @@ const LandingPage: React.FC = () => {
             </Card>
 
             {/* Expense Tracking */}
-            <Card className="border-2 border-red-300 hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50">
+            <Card className="border-2 border-bridge-red/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-bridge-red/10">
                 <CardTitle className="flex items-center text-bridge-black">
-                  <DollarSign className="w-6 h-6 mr-3 text-red-600" />
+                  <DollarSign className="w-6 h-6 mr-3 text-bridge-red" />
                   Expense Tracking & Management
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-red-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-red mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Automatic split calculation based on custody agreement</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-red-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-red mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Receipt management with photo upload</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-red-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-red mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Structured dispute resolution process</span>
                   </li>
                 </ul>
@@ -258,25 +258,25 @@ const LandingPage: React.FC = () => {
             </Card>
 
             {/* Document Management */}
-            <Card className="border-2 border-blue-300 hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+            <Card className="border-2 border-bridge-blue/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-bridge-blue/10">
                 <CardTitle className="flex items-center text-bridge-black">
-                  <FileText className="w-6 h-6 mr-3 text-blue-600" />
+                  <FileText className="w-6 h-6 mr-3 text-bridge-blue" />
                   Document Management & Audit Logs
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-blue-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-blue mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">AI parsing of custody agreements and divorce documents</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-blue-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-blue mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Comprehensive audit trail of all platform activities</span>
                   </li>
                   <li className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-blue-600 mr-2 mt-1 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-bridge-blue mr-2 mt-1 flex-shrink-0" />
                     <span className="text-gray-700">Printable court-ready documentation</span>
                   </li>
                 </ul>
@@ -288,14 +288,14 @@ const LandingPage: React.FC = () => {
 
       {/* Bridgette AI Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-        <Card className="border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50">
+        <Card className="border-2 border-bridge-blue/30 bg-bridge-blue/5">
           <CardContent className="p-6 sm:p-8 md:p-12">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="md:w-1/2 mb-6 sm:mb-8 md:mb-0">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4">
-                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3 mb-2 sm:mb-0" />
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-bridge-blue mr-2 sm:mr-3 mb-2 sm:mb-0" />
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-bridge-black">
-                    Meet Bridge-it, Your AI Assistant
+                    Meet <span className="text-bridge-blue">Bridge-it</span>, Your AI Assistant
                   </h2>
                 </div>
                 <p className="text-base sm:text-lg text-gray-700 mb-4 sm:mb-6">
@@ -351,11 +351,11 @@ const LandingPage: React.FC = () => {
 
       {/* Dual-Instance Architecture */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-        <Card className="border-2 border-green-300 bg-gradient-to-r from-green-50 to-blue-50">
+        <Card className="border-2 border-bridge-green/30 bg-bridge-green/5">
           <CardContent className="p-6 sm:p-8 md:p-12">
             <div className="text-center">
-              <Users className="w-12 h-12 sm:w-16 sm:h-16 text-green-600 mx-auto mb-4 sm:mb-6" />
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-bridge-black mb-4 sm:mb-6 px-2">
+              <Users className="w-12 h-12 sm:w-16 sm:h-16 text-bridge-green mx-auto mb-4 sm:mb-6" />
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-bridge-green mb-4 sm:mb-6 px-2">
                 Dual-Instance Architecture
               </h2>
               <p className="text-base sm:text-lg text-gray-700 mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
@@ -383,19 +383,20 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-bridge-blue to-bridge-green py-12 sm:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-bridge-black mb-4 sm:mb-6 px-2">
+      <section className="bg-bridge-blue py-12 sm:py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-bridge-green/10"></div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 px-2">
             Ready to Transform Your Co-Parenting Journey?
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-bridge-black mb-6 sm:mb-8 px-2">
+          <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 px-2">
             Join thousands of parents who are making co-parenting easier, fairer, and more child-focused.
           </p>
           <div className="flex justify-center">
             <Link to="/signup">
               <Button
                 size="lg"
-                className="bg-white text-bridge-blue hover:bg-gray-100 text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto"
+                className="bg-bridge-yellow text-bridge-blue hover:bg-bridge-yellow/90 hover:scale-105 transition-all text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto font-bold"
               >
                 Get Started Free
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />

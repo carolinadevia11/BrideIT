@@ -166,7 +166,7 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
         <div className="border-b border-slate-100 px-5 py-3 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-400 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bridge-blue text-white">
                 <HeartHandshake className="h-5 w-5" />
               </div>
               <div>

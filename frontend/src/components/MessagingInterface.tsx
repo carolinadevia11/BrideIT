@@ -678,7 +678,7 @@ const MessagingInterface: React.FC = () => {
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="p-3 sm:p-4 border-b border-gray-200 bg-bridge-blue/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 min-w-0 flex-1">
                     <div className="min-w-0 flex-1">

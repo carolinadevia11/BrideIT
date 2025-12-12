@@ -168,7 +168,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
@@ -204,10 +204,10 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
             )}
 
             {!parsedData ? (
-              <Card className="w-full shadow-xl border-blue-100">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl pb-8">
+              <Card className="w-full shadow-xl border-bridge-blue/20">
+                <CardHeader className="bg-bridge-blue/5 rounded-t-xl pb-8">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                    <Scale className="w-6 h-6 text-blue-500" />
+                    <Scale className="w-6 h-6 text-bridge-blue" />
                   </div>
                   <CardTitle className="text-2xl text-blue-900">Upload Custody Agreement</CardTitle>
                   <CardDescription className="text-blue-700">
@@ -302,7 +302,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                     <Button
                       onClick={handleUpload}
                       disabled={!file || isUploading}
-                      className="flex-1 h-12 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg transition-all"
+                      className="flex-1 h-12 text-lg bg-bridge-blue hover:bg-bridge-blue/90 shadow-lg transition-all"
                     >
                       {isUploading ? (
                         <>
@@ -320,13 +320,13 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                 </CardContent>
               </Card>
             ) : (
-              <Card className="w-full shadow-xl border-green-200 ring-4 ring-green-50">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl pb-6">
+              <Card className="w-full shadow-xl border-bridge-green/30 ring-4 ring-bridge-green/10">
+                <CardHeader className="bg-bridge-green/5 rounded-t-xl pb-6">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <CheckCircle className="w-6 h-6 text-bridge-green" />
                   </div>
-                  <CardTitle className="text-2xl text-green-900">Analysis Complete!</CardTitle>
-                  <CardDescription className="text-green-700">
+                  <CardTitle className="text-2xl text-bridge-green">Analysis Complete!</CardTitle>
+                  <CardDescription className="text-bridge-green/80">
                     We've successfully extracted key terms from your agreement
                   </CardDescription>
                 </CardHeader>

@@ -40,7 +40,7 @@ const featureContent: Record<
     summary:
       "A unified, color-coded calendar that keeps both parents aligned on custody schedules, school events, medical appointments, and more.",
     icon: <Calendar className="w-10 h-10 text-green-600" />,
-    heroGradient: "from-green-100 via-blue-100 to-green-50",
+    heroGradient: "from-bridge-green/10 via-bridge-blue/10 to-bridge-green/5",
     highlights: [
       {
         title: "Unified Visibility",
@@ -91,7 +91,7 @@ const featureContent: Record<
     summary:
       "Tone-aware messaging that keeps co-parent conversations civil, logged, and court-ready without feeling sterile.",
     icon: <MessageSquare className="w-10 h-10 text-blue-600" />,
-    heroGradient: "from-blue-100 via-purple-100 to-blue-50",
+    heroGradient: "from-bridge-blue/10 via-purple-100 to-bridge-blue/5",
     highlights: [
       {
         title: "Tone Selection",
@@ -142,7 +142,7 @@ const featureContent: Record<
     summary:
       "Crystal-clear expense logging, automated split calculations, and structured dispute resolution that keeps finances transparent.",
     icon: <DollarSign className="w-10 h-10 text-red-600" />,
-    heroGradient: "from-red-100 via-orange-100 to-rose-50",
+    heroGradient: "from-bridge-red/10 via-orange-100 to-rose-50",
     highlights: [
       {
         title: "Automatic Splits",
@@ -193,7 +193,7 @@ const featureContent: Record<
     summary:
       "Upload agreements, let Bridge-it parse key clauses, and maintain a sealed audit trail ready for mediators and courts.",
     icon: <FileText className="w-10 h-10 text-purple-600" />,
-    heroGradient: "from-purple-100 via-indigo-100 to-purple-50",
+    heroGradient: "from-purple-100 via-bridge-blue/10 to-purple-50",
     highlights: [
       {
         title: "AI Contract Parsing",
@@ -254,7 +254,7 @@ const FeatureDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-bridge-green/5 to-bridge-blue/5">
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -275,7 +275,7 @@ const FeatureDetail: React.FC = () => {
             </Link>
             <Link to="/signup">
               <Button
-                className="bg-gradient-to-r from-bridge-blue to-bridge-green hover:from-blue-600 hover:to-green-600 text-black border-2 border-bridge-green"
+                className="bg-bridge-yellow text-bridge-blue hover:bg-bridge-yellow/90 border-2 border-bridge-yellow font-bold"
               >
                 Get Started Free
               </Button>

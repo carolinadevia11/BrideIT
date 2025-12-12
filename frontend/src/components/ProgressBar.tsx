@@ -30,8 +30,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       </div>
       
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full transition-all duration-500 ease-out"
+        <div
+          className="h-full bg-bridge-green rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         >
           {progress > 20 && (

@@ -213,7 +213,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
 
   if (mode === 'create') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
         <div className="w-full max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Bridgette Side */}
@@ -246,9 +246,9 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
 
               {!generatedCode ? (
                 <Card className="w-full shadow-xl border-blue-100">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-xl pb-8">
+                  <CardHeader className="bg-bridge-blue/5 rounded-t-xl pb-8">
                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                      <Sparkles className="w-6 h-6 text-blue-500" />
+                      <Sparkles className="w-6 h-6 text-bridge-blue" />
                     </div>
                     <CardTitle className="text-2xl text-blue-900">Create Family Profile</CardTitle>
                     <CardDescription className="text-blue-700">
@@ -281,7 +281,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                     <Button
                       onClick={handleCreateFamily}
                       disabled={isSubmitting}
-                      className="w-full h-12 text-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="w-full h-12 text-lg bg-bridge-blue hover:bg-bridge-blue/90 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       {isSubmitting ? (
                         <>
@@ -298,10 +298,10 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="w-full shadow-xl border-green-200 ring-4 ring-green-50">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl text-center pb-6">
+                <Card className="w-full shadow-xl border-bridge-green/30 ring-4 ring-bridge-green/10">
+                  <CardHeader className="bg-bridge-green/5 rounded-t-xl text-center pb-6">
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4">
-                      <Check className="w-8 h-8 text-green-500" />
+                      <Check className="w-8 h-8 text-bridge-green" />
                     </div>
                     <CardTitle className="text-2xl text-green-900">You're All Set!</CardTitle>
                     <CardDescription className="text-green-700">
@@ -314,24 +314,24 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                         Your Unique Family Code
                       </Label>
                       <div className="relative group cursor-pointer" onClick={copyToClipboard}>
-                        <div className="inline-flex items-center justify-center bg-white border-2 border-green-200 hover:border-green-400 rounded-xl px-8 py-6 transition-all duration-200 shadow-sm hover:shadow-md w-full">
-                          <span className="text-4xl md:text-5xl font-bold font-mono text-green-800 tracking-[0.2em]">
+                        <div className="inline-flex items-center justify-center bg-white border-2 border-bridge-green/30 hover:border-bridge-green rounded-xl px-8 py-6 transition-all duration-200 shadow-sm hover:shadow-md w-full">
+                          <span className="text-4xl md:text-5xl font-bold font-mono text-bridge-green tracking-[0.2em]">
                             {generatedCode}
                           </span>
                         </div>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-4 text-green-400 group-hover:text-green-600 transition-colors">
+                        <div className="absolute top-1/2 -translate-y-1/2 right-4 text-bridge-green group-hover:text-bridge-green-dark transition-colors">
                           {copied ? <Check className="w-6 h-6" /> : <Copy className="w-6 h-6" />}
                         </div>
                       </div>
-                      <p className="text-sm text-green-600 font-medium">
+                      <p className="text-sm text-bridge-green font-medium">
                         {copied ? "Copied to clipboard!" : "Click code to copy"}
                       </p>
                     </div>
 
-                    <Alert className="bg-amber-50 border-amber-200">
-                      <Share2 className="w-4 h-4 text-amber-600" />
-                      <AlertTitle className="text-amber-800 font-semibold">Next Steps</AlertTitle>
-                      <AlertDescription className="text-amber-700 text-sm mt-2">
+                    <Alert className="bg-bridge-yellow/10 border-bridge-yellow/30">
+                      <Share2 className="w-4 h-4 text-bridge-yellow-dark" />
+                      <AlertTitle className="text-bridge-yellow-dark font-semibold">Next Steps</AlertTitle>
+                      <AlertDescription className="text-bridge-yellow-dark/90 text-sm mt-2">
                         <ol className="list-decimal list-inside space-y-1 ml-1">
                           <li>Share this code with your co-parent</li>
                           <li>They create a Bridge-it account</li>
@@ -343,7 +343,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                     <Button
                       onClick={() => familyResponse && onSuccess(familyResponse)}
                       disabled={!familyResponse}
-                      className="w-full h-12 text-lg bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all"
+                      className="w-full h-12 text-lg bg-bridge-green hover:bg-bridge-green/90 shadow-md hover:shadow-lg transition-all"
                     >
                       Go to Dashboard
                     </Button>
@@ -359,7 +359,7 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
 
   // Join mode
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
@@ -387,13 +387,13 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
               </Button>
             )}
 
-            <Card className="w-full shadow-xl border-purple-100">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-xl pb-8">
+            <Card className="w-full shadow-xl border-bridge-blue/20">
+              <CardHeader className="bg-bridge-blue/5 rounded-t-xl pb-8">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                  <HeartHandshake className="w-6 h-6 text-purple-500" />
+                  <HeartHandshake className="w-6 h-6 text-bridge-blue" />
                 </div>
-                <CardTitle className="text-2xl text-purple-900">Join Family Profile</CardTitle>
-                <CardDescription className="text-purple-700">
+                <CardTitle className="text-2xl text-bridge-blue">Join Family Profile</CardTitle>
+                <CardDescription className="text-bridge-blue/80">
                   Link your account to an existing family profile
                 </CardDescription>
               </CardHeader>
@@ -435,10 +435,10 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
                   </AlertDescription>
                 </Alert>
 
-                <Button 
-                  onClick={handleLinkFamily} 
+                <Button
+                  onClick={handleLinkFamily}
                   disabled={isSubmitting || !familyCode || !parent2Name}
-                  className="w-full h-12 text-lg bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="w-full h-12 text-lg bg-bridge-blue hover:bg-bridge-blue/90 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   {isSubmitting ? (
                     <>

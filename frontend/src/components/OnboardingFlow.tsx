@@ -32,7 +32,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Hi there! I'm Bridge-it, your personal co-parenting assistant! I'm so excited to show you around Bridge-it and help you create a positive environment for your family! 🎉",
       bridgetteExpression: 'waving',
       icon: Heart,
-      color: 'from-pink-400 to-purple-600',
+      color: 'from-bridge-blue to-bridge-blue/80',
       features: [
         'AI-powered assistance from Bridge-it!',
         'Secure communication with your co-parent',
@@ -50,7 +50,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "The shared calendar is where the magic happens! Both you and your co-parent can see all the important dates, from custody schedules to school events. Bridge-it will help you avoid conflicts and keep everyone on the same page! 📅✨",
       bridgetteExpression: 'encouraging',
       icon: Calendar,
-      color: 'from-blue-400 to-blue-600',
+      color: 'from-bridge-blue to-cyan-600',
       features: [
         'Color-coded event categories',
         'Custody schedule management',
@@ -68,7 +68,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Communication is key to successful co-parenting! Bridge-it will help you choose the right tone for your messages and keep everything documented for your records. No more misunderstandings! 💬🤝",
       bridgetteExpression: 'happy',
       icon: MessageSquare,
-      color: 'from-green-400 to-green-600',
+      color: 'from-bridge-green to-emerald-600',
       features: [
         'Tone selection (friendly, neutral, legal)',
         'AI-powered message suggestions',
@@ -86,7 +86,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Money matters can be tricky, but Bridge-it is here to help! Track all your shared expenses, split costs fairly, and keep detailed records. No more arguments about who paid for what! 💰📊",
       bridgetteExpression: 'thinking',
       icon: DollarSign,
-      color: 'from-purple-400 to-purple-600',
+      color: 'from-bridge-red to-pink-600',
       features: [
         'Automatic cost splitting',
         'Receipt photo storage',
@@ -104,7 +104,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Keep all your important documents safe and organized! From custody agreements to medical records, everything is encrypted and easily accessible when you need it. Bridge-it can even help extract key information! 📄🔒",
       bridgetteExpression: 'encouraging',
       icon: FileText,
-      color: 'from-orange-400 to-orange-600',
+      color: 'from-bridge-yellow to-orange-500',
       features: [
         'Secure document storage',
         'AI-powered document parsing',
@@ -122,7 +122,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Learning never stops! Bridge-it has curated amazing resources from psychology experts, family therapists, and legal professionals to help you on your co-parenting journey. Knowledge is power! 📚💪",
       bridgetteExpression: 'encouraging',
       icon: Users,
-      color: 'from-indigo-400 to-indigo-600',
+      color: 'from-bridge-blue to-indigo-600',
       features: [
         'Expert articles and research',
         'Educational video library',
@@ -140,7 +140,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       bridgetteMessage: "Congratulations! You're now ready to use Bridge-it to create a positive co-parenting experience! Remember, Bridge-it is always here to help guide you through any challenges. You've got this! 🌟👏",
       bridgetteExpression: 'celebrating',
       icon: Star,
-      color: 'from-yellow-400 to-pink-600',
+      color: 'from-bridge-yellow to-bridge-green',
       features: [
         'Your Bridge-it account is fully set up',
         'All features are now available',
@@ -175,7 +175,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Progress Bar */}
         <div className="mb-8">
@@ -268,9 +268,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   ) : (
-                    <Button 
+                    <Button
                       onClick={onComplete}
-                      className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 flex items-center space-x-2"
+                      className="bg-bridge-green hover:bg-bridge-green/90 flex items-center space-x-2"
                     >
                       <Check className="w-4 h-4" />
                       <span>Get Started!</span>

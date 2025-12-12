@@ -782,7 +782,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 <head>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .header { background: linear-gradient(135deg, #3b82f6, #10b981); color: white; padding: 20px; text-align: center; }
+        .header { background: linear-gradient(135deg, #002f6c, #10b981); color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; }
         .section { margin: 20px 0; padding: 15px; border-left: 4px solid #3b82f6; background: #f8fafc; }
         .warning { border-left-color: #f59e0b; background: #fffbeb; }
@@ -1788,7 +1788,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="mt-6 space-y-3">
           {/* Custody Schedule Legend */}
           {custodyAgreement?.custodySchedule ? (
-            <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
+            <div className="p-3 sm:p-4 bg-bridge-blue/5 rounded-lg border-2 border-bridge-blue/20">
               <div className="font-bold text-gray-800 text-sm sm:text-base mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <span className="text-blue-600">📅</span>
                 <span>Custody Schedule:</span>
@@ -1825,8 +1825,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
             </div>
           ) : (familyProfile?.custodyArrangement === '50-50' || familyProfile?.custodyArrangement === 'primary-secondary') && (
-            <div className="p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200">
-              <div className="font-bold text-amber-800 text-sm sm:text-base mb-2 flex items-center gap-1.5 sm:gap-2">
+            <div className="p-3 sm:p-4 bg-bridge-yellow/5 rounded-lg border-2 border-bridge-yellow/20">
+              <div className="font-bold text-bridge-yellow-dark text-sm sm:text-base mb-2 flex items-center gap-1.5 sm:gap-2">
                 <span>⚠️</span>
                 <span>No Custody Schedule Configured</span>
               </div>
