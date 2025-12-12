@@ -36,11 +36,11 @@ const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
 
   const animationClasses = {
     bounce: 'animate-bounce',
-    float: 'animate-pulse',
-    balance: 'animate-pulse',
+    float: 'animate-float',
+    balance: 'animate-gentle-bounce',
     celebrate: 'animate-bounce',
-    thinking: 'animate-pulse',
-    idle: 'animate-pulse'
+    thinking: 'animate-breathe',
+    idle: 'animate-breathe'
   };
 
   // Generate sparkles for celebration

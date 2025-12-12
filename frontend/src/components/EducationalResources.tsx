@@ -732,8 +732,13 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {recommendedArticles.slice(carouselIndex, carouselIndex + 3).map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleArticleClick(article)}>
+            {recommendedArticles.slice(carouselIndex, carouselIndex + 3).map((article, index) => (
+              <Card
+                key={article.id}
+                className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group animate-in fade-in zoom-in fill-mode-backwards"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => handleArticleClick(article)}
+              >
                 <ArticleThumbnail article={article} />
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -817,8 +822,13 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
         {/* Articles Tab */}
         <TabsContent value="articles" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredArticles.map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleArticleClick(article)}>
+            {filteredArticles.map((article, index) => (
+              <Card
+                key={article.id}
+                className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => handleArticleClick(article)}
+              >
                 <ArticleThumbnail article={article} />
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -859,12 +869,17 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
         {/* Videos Tab */}
         <TabsContent value="videos" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map((video) => {
+            {filteredVideos.map((video, index) => {
               const IconComponent = categoryIcons[video.category];
               const colorClass = categoryColors[video.category];
               
               return (
-                <Card key={video.id} className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleVideoClick(video)}>
+                <Card
+                  key={video.id}
+                  className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => handleVideoClick(video)}
+                >
                   <div className={`w-full h-32 ${colorClass} rounded-t-lg flex items-center justify-center relative overflow-hidden`}>
                     <div className="absolute inset-0 bg-white/10"></div>
                     <div className="relative">
@@ -1030,14 +1045,18 @@ const EducationalResources: React.FC<EducationalResourcesProps> = ({ currentUser
 
           {/* Professionals List */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredProfessionals.map((professional) => {
+            {filteredProfessionals.map((professional, index) => {
               const SpecialtyIcon = specialtyIcons[professional.specialty];
               const isFavorite = favoriteProfessionals.includes(professional.id);
               
               return (
-                <Card key={professional.id} className={`hover:shadow-lg transition-shadow ${
-                  professional.isEmergency ? 'border-2 border-red-200 bg-red-50' : ''
-                }`}>
+                <Card
+                  key={professional.id}
+                  className={`hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+                    professional.isEmergency ? 'border-2 border-red-200 bg-red-50' : ''
+                  } animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards`}
+                  style={{ animationDelay: `${(index % 6) * 100}ms` }}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">

@@ -681,7 +681,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
             <CardContent className="pt-6">
 
               {/* Profile Settings */}
-              <TabsContent value="profile" className="space-y-6">
+              <TabsContent value="profile" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="relative">
                     <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
@@ -770,7 +770,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
               {/* New Preferences Tab */}
-              <TabsContent value="preferences" className="space-y-6">
+              <TabsContent value="preferences" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 {/* Language Selection */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -886,7 +886,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
               {/* Notification Settings */}
-              <TabsContent value="notifications" className="space-y-6">
+              <TabsContent value="notifications" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
 
@@ -952,7 +952,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
               {/* Privacy Settings */}
-              <TabsContent value="privacy" className="space-y-6">
+              <TabsContent value="privacy" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Controls</h3>
 
@@ -996,7 +996,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
               {/* Bridgette Settings */}
-              <TabsContent value="bridgette" className="space-y-6">
+              <TabsContent value="bridgette" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridge-it</h3>
 
@@ -1056,7 +1056,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
 
-              <TabsContent value="family" className="space-y-6">
+              <TabsContent value="family" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
                 <Card className="border-2 border-green-200 bg-green-50 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-green-800">

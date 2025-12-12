@@ -1408,25 +1408,6 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 />
               </div>
 
-              <Card className="border-2 border-bridge-blue bg-blue-50">
-                <CardContent className="p-4 sm:p-5">
-                  <div>
-                    <h3 className="font-semibold text-sm sm:text-base text-bridge-black mb-2">⚖️ Daily Balance Tip</h3>
-                    <p className="text-bridge-black text-xs sm:text-sm mb-3">
-                      Remember, fair doesn't always mean equal. Consider each parent's circumstances
-                      when making decisions. Focus on what's best for your children's wellbeing.
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => changeTab('resources')}
-                      className="border-bridge-blue text-bridge-blue hover:bg-bridge-blue hover:text-white"
-                    >
-                      Learn More
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="calendar">

@@ -181,7 +181,11 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
             <span className="text-sm font-medium text-gray-600">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="bg-white/50 border-gray-300 text-gray-700 hover:bg-white hover:text-gray-900"
+            >
               Skip Preview
             </Button>
           </div>

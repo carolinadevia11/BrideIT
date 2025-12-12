@@ -8,7 +8,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b-2 border-bridge-blue">
+      <header className="bg-white shadow-sm border-b-2 border-bridge-blue animate-in fade-in slide-in-from-top duration-700 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             <div className="flex items-center space-x-2 sm:space-x-4">
@@ -54,34 +54,34 @@ const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-20">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-bridge-blue bg-white shadow-[0_25px_80px_rgba(59,130,246,0.25)] px-4 py-8 sm:px-6 sm:py-12 md:px-20 md:py-24 mb-8 sm:mb-12">
-          <div className="absolute -top-40 -left-20 h-80 w-80 bg-gradient-to-br from-bridge-blue/40 via-bridge-green/30 to-transparent blur-3xl" aria-hidden="true"></div>
-          <div className="absolute -bottom-48 -right-16 h-[28rem] w-[28rem] bg-gradient-to-tr from-purple-300/30 via-blue-300/20 to-transparent blur-3xl" aria-hidden="true"></div>
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-bridge-blue bg-white shadow-[0_25px_80px_rgba(59,130,246,0.25)] px-4 py-8 sm:px-6 sm:py-12 md:px-20 md:py-24 mb-8 sm:mb-12 animate-in fade-in zoom-in duration-700 delay-200 fill-mode-backwards">
+          <div className="absolute -top-40 -left-20 h-80 w-80 bg-gradient-to-br from-bridge-blue/40 via-bridge-green/30 to-transparent blur-3xl animate-pulse" aria-hidden="true"></div>
+          <div className="absolute -bottom-48 -right-16 h-[28rem] w-[28rem] bg-gradient-to-tr from-purple-300/30 via-blue-300/20 to-transparent blur-3xl animate-pulse delay-700" aria-hidden="true"></div>
 
           <div className="relative text-center">
-            <div className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-blue-50 border border-blue-200 text-xs sm:text-sm font-medium text-blue-700 mb-4 sm:mb-6">
-              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> 
+            <div className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-blue-50 border border-blue-200 text-xs sm:text-sm font-medium text-blue-700 mb-4 sm:mb-6 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-300 fill-mode-backwards">
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin-slow" />
               <span className="hidden sm:inline">Introducing Bridge-it — your AI co-parenting guide</span>
               <span className="sm:hidden">AI Co-Parenting Guide</span>
             </div>
 
-            <div className="flex justify-center mb-6 sm:mb-8">
-              <img 
-                src="/bridgette-avatar.png" 
-                alt="Bridge-it AI Assistant" 
-                className="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 bridgette-animated"
+            <div className="flex justify-center mb-6 sm:mb-8 animate-in zoom-in fade-in duration-700 delay-500 fill-mode-backwards">
+              <img
+                src="/bridgette-avatar.png"
+                alt="Bridge-it AI Assistant"
+                className="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 bridgette-animated hover:scale-110 transition-transform duration-500 ease-in-out cursor-pointer"
                 style={{ mixBlendMode: 'multiply' }}
               />
             </div>
 
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-bridge-black tracking-tight mb-4 sm:mb-6 px-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-bridge-black tracking-tight mb-4 sm:mb-6 px-2 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-700 fill-mode-backwards">
               Transform Co-Parenting with <span className="text-bridge-blue">Bridge-it</span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-1000 fill-mode-backwards">
               Meet <strong>Bridge-it</strong>, the friendly assistant that keeps both parents aligned. From custody schedules to expenses and conversations, Bridge-it brings calm, clarity, and cooperation to every family.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-12 px-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-12 px-2 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-[1200ms] fill-mode-backwards">
               <div className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2 rounded-full bg-blue-50 text-blue-700 text-xs sm:text-sm font-medium">
                 <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" /> 
                 <span className="whitespace-nowrap">AI-guided onboarding</span>
@@ -96,38 +96,44 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-2">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-2 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-[1400ms] fill-mode-backwards">
               <Link to="/signup">
                 <Button
                   size="lg"
-                  className="bg-bridge-blue hover:bg-bridge-blue/90 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto transition-all hover:scale-105"
+                  className="bg-bridge-blue hover:bg-bridge-blue/90 text-white text-base sm:text-lg px-6 sm:px-10 py-4 sm:py-6 shadow-lg w-full sm:w-auto transition-all hover:scale-105 hover:shadow-xl hover:ring-4 hover:ring-bridge-blue/20"
                 >
                   Start Your Journey
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 animate-pulse" />
                 </Button>
               </Link>
               <Link to="/login" className="w-full sm:w-auto">
-                <Button 
+                <Button
                   size="lg"
                   variant="outline"
-                  className="border-2 border-bridge-blue text-bridge-blue hover:bg-bridge-blue hover:text-white text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto"
+                  className="border-2 border-bridge-blue text-bridge-blue hover:bg-bridge-blue hover:text-white text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto transition-all hover:scale-105 hover:shadow-lg"
                 >
                   I Have an Account
                 </Button>
               </Link>
             </div>
 
-            <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-left">
-              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100">
-                <p className="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-2">Peace of Mind</p>
+            <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-left animate-in slide-in-from-bottom-8 fade-in duration-1000 delay-[1600ms] fill-mode-backwards">
+              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 hover:scale-105 transition-transform duration-300 hover:shadow-md cursor-default">
+                <p className="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-2 flex items-center gap-2">
+                  <Shield className="w-3 h-3" /> Peace of Mind
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600">Real-time updates keep both parents on the same page, reducing stress and misunderstandings.</p>
               </div>
-              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-green-50 border border-green-100">
-                <p className="text-xs uppercase tracking-wide text-green-500 font-semibold mb-2">Balanced Support</p>
+              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-green-50 border border-green-100 hover:scale-105 transition-transform duration-300 hover:shadow-md cursor-default">
+                <p className="text-xs uppercase tracking-wide text-green-500 font-semibold mb-2 flex items-center gap-2">
+                  <Scale className="w-3 h-3" /> Balanced Support
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600">Smart suggestions and reminders ensure responsibilities stay fair and child-focused.</p>
               </div>
-              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-purple-50 border border-purple-100">
-                <p className="text-xs uppercase tracking-wide text-purple-500 font-semibold mb-2">Built for Families</p>
+              <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-purple-50 border border-purple-100 hover:scale-105 transition-transform duration-300 hover:shadow-md cursor-default">
+                <p className="text-xs uppercase tracking-wide text-purple-500 font-semibold mb-2 flex items-center gap-2">
+                  <Heart className="w-3 h-3" /> Built for Families
+                </p>
                 <p className="text-xs sm:text-sm text-gray-600">Designed with therapists, mediators, and legal experts to support every kind of co-parenting journey.</p>
               </div>
             </div>
@@ -136,27 +142,27 @@ const LandingPage: React.FC = () => {
 
         {/* Key Benefits */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-16">
-          <Card className="border-2 border-green-200 bg-green-50 hover:shadow-lg transition-shadow">
+          <Card className="border-2 border-green-200 bg-green-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group cursor-default">
             <CardContent className="p-4 sm:p-6 text-center">
-              <Scale className="w-10 h-10 sm:w-12 sm:h-12 text-green-600 mx-auto mb-3 sm:mb-4" />
+              <Scale className="w-10 h-10 sm:w-12 sm:h-12 text-green-600 mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300" />
               <h3 className="text-lg sm:text-xl font-bold text-bridge-black mb-2">Fair & Balanced</h3>
               <p className="text-sm sm:text-base text-gray-600">
                 Ensure equitable decisions and transparent tracking for both parents
               </p>
             </CardContent>
           </Card>
-          <Card className="border-2 border-blue-200 bg-blue-50 hover:shadow-lg transition-shadow">
+          <Card className="border-2 border-blue-200 bg-blue-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group cursor-default">
             <CardContent className="p-4 sm:p-6 text-center">
-              <Shield className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
+              <Shield className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300" />
               <h3 className="text-lg sm:text-xl font-bold text-bridge-black mb-2">Court-Ready Docs</h3>
               <p className="text-sm sm:text-base text-gray-600">
                 Comprehensive audit logs and documentation for legal proceedings
               </p>
             </CardContent>
           </Card>
-          <Card className="border-2 border-purple-200 bg-purple-50 hover:shadow-lg transition-shadow sm:col-span-2 md:col-span-1">
+          <Card className="border-2 border-purple-200 bg-purple-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 sm:col-span-2 md:col-span-1 group cursor-default">
             <CardContent className="p-4 sm:p-6 text-center">
-              <Heart className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600 mx-auto mb-3 sm:mb-4" />
+              <Heart className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600 mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300" />
               <h3 className="text-lg sm:text-xl font-bold text-bridge-black mb-2">Child-Focused</h3>
               <p className="text-sm sm:text-base text-gray-600">
                 Every feature designed to prioritize your children's best interests
