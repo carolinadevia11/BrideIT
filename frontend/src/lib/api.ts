@@ -62,6 +62,8 @@ export const authAPI = {
     lastName: string;
     email: string;
     password: string;
+    phone?: string;
+    timezone?: string;
   }) => {
     return fetchWithAuth("/api/v1/auth/signup", {
       method: "POST",

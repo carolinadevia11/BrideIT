@@ -199,7 +199,7 @@ async def update_user_profile(
     updates.pop('email', None)  # Email shouldn't be changed
     
     # Only allow specific fields to be updated
-    allowed_fields = {'firstName', 'lastName', 'tourCompleted'}
+    allowed_fields = {'firstName', 'lastName', 'tourCompleted', 'phone', 'timezone'}
     filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
     
     if not filtered_updates:

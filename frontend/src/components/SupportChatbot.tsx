@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Send, HeartHandshake, Shield, Sparkles } from 'lucide-react';
+import { X, Send, HeartHandshake, Shield, Sparkles, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -241,20 +241,23 @@ const SupportChatbot: React.FC<SupportChatbotProps> = ({ isOpen, onClose, parent
 
         <div className="border-t border-slate-100 px-4 sm:px-5 py-3 sm:py-4 dark:border-slate-800">
           {error && <p className="mb-2 text-xs text-rose-500">{error}</p>}
-          <Textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Share how you're feeling or what happened…"
-            className="mb-2 sm:mb-3 resize-none text-sm sm:text-base"
-            rows={3}
-            disabled={!sessionReady || isThinking}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                handleSend();
-              }
-            }}
-          />
+          <div className="relative mb-2 sm:mb-3">
+            <MessageCircle className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Share how you're feeling or what happened…"
+              className="resize-none text-sm sm:text-base pl-9"
+              rows={3}
+              disabled={!sessionReady || isThinking}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault();
+                  handleSend();
+                }
+              }}
+            />
+          </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1">
               <Shield className="h-3.5 w-3.5 flex-shrink-0" />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Link2 } from 'lucide-react';
+import { Users, Link2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AnimatedBridgette from './AnimatedBridgette';
@@ -51,7 +51,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
                       I'm the first parent setting up our family. I'll create our profile and get a Family Code to share with my co-parent.
                     </p>
                     <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base">
-                      Create Family Profile
+                      Create Family Profile <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -75,7 +75,7 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
                       My co-parent already created our family profile. I have a Family Code to link my account.
                     </p>
                     <Button className="w-full bg-purple-600 hover:bg-purple-700 text-sm sm:text-base">
-                      Enter Family Code
+                      Enter Family Code <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </div>
                 </div>

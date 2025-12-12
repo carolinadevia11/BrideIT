@@ -8,6 +8,7 @@ import { authAPI } from '@/lib/api';
 import AnimatedBridgette from '@/components/AnimatedBridgette';
 import { Separator } from '@/components/ui/separator';
 import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -18,6 +19,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
@@ -74,22 +76,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-bridge-green/5 to-bridge-yellow/10 flex items-start justify-center p-4 sm:p-6 pt-12 sm:pt-24">
+      <div className="w-full max-w-md flex flex-col gap-8 items-center">
         {/* Bridge-it Welcome */}
-        <div className="text-center order-2 md:order-1">
+        <div className="text-center">
           <AnimatedBridgette
             size="xl"
             expression="encouraging"
-            animation="float"
+            animation="idle"
             showSpeechBubble={true}
-            message="Welcome back! Bridge-it is here to help you get organized and find balance. Let's get you signed in! ⚖️"
+            message="Welcome, I am here to support you"
             position="center"
           />
         </div>
 
         {/* Login Form */}
-        <Card className="w-full shadow-2xl order-1 md:order-2">
+        <Card className="w-full shadow-2xl">
           <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
             <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
               Welcome to Bridge-it! 👋
@@ -99,17 +101,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm sm:text-base">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Enter your email address"
-                autoComplete="email"
-                autoFocus
-                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter your email address"
+                  autoComplete="email"
+                  autoFocus
+                  className="pl-10 placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -121,16 +126,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   Forgot Password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  className="pl-10 pr-10 placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button
               onClick={handleLogin}

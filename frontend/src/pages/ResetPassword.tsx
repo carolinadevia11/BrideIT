@@ -8,6 +8,7 @@ import { authAPI } from '@/lib/api';
 import AnimatedBridgette from '@/components/AnimatedBridgette';
 import { Separator } from '@/components/ui/separator';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 
 const ResetPassword = () => {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ const ResetPassword = () => {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -133,28 +135,41 @@ const ResetPassword = () => {
           <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm sm:text-base">New Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Enter new password"
-                autoFocus
-                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter new password"
+                  autoFocus
+                  className="pl-10 pr-10 placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-sm sm:text-base">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Confirm new password"
-                className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Confirm new password"
+                  className="pl-10 placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
+                />
+              </div>
             </div>
             <Button
               onClick={handleSubmit}

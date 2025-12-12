@@ -514,13 +514,16 @@ const MessagingInterface: React.FC = () => {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="subject">Subject</Label>
-                      <Input
-                        id="subject"
-                        value={newConversationSubject}
-                        onChange={(e) => setNewConversationSubject(e.target.value)}
-                        placeholder="What's this conversation about?"
-                        className="mt-1"
-                      />
+                      <div className="relative mt-1">
+                        <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                          id="subject"
+                          value={newConversationSubject}
+                          onChange={(e) => setNewConversationSubject(e.target.value)}
+                          placeholder="What's this conversation about?"
+                          className="pl-10"
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category">Category</Label>

@@ -183,7 +183,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <span className="text-sm font-medium text-gray-600">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <Button variant="ghost" size="sm" onClick={skipOnboarding}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={skipOnboarding}
+              className="border-bridge-blue text-bridge-blue hover:bg-bridge-blue/10 font-medium"
+            >
               Skip Tour
             </Button>
           </div>

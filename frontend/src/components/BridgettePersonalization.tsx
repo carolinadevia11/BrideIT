@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MessageSquare, Bell, Volume2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Heart, MessageSquare, Bell, Volume2, ArrowRight, ArrowLeft, Lightbulb, Hand } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -122,42 +122,45 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
               <Label className="text-lg font-medium mb-4 block">
                 How much help would you like?
               </Label>
-              <Select
-                value={preferences.helpLevel}
-                onValueChange={(value) =>
-                  setPreferences({ ...preferences, helpLevel: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="minimal">
-                    <div>
-                      <div className="font-medium">Minimal - Only when asked</div>
-                      <div className="text-xs text-gray-500">
-                        I will stay quiet unless you need me
+              <div className="relative">
+                <Lightbulb className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                <Select
+                  value={preferences.helpLevel}
+                  onValueChange={(value) =>
+                    setPreferences({ ...preferences, helpLevel: value })
+                  }
+                >
+                  <SelectTrigger className="pl-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="minimal">
+                      <div>
+                        <div className="font-medium">Minimal - Only when asked</div>
+                        <div className="text-xs text-gray-500">
+                          I will stay quiet unless you need me
+                        </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="balanced">
-                    <div>
-                      <div className="font-medium">Balanced - Helpful suggestions</div>
-                      <div className="text-xs text-gray-500">
-                        I will offer tips when relevant
+                    </SelectItem>
+                    <SelectItem value="balanced">
+                      <div>
+                        <div className="font-medium">Balanced - Helpful suggestions</div>
+                        <div className="text-xs text-gray-500">
+                          I will offer tips when relevant
+                        </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="detailed">
-                    <div>
-                      <div className="font-medium">Detailed - Comprehensive guidance</div>
-                      <div className="text-xs text-gray-500">
-                        I will guide you through everything
+                    </SelectItem>
+                    <SelectItem value="detailed">
+                      <div>
+                        <div className="font-medium">Detailed - Comprehensive guidance</div>
+                        <div className="text-xs text-gray-500">
+                          I will guide you through everything
+                        </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         );
@@ -337,22 +340,33 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
 
               {renderStepContent()}
 
-              <div className="flex justify-between mt-8">
+              <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-100">
                 <Button
-                  onClick={handleBack}
+                  onClick={() => onComplete(preferences)}
                   variant="outline"
-                  disabled={currentStep === 0}
+                  className="border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 w-full sm:w-auto font-medium"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
+                  Skip Setup
                 </Button>
-                <Button
-                  onClick={handleNext}
-                  className="bg-bridge-blue hover:bg-bridge-blue/90"
-                >
-                  {currentStep === steps.length - 1 ? 'Complete' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <Button
+                    onClick={handleBack}
+                    variant="outline"
+                    disabled={currentStep === 0}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    className="bg-bridge-blue hover:bg-bridge-blue/90 flex-1 sm:flex-none"
+                  >
+                    {currentStep === steps.length - 1 ? 'Complete' : 'Continue'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

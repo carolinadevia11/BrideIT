@@ -9,6 +9,7 @@ import {
   MessageSquarePlus,
   Plus,
   Settings,
+  Search,
 } from "lucide-react";
 
 import {
@@ -247,9 +248,10 @@ const DashboardShell = ({
             </div>
           </div>
           <div className="ml-2 sm:ml-6 hidden flex-1 items-center gap-2 rounded-xl bg-slate-100 px-3 py-1 lg:flex max-w-md">
+            <Search className="h-4 w-4 text-slate-500" />
             <Input
               placeholder="Search calendar, expenses, or documents"
-              className="h-8 border-none bg-transparent text-sm shadow-none focus-visible:ring-0"
+              className="h-8 border-none bg-transparent text-sm shadow-none focus-visible:ring-0 w-full"
             />
           </div>
           <div className="ml-auto flex items-center gap-1 sm:gap-2 flex-shrink-0">

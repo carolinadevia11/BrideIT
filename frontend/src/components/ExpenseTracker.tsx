@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Receipt, DollarSign, Clock, CheckCircle, AlertTriangle, X, Upload, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Receipt, DollarSign, Clock, CheckCircle, AlertTriangle, X, Upload, FileText, Calendar as CalendarIcon, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -437,26 +437,32 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
                 <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
                   <div>
                     <Label htmlFor="description" className="text-sm sm:text-base">Description *</Label>
-                    <Input
-                      id="description"
-                      value={newExpense.description}
-                      onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                      placeholder="e.g., Soccer cleats and uniform"
-                      className="mt-1 text-sm sm:text-base"
-                    />
+                    <div className="relative mt-1">
+                      <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="description"
+                        value={newExpense.description}
+                        onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                        placeholder="e.g., Soccer cleats and uniform"
+                        className="pl-10 text-sm sm:text-base"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label htmlFor="amount">Amount ($) *</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        step="0.01"
-                        value={newExpense.amount}
-                        onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                        placeholder="0.00"
-                        className="mt-1"
-                      />
+                      <div className="relative mt-1">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          value={newExpense.amount}
+                          onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                          placeholder="0.00"
+                          className="pl-10"
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category">Category *</Label>
@@ -479,13 +485,16 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
                   </div>
                   <div>
                     <Label htmlFor="date">Date *</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={newExpense.date}
-                      onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                      <Input
+                        id="date"
+                        type="date"
+                        value={newExpense.date}
+                        onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="receipt">Receipt (Optional)</Label>

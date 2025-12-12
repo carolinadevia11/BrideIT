@@ -8,6 +8,8 @@ class User(BaseModel):
     email: str
     password: str
     role: str = "user"
+    phone: Optional[str] = None
+    timezone: Optional[str] = None
     tourCompleted: Optional[bool] = False
 
 class Child(BaseModel):

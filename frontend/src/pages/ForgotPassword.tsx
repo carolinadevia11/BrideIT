@@ -8,6 +8,7 @@ import { authAPI } from '@/lib/api';
 import AnimatedBridgette from '@/components/AnimatedBridgette';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
+import { Mail } from 'lucide-react';
 
 const ForgotPassword = () => {
   const { toast } = useToast();
@@ -81,17 +82,20 @@ const ForgotPassword = () => {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm sm:text-base">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Enter your email address"
-                    autoComplete="email"
-                    autoFocus
-                    className="placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Enter your email address"
+                      autoComplete="email"
+                      autoFocus
+                      className="pl-10 placeholder:text-gray-400 h-10 sm:h-11 text-sm sm:text-base"
+                    />
+                  </div>
                 </div>
                 <Button
                   onClick={handleSubmit}

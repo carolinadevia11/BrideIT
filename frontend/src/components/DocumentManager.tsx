@@ -517,24 +517,30 @@ const DocumentManager: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <Label htmlFor="folderName" className="text-sm sm:text-base">Folder Name *</Label>
-              <Input
-                id="folderName"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="e.g., Sports & Activities, Travel Plans..."
-                className="mt-1 text-sm sm:text-base"
-              />
+              <div className="relative mt-1">
+                <Folder className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="folderName"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="e.g., Sports & Activities, Travel Plans..."
+                  className="pl-10 text-sm sm:text-base"
+                />
+              </div>
             </div>
             
             <div>
               <Label htmlFor="folderDescription" className="text-sm sm:text-base">Description</Label>
-              <Input
-                id="folderDescription"
-                value={newFolderDescription}
-                onChange={(e) => setNewFolderDescription(e.target.value)}
-                placeholder="Brief description of what you'll store here"
-                className="mt-1 text-sm sm:text-base"
-              />
+              <div className="relative mt-1">
+                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="folderDescription"
+                  value={newFolderDescription}
+                  onChange={(e) => setNewFolderDescription(e.target.value)}
+                  placeholder="Brief description of what you'll store here"
+                  className="pl-10 text-sm sm:text-base"
+                />
+              </div>
             </div>
           </div>
 

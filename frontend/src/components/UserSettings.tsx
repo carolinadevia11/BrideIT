@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye, Trash2, Edit, Sparkles } from 'lucide-react';
+import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye, Trash2, Edit, Sparkles, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -702,43 +702,55 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={settings.profile.firstName}
-                      onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="firstName"
+                        value={settings.profile.firstName}
+                        onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={settings.profile.lastName}
-                      onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="lastName"
+                        value={settings.profile.lastName}
+                        onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={settings.profile.email}
-                    onChange={(e) => updateSetting('profile', 'email', e.target.value)}
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={settings.profile.email}
+                      onChange={(e) => updateSetting('profile', 'email', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={settings.profile.phone}
-                    onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="phone"
+                      value={settings.profile.phone}
+                      onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1501,7 +1513,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                               value={manualData.scheduleType} 
                               onValueChange={handleScheduleTypeChange}
                             >
-                              <SelectTrigger className="mt-1">
+                              <SelectTrigger className="mt-1 focus:ring-bridge-blue">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1629,7 +1641,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                               value={manualData.expenseSplitType} 
                               onValueChange={handleExpenseSplitChange}
                             >
-                              <SelectTrigger className="mt-1">
+                              <SelectTrigger className="mt-1 focus:ring-bridge-blue">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>

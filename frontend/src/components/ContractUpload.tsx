@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft, Shield, Sparkles, Scale } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft, Shield, Sparkles, Scale, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -243,6 +243,9 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                       <label htmlFor="file-upload" className="cursor-pointer block">
                         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Upload className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex justify-center mb-2">
+                          <Paperclip className="w-6 h-6 text-gray-400 animate-bounce" />
                         </div>
                         <p className="text-lg font-medium text-gray-900 mb-2">
                           Click to upload or drag and drop

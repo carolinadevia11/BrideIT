@@ -8,15 +8,17 @@ interface AnimatedBridgetteProps {
   showSpeechBubble?: boolean;
   message?: string;
   position?: 'center' | 'left' | 'right';
+  bubblePosition?: 'top' | 'bottom';
 }
 
-const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({ 
-  size = 'lg', 
+const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
+  size = 'lg',
   expression = 'balanced',
   animation = 'float',
   showSpeechBubble = false,
   message = "I'm here to help keep things fair and balanced!",
-  position = 'center'
+  position = 'center',
+  bubblePosition = 'top'
 }) => {
   const [currentAnimation, setCurrentAnimation] = useState(animation);
   const [sparkles, setSparkles] = useState<Array<{id: number, x: number, y: number}>>([]);
@@ -62,24 +64,21 @@ const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
 
   return (
     <div className={`relative flex flex-col items-center ${positionClasses[position]}`}>
-      {/* Speech Bubble */}
-      {showSpeechBubble && (
-        <div className="mb-4 relative">
-          <div className="bg-white rounded-3xl px-6 py-4 shadow-xl border-2 border-bridge-blue relative max-w-sm">
-            <p className="text-sm font-medium text-bridge-black text-center">{message}</p>
-            {/* Tail */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
-              <div className="w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-bridge-blue"></div>
-              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                <div className="w-0 h-0 border-l-5 border-r-5 border-t-5 border-transparent border-t-white"></div>
+      {/* Main Avatar Container */}
+      <div className={`${sizeClasses[size]} relative ${animationClasses[currentAnimation]}`}>
+        {/* Speech Bubble */}
+        {showSpeechBubble && (
+          <div className={`absolute ${bubblePosition === 'top' ? 'bottom-[90%]' : 'top-[90%]'} left-1/2 transform -translate-x-1/2 w-48 z-50 animate-in fade-in zoom-in duration-300`}>
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-xl border-2 border-bridge-blue relative">
+              <p className="text-xs font-medium text-bridge-black text-center leading-snug">{message}</p>
+              {/* Tail */}
+              <div className={`absolute ${bubblePosition === 'top' ? '-bottom-2' : '-top-2'} left-1/2 transform -translate-x-1/2`}>
+                <div className={`w-4 h-4 bg-white ${bubblePosition === 'top' ? 'border-r-2 border-b-2' : 'border-l-2 border-t-2'} border-bridge-blue transform rotate-45`}></div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Main Avatar Container */}
-      <div className={`${sizeClasses[size]} relative ${animationClasses[currentAnimation]}`}>
+        )}
+
         {/* Sparkles for celebration */}
         {expression === 'celebrating' && sparkles.map((sparkle) => (
           <Sparkles 
@@ -164,11 +163,6 @@ const AnimatedBridgette: React.FC<AnimatedBridgetteProps> = ({
         <div className="absolute top-1/2 -left-6 w-2 h-2 bg-bridge-yellow rounded-full animate-bounce opacity-80" style={{animationDelay: '2s'}}></div>
       </div>
 
-      {/* Name tag */}
-      <div className="mt-4 bg-white px-4 py-2 rounded-full shadow-lg border-2 border-bridge-blue">
-        <span className="text-sm font-bold text-bridge-blue">Bridge-it</span>
-        <span className="text-xs text-bridge-black ml-1">⚖️ Your AI Assistant</span>
-      </div>
     </div>
   );
 };

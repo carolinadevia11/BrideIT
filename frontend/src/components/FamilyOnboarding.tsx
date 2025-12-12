@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, MapPin, Clock, Heart, Baby, Home, CheckCircle, Plus, Trash2, Calendar, AlertTriangle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, MapPin, Clock, Heart, Baby, Home, CheckCircle, Plus, Trash2, Calendar, AlertTriangle, User, Mail, Phone, Hash, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -314,13 +314,16 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
 
             <div>
               <Label htmlFor="familyName">Family Name (Optional)</Label>
-              <Input
-                id="familyName"
-                value={familyData.familyName}
-                onChange={(e) => setFamilyData(prev => ({ ...prev, familyName: e.target.value }))}
-                placeholder="e.g., Johnson Family"
-                className="mt-1"
-              />
+              <div className="relative mt-1">
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="familyName"
+                  value={familyData.familyName}
+                  onChange={(e) => setFamilyData(prev => ({ ...prev, familyName: e.target.value }))}
+                  placeholder="e.g., Johnson Family"
+                  className="pl-10"
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-1">This helps identify your family in the system</p>
             </div>
 
@@ -358,92 +361,116 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="p1-firstName">First Name *</Label>
-                <Input
-                  id="p1-firstName"
-                  value={familyData.parent1?.firstName}
-                  onChange={(e) => updateParent1('firstName', e.target.value)}
-                  placeholder="Sarah"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-firstName"
+                    value={familyData.parent1?.firstName}
+                    onChange={(e) => updateParent1('firstName', e.target.value)}
+                    placeholder="Sarah"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="p1-lastName">Last Name *</Label>
-                <Input
-                  id="p1-lastName"
-                  value={familyData.parent1?.lastName}
-                  onChange={(e) => updateParent1('lastName', e.target.value)}
-                  placeholder="Johnson"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-lastName"
+                    value={familyData.parent1?.lastName}
+                    onChange={(e) => updateParent1('lastName', e.target.value)}
+                    placeholder="Johnson"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="p1-email">Email *</Label>
-                <Input
-                  id="p1-email"
-                  type="email"
-                  value={familyData.parent1?.email}
-                  onChange={(e) => updateParent1('email', e.target.value)}
-                  placeholder="sarah@email.com"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-email"
+                    type="email"
+                    value={familyData.parent1?.email}
+                    onChange={(e) => updateParent1('email', e.target.value)}
+                    placeholder="sarah@email.com"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="p1-phone">Phone</Label>
-                <Input
-                  id="p1-phone"
-                  type="tel"
-                  value={familyData.parent1?.phone}
-                  onChange={(e) => updateParent1('phone', e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-phone"
+                    type="tel"
+                    value={familyData.parent1?.phone}
+                    onChange={(e) => updateParent1('phone', e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
               <Label htmlFor="p1-address">Street Address</Label>
-              <Input
-                id="p1-address"
-                value={familyData.parent1?.address}
-                onChange={(e) => updateParent1('address', e.target.value)}
-                placeholder="123 Main St"
-                className="mt-1"
-              />
+              <div className="relative mt-1">
+                <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="p1-address"
+                  value={familyData.parent1?.address}
+                  onChange={(e) => updateParent1('address', e.target.value)}
+                  placeholder="123 Main St"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="p1-city">City</Label>
-                <Input
-                  id="p1-city"
-                  value={familyData.parent1?.city}
-                  onChange={(e) => updateParent1('city', e.target.value)}
-                  placeholder="Seattle"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-city"
+                    value={familyData.parent1?.city}
+                    onChange={(e) => updateParent1('city', e.target.value)}
+                    placeholder="Seattle"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="p1-state">State</Label>
-                <Input
-                  id="p1-state"
-                  value={familyData.parent1?.state}
-                  onChange={(e) => updateParent1('state', e.target.value)}
-                  placeholder="WA"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-state"
+                    value={familyData.parent1?.state}
+                    onChange={(e) => updateParent1('state', e.target.value)}
+                    placeholder="WA"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="p1-zip">ZIP Code</Label>
-                <Input
-                  id="p1-zip"
-                  value={familyData.parent1?.zipCode}
-                  onChange={(e) => updateParent1('zipCode', e.target.value)}
-                  placeholder="98101"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p1-zip"
+                    value={familyData.parent1?.zipCode}
+                    onChange={(e) => updateParent1('zipCode', e.target.value)}
+                    placeholder="98101"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 
@@ -473,35 +500,44 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="p2-firstName">First Name</Label>
-                  <Input
-                    id="p2-firstName"
-                    value={familyData.parent2?.firstName}
-                    onChange={(e) => updateParent2('firstName', e.target.value)}
-                    placeholder="Michael"
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="p2-firstName"
+                      value={familyData.parent2?.firstName}
+                      onChange={(e) => updateParent2('firstName', e.target.value)}
+                      placeholder="Michael"
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="p2-lastName">Last Name</Label>
-                  <Input
-                    id="p2-lastName"
-                    value={familyData.parent2?.lastName}
-                    onChange={(e) => updateParent2('lastName', e.target.value)}
-                    placeholder="Smith"
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="p2-lastName"
+                      value={familyData.parent2?.lastName}
+                      onChange={(e) => updateParent2('lastName', e.target.value)}
+                      placeholder="Smith"
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="mt-4">
                 <Label htmlFor="p2-email">Email (for invitation)</Label>
-                <Input
-                  id="p2-email"
-                  type="email"
-                  value={familyData.parent2?.email}
-                  onChange={(e) => updateParent2('email', e.target.value)}
-                  placeholder="michael@email.com"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="p2-email"
+                    type="email"
+                    value={familyData.parent2?.email}
+                    onChange={(e) => updateParent2('email', e.target.value)}
+                    placeholder="michael@email.com"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -603,43 +639,52 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="child-firstName">First Name *</Label>
-                    <Input
-                      id="child-firstName"
-                      value={newChild.firstName}
-                      onChange={(e) => {
-                        if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
-                        setNewChild(prev => ({ ...prev, firstName: e.target.value }))
-                      }}
-                      placeholder="Emma"
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="child-firstName"
+                        value={newChild.firstName}
+                        onChange={(e) => {
+                          if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                          setNewChild(prev => ({ ...prev, firstName: e.target.value }))
+                        }}
+                        placeholder="Emma"
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="child-lastName">Last Name</Label>
-                    <Input
-                      id="child-lastName"
-                      value={newChild.lastName}
-                      onChange={(e) => {
-                        if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
-                        setNewChild(prev => ({ ...prev, lastName: e.target.value }))
-                      }}
-                      placeholder={familyData.familyName || 'Johnson'}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="child-lastName"
+                        value={newChild.lastName}
+                        onChange={(e) => {
+                          if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                          setNewChild(prev => ({ ...prev, lastName: e.target.value }))
+                        }}
+                        placeholder={familyData.familyName || 'Johnson'}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="child-dob">Date of Birth *</Label>
-                    <Input
-                      id="child-dob"
-                      type="date"
-                      max={new Date().toISOString().split('T')[0]}
-                      value={newChild.dateOfBirth ? new Date(newChild.dateOfBirth).toISOString().split('T')[0] : ''}
-                      onChange={(e) => setNewChild(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                      <Input
+                        id="child-dob"
+                        type="date"
+                        max={new Date().toISOString().split('T')[0]}
+                        value={newChild.dateOfBirth ? new Date(newChild.dateOfBirth).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setNewChild(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="child-gender">Gender</Label>

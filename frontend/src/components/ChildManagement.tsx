@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Baby, Calendar, Heart, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Baby, Calendar, Heart, AlertTriangle, User, Building, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -322,43 +322,52 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => {
-                    if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
-                    setFormData(prev => ({ ...prev, firstName: e.target.value }))
-                  }}
-                  placeholder="Emma"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => {
+                      if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                      setFormData(prev => ({ ...prev, firstName: e.target.value }))
+                    }}
+                    placeholder="Emma"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => {
-                    if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
-                    setFormData(prev => ({ ...prev, lastName: e.target.value }))
-                  }}
-                  placeholder="Johnson"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => {
+                      if (e.target.value && !/^[a-zA-Z\s\-']*$/.test(e.target.value)) return;
+                      setFormData(prev => ({ ...prev, lastName: e.target.value }))
+                    }}
+                    placeholder="Johnson"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  max={new Date().toISOString().split('T')[0]}
-                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    max={new Date().toISOString().split('T')[0]}
+                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: new Date(e.target.value) }))}
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="gender">Gender</Label>
@@ -379,23 +388,29 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="school">School (Optional)</Label>
-                <Input
-                  id="school"
-                  value={formData.school}
-                  onChange={(e) => setFormData(prev => ({ ...prev, school: e.target.value }))}
-                  placeholder="Lincoln Elementary"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="school"
+                    value={formData.school}
+                    onChange={(e) => setFormData(prev => ({ ...prev, school: e.target.value }))}
+                    placeholder="Lincoln Elementary"
+                    className="pl-10"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="grade">Grade (Optional)</Label>
-                <Input
-                  id="grade"
-                  value={formData.grade}
-                  onChange={(e) => setFormData(prev => ({ ...prev, grade: e.target.value }))}
-                  placeholder="3rd"
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="grade"
+                    value={formData.grade}
+                    onChange={(e) => setFormData(prev => ({ ...prev, grade: e.target.value }))}
+                    placeholder="3rd"
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
 

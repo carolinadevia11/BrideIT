@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, Link2, Upload, FileText, Loader2, ArrowLeft, Sparkles, Share2, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { Copy, Check, Link2, Upload, FileText, Loader2, ArrowLeft, Sparkles, Share2, ShieldCheck, HeartHandshake, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -266,13 +266,16 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
 
                     <div className="space-y-2">
                       <Label htmlFor="coParentName" className="text-blue-900">Co-Parent's Name (Optional)</Label>
-                      <Input
-                        id="coParentName"
-                        value={coParentName}
-                        onChange={(e) => setCoParentName(e.target.value)}
-                        placeholder="e.g. Michael"
-                        className="bg-white border-blue-200 focus-visible:ring-blue-400"
-                      />
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 w-4 h-4" />
+                        <Input
+                          id="coParentName"
+                          value={coParentName}
+                          onChange={(e) => setCoParentName(e.target.value)}
+                          placeholder="e.g. Michael"
+                          className="pl-10 bg-white border-blue-200 focus-visible:ring-blue-400"
+                        />
+                      </div>
                       <p className="text-xs text-blue-700/70">
                         Adding their name now helps personalize the calendar before they join.
                       </p>
@@ -400,13 +403,16 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
               <CardContent className="pt-6 space-y-6">
                 <div className="space-y-3">
                   <Label htmlFor="parent2Name" className="text-gray-700">Your Full Name</Label>
-                  <Input
-                    id="parent2Name"
-                    value={parent2Name}
-                    onChange={(e) => setParent2Name(e.target.value)}
-                    placeholder="e.g. Michael Smith"
-                    className="h-12 text-lg border-purple-200 focus:border-purple-400 focus:ring-purple-400"
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-300 w-5 h-5" />
+                    <Input
+                      id="parent2Name"
+                      value={parent2Name}
+                      onChange={(e) => setParent2Name(e.target.value)}
+                      placeholder="e.g. Michael Smith"
+                      className="pl-10 h-12 text-lg border-purple-200 focus:border-purple-400 focus:ring-purple-400"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">
