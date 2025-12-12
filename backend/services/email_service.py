@@ -8,12 +8,20 @@ load_dotenv()
 
 class EmailService:
     def __init__(self):
-        self.suppress_emails = False
+        # Check if email credentials are set
+        mail_username = os.getenv("MAIL_USERNAME")
+        mail_password = os.getenv("MAIL_PASSWORD")
         
+        if not mail_username or not mail_password:
+            print("WARNING: Email credentials not set. Emails will be suppressed/simulated.")
+            self.suppress_emails = True
+        else:
+            self.suppress_emails = False
+
         # Ensure environment variables are loaded or provide defaults/handling
         self.conf = ConnectionConfig(
-            MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
-            MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
+            MAIL_USERNAME=mail_username or "",
+            MAIL_PASSWORD=mail_password or "",
             MAIL_FROM=os.getenv("MAIL_FROM", "noreply@dyad.com"),
             MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
             MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
@@ -24,7 +32,7 @@ class EmailService:
         )
         self.fastmail = FastMail(self.conf)
 
-    def _get_html_template(self, title: str, content: str, action_url: str = "") -> str:
+    def _get_html_template(self, title: str, content: str, action_url: str = "", action_text: str = "Open Bridge-it") -> str:
         """
         Generates a professional HTML email template with the app branding.
         """
@@ -54,7 +62,7 @@ class EmailService:
 
                     {f'''
                     <div style="text-align: center; margin-top: 30px;">
-                        <a href="{action_url}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">Open Bridge-it</a>
+                        <a href="{action_url}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 16px;">{action_text}</a>
                     </div>
                     ''' if action_url else ''}
                 </div>
@@ -284,6 +292,32 @@ class EmailService:
                 subject=subject,
                 recipients=valid_recipients,
                 body=self._get_html_template(subject, content),
+                subtype=MessageType.html
+            )
+            await self.fastmail.send_message(message)
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+
+    async def send_password_reset_email(self, email: str, reset_link: str):
+        """Sends a password reset email."""
+        if self.suppress_emails:
+            print(f"Email suppressed (Password Reset): {email}")
+            print(f"Reset Link: {reset_link}")
+            return
+
+        subject = "Reset Your Password"
+        
+        content = f"""
+        <p>We received a request to reset the password for your Bridge-it account.</p>
+        <p>If you didn't make this request, you can safely ignore this email.</p>
+        <p>To reset your password, click the button below:</p>
+        """
+        
+        try:
+            message = MessageSchema(
+                subject=subject,
+                recipients=[email],
+                body=self._get_html_template(subject, content, action_url=reset_link, action_text="Reset Password"),
                 subtype=MessageType.html
             )
             await self.fastmail.send_message(message)

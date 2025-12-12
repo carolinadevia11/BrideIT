@@ -10,6 +10,8 @@ import FeatureDetail from "./pages/FeatureDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminFamilyDetail from "./pages/AdminFamilyDetail";
 
@@ -79,6 +81,26 @@ const App = () => {
                   <Navigate to="/dashboard" replace />
                 ) : (
                   <Signup onLogin={handleLogin} />
+                )
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <ForgotPassword />
+                )
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <ResetPassword />
                 )
               }
             />

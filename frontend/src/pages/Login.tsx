@@ -112,7 +112,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

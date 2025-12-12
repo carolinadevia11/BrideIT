@@ -114,6 +114,20 @@ export const authAPI = {
       body: JSON.stringify(updates),
     });
   },
+
+  forgotPassword: async (email: string) => {
+    return fetchWithAuth("/api/v1/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    return fetchWithAuth("/api/v1/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  },
 };
 
 // Family API

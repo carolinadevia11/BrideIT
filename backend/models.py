@@ -275,3 +275,10 @@ class DocumentUpload(BaseModel):
     file_content: str  # Base64 encoded file
     file_name: str
     children_ids: Optional[List[str]] = None
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str

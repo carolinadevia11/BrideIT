@@ -7,8 +7,9 @@ import jwt
 from datetime import datetime, timedelta
 import os
 
-from models import User
+from models import User, PasswordResetRequest, PasswordReset
 from database import db
+from services.email_service import email_service
 
 router = APIRouter()
 
@@ -71,6 +72,59 @@ async def create_user(user_data: User):
         user_dict['tourCompleted'] = False
     db.users.insert_one(user_dict)
     return user_in_db
+
+@router.post("/api/v1/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    user = db.users.find_one({"email": request.email})
+    if not user:
+        # Don't reveal if user exists
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+    
+    # Generate reset token
+    expires_delta = timedelta(hours=1)
+    reset_token = create_access_token(
+        data={"sub": user["email"], "type": "password_reset"},
+        expires_delta=expires_delta
+    )
+    
+    # In production, FRONTEND_URL must be set to the deployed application's URL
+    # e.g., https://my-app.vercel.app
+    # Default to 5137 for local development as per vite.config.ts
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5137")
+    
+    # Ensure no trailing slash
+    if frontend_url.endswith('/'):
+        frontend_url = frontend_url[:-1]
+        
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    
+    # Send email
+    await email_service.send_password_reset_email(user["email"], reset_link)
+    
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+@router.post("/api/v1/auth/reset-password")
+async def reset_password(reset_data: PasswordReset):
+    try:
+        payload = jwt.decode(reset_data.token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        
+        if email is None or token_type != "password_reset":
+            raise HTTPException(status_code=400, detail="Invalid token")
+            
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        
+    user = db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Update password
+    hashed_password = pwd_context.hash(reset_data.new_password)
+    db.users.update_one({"email": email}, {"$set": {"password": hashed_password}})
+    
+    return {"message": "Password has been reset successfully"}
 
 @router.post("/api/v1/auth/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
