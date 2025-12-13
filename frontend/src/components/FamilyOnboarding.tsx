@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { ArrowRight, ArrowLeft, Users, MapPin, Clock, Heart, Baby, Home, CheckCircle, Plus, Trash2, Calendar, AlertTriangle, User, Mail, Phone, Hash, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,19 +90,9 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       description: 'Add information about your children'
     },
     {
-      id: 'geography',
-      title: 'Location Information',
-      description: 'Tell us about different locations (if applicable)'
-    },
-    {
       id: 'custody',
-      title: 'Custody Arrangement',
-      description: 'Basic custody information'
-    },
-    {
-      id: 'special',
-      title: 'Special Accommodations',
-      description: 'Any special needs or considerations'
+      title: 'Custody & Details',
+      description: 'Arrangement and other details'
     },
     {
       id: 'review',
@@ -227,12 +218,9 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const updateBridgetteForStep = (step: number) => {
     const messages = [
       "Hi! I'm so excited to help you set up your family profile! This will help me organize everything perfectly for your unique situation! 🌟",
-      "Great! Let's start with the first parent's information. This helps me understand your family structure! 👤",
-      "Perfect! Now let's get the second parent's information. Almost there! 👥",
-      "Understanding where everyone lives helps me manage schedules across different locations! 🗺️",
-      "Now the most important part - tell me about your wonderful children! I'll help organize everything for each of them! 👶",
-      "Understanding your custody arrangement helps me set up the calendar correctly! 📅",
-      "Let me know about any special needs or accommodations so I can help you better! ❤️",
+      "Let's start with your contact information. This helps me understand who's who in the family! 👤",
+      "Tell me about your wonderful children! I'll help organize everything for each of them! 👶",
+      "Understanding your custody arrangement and any special details helps me set up the calendar correctly! 📅",
       "Let's review everything to make sure it's perfect! You're almost ready to start using Bridge! ✨"
     ];
     setBridgetteMessage(messages[step]);
@@ -243,6 +231,13 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
     // Pass updated data to parent component
     setBridgetteExpression('celebrating');
     setBridgetteMessage("Perfect! Your family profile is all set up! 🎉");
+    
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+
     setIsSubmitting(true);
     
     // Prepare children data for backend (map firstName/lastName to name)
@@ -285,14 +280,10 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       case 1:
         return familyData.parent1?.firstName && familyData.parent1?.email;
       case 2:
-        return true; // Geography step - optional
-      case 3:
         return (familyData.children?.length || 0) > 0;
+      case 3:
+        return !!familyData.custodyArrangement;
       case 4:
-        return familyData.custodyArrangement;
-      case 5:
-        return true;
-      case 6:
         return true;
       default:
         return false;
@@ -327,29 +318,6 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
               <p className="text-xs text-gray-500 mt-1">This helps identify your family in the system</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="border-2 border-blue-200">
-                <CardContent className="p-4 text-center">
-                  <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <h3 className="font-medium text-gray-800">Parent Info</h3>
-                  <p className="text-xs text-gray-600">Contact details for both parents</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-green-200">
-                <CardContent className="p-4 text-center">
-                  <Baby className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                  <h3 className="font-medium text-gray-800">Children</h3>
-                  <p className="text-xs text-gray-600">Information about your kids</p>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-purple-200">
-                <CardContent className="p-4 text-center">
-                  <MapPin className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <h3 className="font-medium text-gray-800">Locations</h3>
-                  <p className="text-xs text-gray-600">Addresses and time zones</p>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         );
 
@@ -546,53 +514,6 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       case 2:
         return (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-800">Your Location</h3>
-            
-            <Card className="border-2 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Home className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <h4 className="font-medium text-gray-800">Your Address</h4>
-                      <p className="text-sm text-gray-600">
-                        {familyData.parent1?.address ? (
-                          <>
-                            {familyData.parent1.address}, {familyData.parent1?.city}, {familyData.parent1?.state} {familyData.parent1?.zipCode}
-                          </>
-                        ) : (
-                          <span className="text-gray-400 italic">No address provided</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">Timezone: {familyData.parent1?.timezone}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)}>
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-green-200 bg-green-50">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <Users className="w-5 h-5 text-green-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-green-800">About Your Co-Parent</h4>
-                    <p className="text-sm text-green-700">
-                      Your co-parent will create their own account and link to your family using the Family Code we'll generate for you. They'll add their own location information when they join.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-800">Your Children</h3>
             
             {/* Existing Children */}
@@ -737,15 +658,15 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-800">Custody Arrangement</h3>
+            <h3 className="text-xl font-bold text-gray-800">Custody & Details</h3>
             
             <div>
               <Label>What type of custody arrangement do you have?</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                <Card 
+                <Card
                   className={`cursor-pointer transition-all ${familyData.custodyArrangement === '50-50' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: '50-50' }))}
                 >
@@ -755,7 +676,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   </CardContent>
                 </Card>
 
-                <Card 
+                <Card
                   className={`cursor-pointer transition-all ${familyData.custodyArrangement === 'primary-secondary' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: 'primary-secondary' }))}
                 >
@@ -765,7 +686,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   </CardContent>
                 </Card>
 
-                <Card 
+                <Card
                   className={`cursor-pointer transition-all ${familyData.custodyArrangement === 'custom' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: 'custom' }))}
                 >
@@ -777,28 +698,9 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="custody-notes">Additional Notes (Optional)</Label>
-              <Textarea
-                id="custody-notes"
-                value={familyData.custodyNotes}
-                onChange={(e) => setFamilyData(prev => ({ ...prev, custodyNotes: e.target.value }))}
-                placeholder="Any specific details about your custody arrangement..."
-                className="mt-1"
-                rows={3}
-              />
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-800">Special Accommodations</h3>
-            
-            <div>
-              <Label>Do any of these apply to your family?</Label>
-              <div className="space-y-3 mt-3">
+            <div className="mt-6">
+              <Label>Special Accommodations (Optional)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 {[
                   'Long-distance co-parenting',
                   'Different time zones',
@@ -827,7 +729,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                         }
                       }}
                     />
-                    <Label className="font-normal cursor-pointer">{accommodation}</Label>
+                    <Label className="font-normal cursor-pointer text-sm">{accommodation}</Label>
                   </div>
                 ))}
               </div>
@@ -835,7 +737,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
           </div>
         );
 
-      case 6:
+      case 4:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-800">Review Your Information</h3>

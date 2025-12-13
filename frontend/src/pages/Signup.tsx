@@ -41,13 +41,35 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleNext = () => {
     if (currentStep === 1) {
       // Validate Step 1
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password) {
         toast({
           title: "Missing Information",
           description: "Please fill in all fields to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!isValidEmail(formData.email)) {
+        toast({
+          title: "Invalid Email",
+          description: "Please enter a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (formData.password.length < 8) {
+        toast({
+          title: "Weak Password",
+          description: "Password must be at least 8 characters long.",
           variant: "destructive",
         });
         return;

@@ -163,11 +163,6 @@ const DashboardShell = ({
         <Sidebar className="bg-white text-slate-700 border-r border-slate-200 shadow-sm flex flex-col h-full">
           <SidebarHeader className="px-3 sm:px-4 pt-4 sm:pt-5 pb-2 sm:pb-3 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
-              <img
-                src="/bridgette-avatar.png"
-                alt="Bridge-it"
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 p-1 object-contain flex-shrink-0"
-              />
               <div className="min-w-0">
                 <p className="text-sm sm:text-base font-semibold tracking-tight text-slate-900 truncate">
                   Bridge-it

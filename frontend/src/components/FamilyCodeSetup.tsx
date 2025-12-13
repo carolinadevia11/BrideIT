@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { Copy, Check, Link2, Upload, FileText, Loader2, ArrowLeft, Sparkles, Share2, ShieldCheck, HeartHandshake, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,6 +130,13 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
 
       setGeneratedCode(response.familyCode);
       setFamilyResponse(response);
+      
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
       toast({
         title: "Success!",
         description: "Family profile created with Family Code",
@@ -179,6 +187,12 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
       const response = await familyAPI.linkToFamily({
         familyCode: familyCode.toUpperCase(),
         parent2_name: parent2Name
+      });
+
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
       });
 
       toast({

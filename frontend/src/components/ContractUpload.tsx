@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { Upload, FileText, Loader2, CheckCircle, AlertCircle, FileCheck, X, ArrowLeft, Shield, Sparkles, Scale, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -104,6 +105,12 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                 setIsParsing(false);
                 setIsUploading(false);
                 
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: { y: 0.6 }
+                });
+
                 toast({
                   title: "Success!",
                   description: "Contract uploaded and parsed successfully",

@@ -22,6 +22,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const handleLogin = async () => {
     // Basic validation
     if (!email.trim()) {
@@ -32,6 +36,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       });
       return;
     }
+
+    if (!isValidEmail(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!password.trim()) {
       toast({
         title: "Password required",

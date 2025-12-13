@@ -1,3 +1,4 @@
+import confetti from 'canvas-confetti';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot, ArrowLeft } from 'lucide-react';
@@ -158,6 +159,83 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [adminLoading, setAdminLoading] = useState(false);
   const [familyProfileLoading, setFamilyProfileLoading] = useState(true);
   const [adminError, setAdminError] = useState<string | null>(null);
+  const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null);
+
+  // Confetti helper function
+  const triggerConfetti = () => {
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999, // Ensure confetti is on top of everything
+    };
+
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      });
+    }
+
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    });
+    fire(0.2, {
+      spread: 60,
+    });
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8
+    });
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2
+    });
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    });
+  };
+
+  useEffect(() => {
+    if (familyProfileLoading || !currentUser) return;
+
+    // We use a versioned key to force the celebration to show up for testing if we change logic
+    const sessionKey = 'hasSeenCelebration_v1';
+    const hasSeenCelebration = sessionStorage.getItem(sessionKey);
+    
+    console.log('Checking celebration status:', {
+      hasSeenCelebration,
+      onboardingCompleted: familyProfile?.onboardingCompleted,
+      childrenCount: familyProfile?.children?.length,
+      custodyArrangement: familyProfile?.custodyArrangement
+    });
+
+    // Check for full completion
+    if (familyProfile?.onboardingCompleted && !hasSeenCelebration) {
+       console.log('Triggering completion celebration');
+       triggerConfetti();
+       setCelebrationMessage(`🎉 Great job completing your setup, ${currentUser.firstName}!`);
+       sessionStorage.setItem(sessionKey, 'true');
+       return;
+    }
+
+    // Check for progress (Has children OR Has custody arrangement)
+    const hasProgress = (familyProfile?.children && familyProfile.children.length > 0) ||
+                        (familyProfile?.custodyArrangement);
+
+    if (hasProgress && !hasSeenCelebration) {
+       console.log('Triggering progress celebration');
+       triggerConfetti();
+       setCelebrationMessage(`✨ Great job making progress, ${currentUser.firstName}!`);
+       sessionStorage.setItem(sessionKey, 'true');
+       return;
+    }
+  }, [familyProfile, familyProfileLoading, currentUser]);
 
   const pendingFamilyCount = adminStats?.unlinkedFamilies ?? adminPendingFamilies.length;
 
@@ -1256,112 +1334,60 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
               <Card className="bg-bridge-blue/5 border-2 border-bridge-blue/20 overflow-hidden" data-tour="dashboard-welcome">
                 <CardContent className="p-3 sm:p-5">
-                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <div className="flex-shrink-0 cursor-pointer transition-transform hover:scale-110 active:scale-95" onClick={triggerConfetti} title="Click for a surprise! 🎉">
+                      <img
+                        src="/bridgette-avatar.png"
+                        alt="Bridgette"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white shadow-md bg-white object-contain p-1"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0 speech-bubble">
-                      <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-bridge-black">
-                        Good morning{currentUser ? `, ${currentUser.firstName}` : ''}! ⚖️
+                      <h2 className="text-lg sm:text-xl font-bold mb-1 text-bridge-black">
+                        {celebrationMessage || `Good morning${currentUser ? ` ${currentUser.firstName}` : ''}, hope you are having a wonderful day.`}
                       </h2>
-                      <p className="text-xs sm:text-sm text-bridge-black mb-3 sm:mb-4">
-                        Bridgette here! I hope you're having a wonderful day. I wanted to let you know that you have{' '}
-                        {eventsCopy} on your calendar and {expensesVerb} {expensesCopy} that need your review.
-                        {" "}Don't worry - I'm here to help keep everything organized and balanced!
-                      </p>
-                      {familyProfile && familyProfile.children.length > 0 && (
-                        <div className="bg-white/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
-                          <p className="text-bridge-black text-xs sm:text-sm font-medium mb-2">
-                            👶 Your children:
+                      
+                      {dashboardMetricsLoaded && (dashboardMetrics.pendingExpenseDetails.length > 0 || dashboardMetrics.upcomingEventDetails.length > 0) && (
+                        <div className="mt-4 bg-white/40 rounded-lg p-3 sm:p-4 border border-white/50 shadow-sm">
+                          <p className="text-bridge-black text-sm font-semibold mb-2 flex items-center gap-2">
+                             Here are your reminders:
                           </p>
-                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            {familyProfile.children.map((child) => (
-                              <span key={child.id} className="bg-white/30 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm text-bridge-black">
-                                {child.firstName}, {child.age}
-                              </span>
+                          <ul className="space-y-2">
+                            {dashboardMetrics.pendingExpenseDetails.map((expense) => (
+                              <li key={expense.id} className="flex items-start gap-2 text-sm text-bridge-black/80">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-bridge-red flex-shrink-0" />
+                                <span className="break-words">
+                                  <span className="font-medium">Expense Review:</span> {expense.description}
+                                  {typeof expense.amount === 'number' && ` ($${expense.amount.toFixed(2)})`}
+                                </span>
+                              </li>
                             ))}
-                          </div>
+                            {dashboardMetrics.upcomingEventDetails.map((event) => (
+                              <li key={event.id} className="flex items-start gap-2 text-sm text-bridge-black/80">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-bridge-green flex-shrink-0" />
+                                <span className="break-words">
+                                  <span className="font-medium">Upcoming Event:</span> {event.title} on {event.dateLabel}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          
+                          {dashboardMetrics.pendingExpenseDetails.length > 0 && (
+                            <div className="mt-4 pt-2 border-t border-black/5">
+                              <Button
+                                onClick={() => changeTab('expenses')}
+                                className="bg-bridge-red hover:bg-red-600 text-white font-medium text-sm h-8"
+                              >
+                                Review Expenses
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
-                      <div className="bg-white/20 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
-                        <p className="text-bridge-black text-xs sm:text-sm font-medium mb-2">
-                          📋 Quick items for your attention:
-                        </p>
-                        <ul className="text-bridge-black text-xs sm:text-sm space-y-1">
-                          {dashboardMetricsLoaded ? (
-                            <>
-                              {dashboardMetrics.pendingExpenseDetails.length > 0 ? (
-                                dashboardMetrics.pendingExpenseDetails.map((expense) => (
-                                  <li key={expense.id} className="break-words">
-                                    • {expense.description}
-                                    {typeof expense.amount === 'number' && (
-                                      <> (${expense.amount.toFixed(2)})</>
-                                    )}
-                                    {expense.status && (
-                                      <> – status: {expense.status.replace(/_/g, ' ')}</>
-                                    )}
-                                  </li>
-                                ))
-                              ) : (
-                                <li>• No expenses need your review right now 🎉</li>
-                              )}
-                              {dashboardMetrics.upcomingEventDetails.length > 0 && (
-                                <li key="upcoming-event" className="break-words">
-                                  • Next event:{' '}
-                                  {dashboardMetrics.upcomingEventDetails[0].title} on{' '}
-                                  {dashboardMetrics.upcomingEventDetails[0].dateLabel}
-                                </li>
-                              )}
-                            </>
-                          ) : (
-                            <li>• Gathering your latest activity...</li>
-                          )}
-                        </ul>
-                      </div>
-                      <Button
-                        onClick={() => changeTab('expenses')}
-                        className="bg-bridge-red hover:bg-red-600 text-white font-medium text-sm sm:text-base w-full sm:w-auto"
-                      >
-                        Review Now
-                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-
-              {!familyProfileLoading && !familyProfile && (
-                <Card className="border-2 border-yellow-200 bg-yellow-50">
-                  <CardContent className="p-3 sm:p-5">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-base font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
-                        <p className="text-bridge-black text-xs sm:text-sm">
-                          Add information about your family to get personalized organization and support
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => setShowFamilyChoice(true)}
-                        className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400 text-sm sm:text-base w-full sm:w-auto"
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Set Up Family Profile
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <ProgressBar
-                  progress={85}
-                  title="Co-parenting Balance"
-                  subtitle="Great progress this month!"
-                  showTrophy={false}
-                />
-                <ProgressBar
-                  progress={100}
-                  title="January Setup"
-                  subtitle="All systems ready!"
-                  showTrophy={true}
-                />
-              </div>
 
               <div data-tour="quick-actions">
                 <h3 className="text-base sm:text-lg font-bold text-bridge-black mb-3 sm:mb-4">Quick Actions</h3>
@@ -1400,6 +1426,43 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </div>
               </div>
 
+              {!familyProfileLoading && !familyProfile && (
+                <Card className="border-2 border-yellow-200 bg-yellow-50">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-base font-semibold text-bridge-black mb-2">Complete Your Family Setup</h3>
+                        <p className="text-bridge-black text-xs sm:text-sm">
+                          Add information about your family to get personalized organization and support
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setShowFamilyChoice(true)}
+                        className="bg-bridge-yellow hover:bg-yellow-400 text-bridge-black border-2 border-gray-400 text-sm sm:text-base w-full sm:w-auto"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Set Up Family Profile
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <ProgressBar
+                  progress={85}
+                  title="Co-parenting Balance"
+                  subtitle="Great progress this month!"
+                  showTrophy={false}
+                />
+                <ProgressBar
+                  progress={100}
+                  title="January Setup"
+                  subtitle="All systems ready!"
+                  showTrophy={true}
+                />
+              </div>
+
               <div data-tour="recent-activity">
                 <RecentActivity
                   onNavigateToExpenses={() => changeTab('expenses')}
@@ -1434,19 +1497,6 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               <EducationalResources currentUserName={currentUser?.firstName} />
             </TabsContent>
           </Tabs>
-          <div className="fixed bottom-6 right-6 hidden md:block" data-tour="support-chatbot">
-            <button
-              className="rounded-full w-16 h-16 bg-white hover:bg-gray-50 shadow-lg border-2 border-[hsl(217,92%,39%)] overflow-hidden cursor-pointer transition-transform hover:scale-110"
-              onClick={() => setShowSupportChatbot(true)}
-              title="Talk to Bridgette, your friendly co-parenting assistant! 👋"
-            >
-              <img
-                src="/bridgette-avatar.png"
-                alt="Bridgette"
-                className="w-full h-full object-cover"
-              />
-            </button>
-          </div>
         </div>
         <SupportChatbot
           isOpen={showSupportChatbot}

@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import date, datetime
+import re
 
 class User(BaseModel):
     firstName: str
@@ -8,6 +9,27 @@ class User(BaseModel):
     email: str
     password: str
     role: str = "user"
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", v):
+            raise ValueError('Invalid email address')
+        return v.lower()
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
+
+    @field_validator('firstName', 'lastName')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v.strip()
     phone: Optional[str] = None
     timezone: Optional[str] = None
     tourCompleted: Optional[bool] = False
