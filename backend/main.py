@@ -19,7 +19,8 @@ app.add_middleware(
         "https://bridge-fe-eqsr.onrender.com",
         "https://bridge-fe-kcd1.onrender.com",
         "https://bridge-it.onrender.com",
-        "https://bridgeit-8cof.onrender.com"
+        "https://bridgeit-8cof.onrender.com",
+        "https://bridgeit-8cof.onrender.com/"
     ],
     allow_credentials=True,
     allow_methods=["*"],

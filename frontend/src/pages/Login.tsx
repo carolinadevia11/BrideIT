@@ -27,6 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   const handleLogin = async () => {
+    console.log('handleLogin called');
     // Basic validation
     if (!email.trim()) {
       toast({
@@ -57,7 +58,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
+      console.log('Calling authAPI.login...');
       const response = await authAPI.login(email, password);
+      console.log('authAPI.login response:', response);
       const token = response.access_token;
       localStorage.setItem('authToken', token);
       
@@ -73,6 +76,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }, 500);
     } catch (error) {
       console.error('Error logging in:', error);
+      // Check if error is network related (e.g. CORS)
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+          console.error('Network error (likely CORS or connectivity)');
+      }
       toast({
         title: "Error",
         description: "Failed to log in. Please check your credentials.",
