@@ -6,6 +6,9 @@ from models import MessageCreate, ConversationCreate, Message, Conversation, Use
 from routers.auth import get_current_user
 from database import db
 import json
+import os
+import jwt
+import time
 
 router = APIRouter(prefix="/api/v1/messaging", tags=["messaging"])
 
@@ -53,6 +56,8 @@ manager = ConnectionManager()
 # WebSocket Endpoint
 @router.websocket("/ws/{email}")
 async def websocket_endpoint(websocket: WebSocket, email: str):
+    # Normalize email to lowercase for consistent connection management
+    email = email.lower()
     await manager.connect(websocket, email)
     try:
         while True:
@@ -67,7 +72,28 @@ async def websocket_endpoint(websocket: WebSocket, email: str):
                             "type": "typing",
                             "conversationId": message.get("conversationId"),
                             "senderEmail": email
-                        }, recipient_email)
+                        }, recipient_email.lower())
+                
+                # Handle Call Rejected
+                elif message.get("type") == "call_rejected":
+                    recipient_email = message.get("recipientEmail")
+                    if recipient_email:
+                        await manager.send_personal_message({
+                            "type": "call_rejected",
+                            "conversationId": message.get("conversationId"),
+                            "rejectorEmail": email
+                        }, recipient_email.lower())
+                        
+                        # Log missed call in chat
+                        db.messages.insert_one({
+                            "conversation_id": message.get("conversationId"),
+                            "sender_email": email, # The person who rejected
+                            "content": "Declined the call",
+                            "tone": "neutral-legal",
+                            "type": "call_missed",
+                            "timestamp": datetime.utcnow(),
+                            "status": "sent"
+                        })
             except json.JSONDecodeError:
                 pass
             except Exception as e:
@@ -319,6 +345,7 @@ async def get_messages(
                 "senderEmail": msg["sender_email"],
                 "content": msg["content"],
                 "tone": msg["tone"],
+                "type": msg.get("type", "text"), # Added type with default
                 "timestamp": msg["timestamp"].isoformat(),
                 "status": status
             })
@@ -368,6 +395,7 @@ async def send_message(
             "sender_email": current_user.email,
             "content": message.content,
             "tone": message.tone,
+            "type": message.type, # Added type
             "timestamp": timestamp,
             "status": "sent"
         }
@@ -381,7 +409,7 @@ async def send_message(
             {"$set": {"last_message_at": timestamp}}
         )
         
-        print(f"[POST /message] Sent message: {msg_id}")
+        print(f"[POST /message] Sent message: {msg_id} (Type: {message.type})")
         
         response_data = {
             "id": msg_id,
@@ -389,16 +417,23 @@ async def send_message(
             "senderEmail": current_user.email,
             "content": message.content,
             "tone": message.tone,
+            "type": message.type, # Added type
             "timestamp": timestamp.isoformat(),
             "status": "sent"
         }
         
         # Push to other participants via WebSocket
         for participant in conversation["participants"]:
-            if participant != current_user.email:
+            # Use case-insensitive comparison and sending
+            if participant.strip().lower() != current_user.email.strip().lower():
                 # Add a flag so frontend knows this is a real-time update
-                ws_payload = {**response_data, "type": "new_message"}
-                await manager.send_personal_message(ws_payload, participant)
+                # Preserve original message type as 'messageType' since 'type' is overwritten
+                ws_payload = {
+                    **response_data,
+                    "type": "new_message",
+                    "messageType": response_data.get("type")
+                }
+                await manager.send_personal_message(ws_payload, participant.strip().lower())
         
         return response_data
     except HTTPException:
@@ -472,5 +507,88 @@ async def archive_conversation(
         raise
     except Exception as e:
         print(f"[ERROR] Archive conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Get LiveKit Token for Video Call
+@router.get("/livekit/token")
+async def get_livekit_token(
+    room: str,
+    username: str,
+    callType: str = "video", # Add callType parameter, default to video for backward compatibility
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a LiveKit access token for video calls manually (bypassing SDK issues)
+    """
+    try:
+        # Get credentials from env
+        api_key = os.getenv("LIVEKIT_API_KEY")
+        api_secret = os.getenv("LIVEKIT_API_SECRET")
+
+        if not api_key or not api_secret:
+             raise HTTPException(status_code=500, detail="LiveKit credentials not configured")
+
+        # Token expiration (6 hours)
+        expiration = int(time.time()) + (6 * 60 * 60)
+
+        # Video Grant
+        grant = {
+            "room": room,
+            "roomJoin": True,
+            "canPublish": True,
+            "canSubscribe": True,
+        }
+
+        # JWT Payload
+        payload = {
+            "exp": expiration,
+            "iss": api_key,
+            "sub": current_user.email, # Use email as unique identity
+            "video": grant,
+            "name": username # Display name
+        }
+
+        # Encode token
+        token = jwt.encode(payload, api_secret, algorithm="HS256")
+
+        # Notify other participants in the conversation (inferred from room name)
+        # Assuming room name is "room-{conversation_id}"
+        if room.startswith("room-"):
+             conversation_id = room.replace("room-", "")
+             conversation = db.conversations.find_one({"_id": ObjectId(conversation_id)})
+             
+             if conversation:
+                 # 1. Insert System Message "Video/Audio Call started"
+                 timestamp = datetime.utcnow()
+                 msg_content = "Started a video call" if callType == "video" else "Started a voice call"
+                 msg_doc = {
+                    "conversation_id": conversation_id,
+                    "sender_email": current_user.email,
+                    "content": msg_content,
+                    "tone": "neutral-legal",
+                    "type": "call_start",
+                    "timestamp": timestamp,
+                    "status": "sent"
+                 }
+                 db.messages.insert_one(msg_doc)
+                 
+                 # 2. Notify via WebSocket
+                 for participant in conversation["participants"]:
+                     # Use case-insensitive comparison and sending
+                     if participant.strip().lower() != current_user.email.strip().lower():
+                         await manager.send_personal_message({
+                             "type": "video_call_started",
+                             "conversationId": conversation_id,
+                             "initiatorName": username,
+                             "initiatorEmail": current_user.email,
+                             "roomName": room,
+                             "callType": callType # Pass callType to frontend
+                         }, participant.strip().lower())
+
+        return {"token": token}
+
+    except Exception as e:
+        print(f"[ERROR] Generate LiveKit token: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

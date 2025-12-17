@@ -426,6 +426,7 @@ export const messagingAPI = {
     conversation_id: string;
     content: string;
     tone: string;
+    type?: string;
   }) => {
     return fetchWithAuth('/api/v1/messaging/messages', {
       method: 'POST',
@@ -443,6 +444,15 @@ export const messagingAPI = {
     return fetchWithAuth(`/api/v1/messaging/conversations/${conversationId}/archive`, {
       method: 'PATCH',
     });
+  },
+
+  getLiveKitToken: async (room: string, username: string, callType: 'video' | 'audio' = 'video') => {
+    const params = new URLSearchParams({
+      room,
+      username,
+      callType
+    });
+    return fetchWithAuth(`/api/v1/messaging/livekit/token?${params.toString()}`);
   },
 };
 

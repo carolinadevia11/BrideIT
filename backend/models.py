@@ -182,14 +182,16 @@ class Message(BaseModel):
     conversation_id: str
     sender_email: str
     content: str
-    tone: str  # 'matter-of-fact', 'friendly', 'neutral-legal'
+    tone: str  # 'matter-of-fact', 'friendly', 'neutral-legal', 'system'
     timestamp: Optional[datetime] = None
     status: str = 'sent'  # sent, delivered, read
+    type: str = 'text' # 'text', 'call_start', 'call_end', 'call_missed'
 
 class MessageCreate(BaseModel):
     conversation_id: str
     content: str
     tone: str = 'friendly'
+    type: str = 'text'
 
 class Conversation(BaseModel):
     id: Optional[str] = None
