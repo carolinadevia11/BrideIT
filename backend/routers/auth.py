@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, Request
+from fastapi import APIRouter, Depends, HTTPException, Body, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from passlib.context import CryptContext
@@ -74,7 +74,10 @@ async def create_user(user_data: User):
     return user_in_db
 
 @router.post("/api/v1/auth/forgot-password")
-async def forgot_password(reset_request: PasswordResetRequest, request: Request):
+async def forgot_password(
+    reset_request: PasswordResetRequest,
+    origin: Union[str, None] = Header(default=None)
+):
     user = db.users.find_one({"email": reset_request.email})
     if not user:
         # Don't reveal if user exists
@@ -91,11 +94,9 @@ async def forgot_password(reset_request: PasswordResetRequest, request: Request)
     # 1. Try env var first
     frontend_url = os.getenv("FRONTEND_URL")
     
-    # 2. If not set, try Origin header (this works well for deployed apps calling from frontend)
-    if not frontend_url:
-        origin = request.headers.get("origin")
-        if origin:
-            frontend_url = origin
+    # 2. If not set, try Origin header
+    if not frontend_url and origin:
+        frontend_url = origin
             
     # 3. Fallback to localhost
     if not frontend_url:

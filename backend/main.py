@@ -11,14 +11,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://localhost:5137", 
+        "http://localhost:5137",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5137",
         "http://127.0.0.1:5174",
         "https://bridge-fe-eqsr.onrender.com",
         "https://bridge-fe-kcd1.onrender.com",
-        "https://bridge-it.onrender.com"
+        "https://bridge-it.onrender.com",
+        "https://bridgeit-8cof.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
