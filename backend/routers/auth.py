@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from passlib.context import CryptContext
@@ -74,8 +74,8 @@ async def create_user(user_data: User):
     return user_in_db
 
 @router.post("/api/v1/auth/forgot-password")
-async def forgot_password(request: PasswordResetRequest):
-    user = db.users.find_one({"email": request.email})
+async def forgot_password(reset_request: PasswordResetRequest, request: Request):
+    user = db.users.find_one({"email": reset_request.email})
     if not user:
         # Don't reveal if user exists
         return {"message": "If an account with that email exists, a password reset link has been sent."}
@@ -87,10 +87,19 @@ async def forgot_password(request: PasswordResetRequest):
         expires_delta=expires_delta
     )
     
-    # In production, FRONTEND_URL must be set to the deployed application's URL
-    # e.g., https://my-app.vercel.app
-    # Default to 5137 for local development as per vite.config.ts
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5137")
+    # Determine frontend URL
+    # 1. Try env var first
+    frontend_url = os.getenv("FRONTEND_URL")
+    
+    # 2. If not set, try Origin header (this works well for deployed apps calling from frontend)
+    if not frontend_url:
+        origin = request.headers.get("origin")
+        if origin:
+            frontend_url = origin
+            
+    # 3. Fallback to localhost
+    if not frontend_url:
+        frontend_url = "http://localhost:5137"
     
     # Ensure no trailing slash
     if frontend_url.endswith('/'):
