@@ -16,9 +16,16 @@ router = APIRouter(prefix="/api/v1/messaging", tags=["messaging"])
 # WebSocket Endpoint
 @router.websocket("/ws/{email}")
 async def websocket_endpoint(websocket: WebSocket, email: str):
+    print(f"[WS] Connection attempt for {email}")
     # Normalize email to lowercase for consistent connection management
     email = email.lower()
-    await manager.connect(websocket, email)
+    try:
+        await manager.connect(websocket, email)
+        print(f"[WS] Connection accepted for {email}")
+    except Exception as e:
+        print(f"[WS] Connection failed for {email}: {e}")
+        return # Exit if connection fails
+
     try:
         while True:
             data = await websocket.receive_text()
