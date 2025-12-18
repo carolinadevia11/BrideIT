@@ -31,6 +31,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -76,12 +77,21 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
+
+      // Start Heartbeat
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 25000); // 25 seconds
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        // console.log('[WebSocketContext] Received:', data.type); 
+        if (data.type === 'pong') return; // Ignore pong
+        // console.log('[WebSocketContext] Received:', data.type);
         setLastMessage(data);
       } catch (error) {
         console.error('[WebSocketContext] Parse error:', error);
@@ -96,6 +106,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
       console.log('[WebSocketContext] Closed:', event.code, event.reason);
       setIsConnected(false);
       wsRef.current = null;
+      
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
 
       // Reconnect logic if authenticated (and not a normal closure like logout)
       if (isAuthenticated && event.code !== 1000) {
@@ -122,6 +137,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, 
       }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
       }
     };
   }, [isAuthenticated, userEmail, connect]);

@@ -6,11 +6,29 @@ from database import db
 
 app = FastAPI()
 
+# Middleware to log incoming connection origins (Debug)
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Scope, Receive, Send
+
+class LogOriginMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] in ("http", "websocket"):
+            headers = dict(scope.get("headers", []))
+            origin = headers.get(b"origin", b"").decode("utf-8")
+            client = scope.get("client")
+            print(f"[Middleware] Incoming {scope['type']} connection from {client} | Origin: {origin}")
+        await self.app(scope, receive, send)
+
+app.add_middleware(LogOriginMiddleware)
+
 # CORS middleware must be added BEFORE including routers
 app.add_middleware(
     CORSMiddleware,
     # Allow all origins using regex to support credentials
-    allow_origin_regex="https?://.*",
+    allow_origin_regex=".*", # Temporarily allow EVERYTHING to rule out regex issues
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

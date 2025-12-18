@@ -33,6 +33,12 @@ async def websocket_endpoint(websocket: WebSocket, email: str):
             # print(f"[WS] Received data from {email}: {data[:50]}...") # Log first 50 chars
             try:
                 message = json.loads(data)
+                
+                # Handle Ping (Heartbeat)
+                if message.get("type") == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+                    continue
+
                 # Handle typing indicators
                 if message.get("type") == "typing":
                     recipient_email = message.get("recipientEmail")
