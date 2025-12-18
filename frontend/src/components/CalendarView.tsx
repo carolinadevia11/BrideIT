@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign, Trash2, Loader2 } from 'lucide-react';
 import { calendarAPI, expensesAPI, documentsAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -146,6 +147,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   currentUser,
   onNavigateToMessages,
 }) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showChangeRequest, setShowChangeRequest] = useState(false);
@@ -1833,12 +1835,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               <p className="text-xs sm:text-sm text-amber-700 mb-2 sm:mb-3">
                 Configure your custody schedule to see color-coded days on the calendar showing which parent has custody.
               </p>
-              <a 
-                href="/settings" 
+              <button
+                onClick={() => navigate('/settings', { state: { activeTab: 'family' } })}
                 className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs sm:text-sm font-medium transition-colors"
               >
                 📝 Configure Custody Schedule in Settings
-              </a>
+              </button>
             </div>
           )}
           

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { User, Bell, Shield, Globe, Heart, Camera, MessageSquare, BookOpen, Languages, Users, FileText, Upload, X, Loader2, CheckCircle, AlertCircle, Eye, Trash2, Edit, Sparkles, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface UserSettingsProps {
 
 const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfile }) => {
   const { toast } = useToast();
+  const location = useLocation();
 
   const [settings, setSettings] = useState({
     profile: {
@@ -137,6 +139,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
       },
     }));
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname, location.state]);
 
   useEffect(() => {
     let isMounted = true;
@@ -630,8 +636,15 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 md:p-8">
       <div className="w-full max-w-6xl mx-auto">
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-white/50 backdrop-blur-sm p-1 rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+        <Tabs defaultValue={location.state?.activeTab || "family"} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-white/50 backdrop-blur-sm p-1 rounded-xl border border-gray-200 shadow-sm h-auto">
+            <TabsTrigger
+              value="family"
+              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-bold transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-700 hover:text-bridge-blue hover:bg-blue-50 border-2 border-transparent data-[state=active]:border-white/20"
+            >
+              <Users className="w-5 h-5" />
+              <span className="hidden sm:inline text-base">Family</span>
+            </TabsTrigger>
             <TabsTrigger
               value="profile"
               className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
@@ -667,557 +680,12 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Bridge-it</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="family"
-              className="flex items-center justify-center space-x-2 rounded-lg py-2 text-sm font-medium transition-all data-[state=active]:bg-bridge-blue data-[state=active]:text-white data-[state=active]:shadow-md text-gray-600 hover:text-bridge-blue hover:bg-blue-50"
-            >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Family</span>
-            </TabsTrigger>
           </TabsList>
 
           <Card className="shadow-xl border-bridge-blue/10 bg-white/90 backdrop-blur-sm">
 
             <CardContent className="pt-6">
-
-              {/* Profile Settings */}
-              <TabsContent value="profile" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="relative">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      {profileInitials}
-                    </div>
-                    <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
-                      <Camera className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {[settings.profile.firstName, settings.profile.lastName].filter(Boolean).join(' ') || 'Your name'}
-                    </h3>
-                    <p className="text-gray-600">{settings.profile.email || 'Add your email address'}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
-                    <div className="relative mt-1">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="firstName"
-                        value={settings.profile.firstName}
-                        onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <div className="relative mt-1">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        id="lastName"
-                        value={settings.profile.lastName}
-                        onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={settings.profile.email}
-                      onChange={(e) => updateSetting('profile', 'email', e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative mt-1">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      id="phone"
-                      value={settings.profile.phone}
-                      onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="timezone">Time Zone</Label>
-                  <Select value={settings.profile.timezone} onValueChange={(value) => updateSetting('profile', 'timezone', value)}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EST">Eastern Time (EST)</SelectItem>
-                      <SelectItem value="CST">Central Time (CST)</SelectItem>
-                      <SelectItem value="MST">Mountain Time (MST)</SelectItem>
-                      <SelectItem value="PST">Pacific Time (PST)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio (Optional)</Label>
-                  <Textarea
-                    id="bio"
-                    value={settings.profile.bio}
-                    onChange={(e) => updateSetting('profile', 'bio', e.target.value)}
-                    placeholder="Tell your co-parent a bit about yourself..."
-                    className="mt-1"
-                    rows={3}
-                  />
-                </div>
-              </TabsContent>
-
-              {/* New Preferences Tab */}
-              <TabsContent value="preferences" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                {/* Language Selection */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <Languages className="w-5 h-5 mr-2 text-blue-600" />
-                    Language Preference
-                  </h3>
-                  <Select value={settings.preferences.language} onValueChange={(value) => updateSetting('preferences', 'language', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="english">English</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Message Tone Preference */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
-                    Default Message Tone
-                  </h3>
-                  <Select value={settings.preferences.messageTone} onValueChange={(value) => updateSetting('preferences', 'messageTone', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="friendly">
-                        <div>
-                          <div className="font-medium">Friendly</div>
-                          <div className="text-xs text-gray-500">Warm and collaborative tone</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="matter-of-fact">
-                        <div>
-                          <div className="font-medium">Matter-of-fact</div>
-                          <div className="text-xs text-gray-500">Direct and clear communication</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="neutral-legal">
-                        <div>
-                          <div className="font-medium">Neutral Legal</div>
-                          <div className="text-xs text-gray-500">Professional and documented</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="gentle">
-                        <div>
-                          <div className="font-medium">Gentle</div>
-                          <div className="text-xs text-gray-500">Soft and understanding approach</div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Notification Opt-ins */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                    Notification Preferences
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { key: 'dailyTips', label: 'Daily Co-parenting Tips', desc: 'Receive helpful daily tips and encouragement' },
-                      { key: 'weeklyDigest', label: 'Weekly Summary', desc: 'Weekly digest of your co-parenting activities' },
-                      { key: 'expertArticles', label: 'Expert Articles', desc: 'New articles from psychology and family experts' },
-                      { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge-it co-parenting community' },
-                      { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge-it' },
-                      { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
-                        <Checkbox
-                          checked={settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn]}
-                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'notificationOptIn', item.key, checked)}
-                        />
-                        <div className="flex-1">
-                          <Label className="font-medium">{item.label}</Label>
-                          <p className="text-sm text-gray-600">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Article Type Preferences */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
-                    Article Types You're Interested In
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { key: 'communication', label: 'Communication Strategies', desc: 'Tips for better co-parent communication' },
-                      { key: 'legal', label: 'Legal Guidance', desc: 'Understanding custody laws and agreements' },
-                      { key: 'emotional', label: 'Emotional Support', desc: 'Managing stress and emotional wellbeing' },
-                      { key: 'practical', label: 'Practical Tips', desc: 'Day-to-day co-parenting logistics' },
-                      { key: 'children', label: 'Children & Family', desc: 'Supporting your children through transitions' },
-                      { key: 'financial', label: 'Financial Planning', desc: 'Managing shared expenses and budgeting' }
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
-                        <Checkbox
-                          checked={settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes]}
-                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'articleTypes', item.key, checked)}
-                        />
-                        <div className="flex-1">
-                          <Label className="font-medium">{item.label}</Label>
-                          <p className="text-sm text-gray-600">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Notification Settings */}
-              <TabsContent value="notifications" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">Email Notifications</Label>
-                        <p className="text-sm text-gray-600">Receive updates via email</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.email}
-                        onCheckedChange={(checked) => updateSetting('notifications', 'email', checked)}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">SMS Notifications</Label>
-                        <p className="text-sm text-gray-600">Urgent updates via text</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.sms}
-                        onCheckedChange={(checked) => updateSetting('notifications', 'sms', checked)}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">Push Notifications</Label>
-                        <p className="text-sm text-gray-600">Real-time alerts on your device</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.push}
-                        onCheckedChange={(checked) => updateSetting('notifications', 'push', checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">What to notify me about</h3>
-
-                  <div className="space-y-3">
-                    {[
-                      { key: 'calendar', label: 'Calendar Changes', desc: 'Schedule updates and new events' },
-                      { key: 'messages', label: 'New Messages', desc: 'Messages from your co-parent' },
-                      { key: 'expenses', label: 'Expense Updates', desc: 'New expenses and payment requests' },
-                      { key: 'documents', label: 'Document Changes', desc: 'New documents and updates' }
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
-                        <Checkbox
-                          checked={settings.notifications[item.key as keyof typeof settings.notifications] as boolean}
-                          onCheckedChange={(checked) => updateSetting('notifications', item.key, checked)}
-                        />
-                        <div className="flex-1">
-                          <Label className="font-medium">{item.label}</Label>
-                          <p className="text-sm text-gray-600">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Privacy Settings */}
-              <TabsContent value="privacy" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Controls</h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Profile Visibility</Label>
-                      <Select value={settings.privacy.profileVisibility} onValueChange={(value) => updateSetting('privacy', 'profileVisibility', value)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="co-parent-only">Co-parent only</SelectItem>
-                          <SelectItem value="family-network">Extended family network</SelectItem>
-                          <SelectItem value="private">Completely private</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">Activity Sharing</Label>
-                        <p className="text-sm text-gray-600">Share activity status with co-parent</p>
-                      </div>
-                      <Switch
-                        checked={settings.privacy.activitySharing}
-                        onCheckedChange={(checked) => updateSetting('privacy', 'activitySharing', checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-blue-800">Data Security</p>
-                      <p className="text-blue-700">All your data is encrypted and stored securely. You can export or delete your data at any time.</p>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Bridgette Settings */}
-              <TabsContent value="bridgette" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridge-it</h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Bridge-it's Personality</Label>
-                      <Select value={settings.bridgette.personality} onValueChange={(value) => updateSetting('bridgette', 'personality', value)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="encouraging">Encouraging & Supportive</SelectItem>
-                          <SelectItem value="direct">Direct & Efficient</SelectItem>
-                          <SelectItem value="detailed">Detailed & Thorough</SelectItem>
-                          <SelectItem value="gentle">Gentle & Calm</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Help Level</Label>
-                      <Select value={settings.bridgette.helpLevel} onValueChange={(value) => updateSetting('bridgette', 'helpLevel', value)}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="minimal">Minimal - Only when asked</SelectItem>
-                          <SelectItem value="balanced">Balanced - Helpful suggestions</SelectItem>
-                          <SelectItem value="detailed">Detailed - Comprehensive guidance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">Proactive Help</Label>
-                        <p className="text-sm text-gray-600">Let Bridge-it offer suggestions proactively</p>
-                      </div>
-                      <Switch
-                        checked={settings.bridgette.proactiveHelp}
-                        onCheckedChange={(checked) => updateSetting('bridgette', 'proactiveHelp', checked)}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label className="font-medium">Daily Tips</Label>
-                        <p className="text-sm text-gray-600">Receive daily co-parenting tips</p>
-                      </div>
-                      <Switch
-                        checked={settings.bridgette.dailyTips}
-                        onCheckedChange={(checked) => updateSetting('bridgette', 'dailyTips', checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-
               <TabsContent value="family" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <Card className="border-2 border-green-200 bg-green-50 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-800">
-                      <Globe className="w-5 h-5" />
-                      Family Profile & Code
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {familyProfile ? (
-                      <>
-                        {/* Family Summary Banner */}
-                        <div className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <Users className="w-8 h-8 text-green-600" />
-                              <div>
-                                <h3 className="font-semibold text-gray-800">{familyProfile.familyName || 'Your Family'}</h3>
-                                <p className="text-sm text-gray-600">
-                                  {familyProfile.children.length} {familyProfile.children.length === 1 ? 'child' : 'children'} •
-                                  {familyProfile.custodyArrangement === '50-50' ? ' 50/50 custody' :
-                                    familyProfile.custodyArrangement === 'primary-secondary' ? ' Primary/Secondary custody' :
-                                      ' Custom custody'}
-                                  {familyProfile.differentTimezones && ' • Different time zones'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              {familyProfile.children.map((child) => (
-                                <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                  {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="border rounded-lg bg-white/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-2">
-                            Family Code
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="font-mono text-lg bg-white px-4 py-2 rounded-md border border-green-200 text-green-800 shadow-sm">
-                              {familyProfile.familyCode || 'Not yet generated'}
-                            </span>
-                            {familyProfile.familyCode && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCopyFamilyCode}
-                                className="border-green-200 text-green-700 hover:bg-green-100"
-                              >
-                                Copy
-                              </Button>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-3">
-                            Share this code with your co-parent when they create their own Bridge-it account so they can link to this family.
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-green-200 bg-white/70 p-6 text-center text-sm text-green-800">
-                        Complete your family onboarding to generate a Family Code.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Custody Distribution Section */}
-                <Card className="border-2 border-purple-200 bg-purple-50 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-purple-800">
-                      <Users className="w-5 h-5" />
-                      Custody Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs
-                      value={custodyViewPeriod}
-                      onValueChange={(value) => {
-                        setCustodyDistribution(null);
-                        setCustodyViewPeriod(value as 'weekly' | 'yearly');
-                      }}
-                      className="w-full"
-                    >
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                        <TabsTrigger value="yearly">Yearly</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="weekly">
-                        {loadingCustody ? (
-                          <div className="text-center py-4">
-                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-                            <p className="text-sm text-gray-600 mt-2">Loading weekly custody details...</p>
-                          </div>
-                        ) : custodyDistribution ? (
-                          <div className="space-y-4 pt-4">
-                            <div className="flex justify-around text-center">
-                              <div>
-                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
-                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
-                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
-                              </div>
-                              <div>
-                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
-                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
-                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
-                              </div>
-                            </div>
-                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
-                          </div>
-                        ) : (
-                          <div className="text-center text-sm text-gray-600 py-4">
-                            Weekly custody distribution data is not available.
-                          </div>
-                        )}
-                      </TabsContent>
-                      <TabsContent value="yearly">
-                        {loadingCustody ? (
-                          <div className="text-center py-4">
-                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
-                            <p className="text-sm text-gray-600 mt-2">Loading yearly custody details...</p>
-                          </div>
-                        ) : custodyDistribution ? (
-                          <div className="space-y-4 pt-4">
-                            <div className="flex justify-around text-center">
-                              <div>
-                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
-                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
-                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
-                              </div>
-                              <div>
-                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
-                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
-                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
-                              </div>
-                            </div>
-                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
-                          </div>
-                        ) : (
-                          <div className="text-center text-sm text-gray-600 py-4">
-                            Yearly custody distribution data is not available.
-                          </div>
-                        )}
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-
                 {/* Custody Agreement Section */}
                 <Card className="border-2 border-blue-200 bg-blue-50 shadow-sm">
                   <CardHeader>
@@ -1746,7 +1214,539 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                     )}
                   </CardContent>
                 </Card>
+
+                <Card className="border-2 border-green-200 bg-green-50 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-800">
+                      <Globe className="w-5 h-5" />
+                      Family Profile & Code
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {familyProfile ? (
+                      <>
+                        {/* Family Summary Banner */}
+                        <div className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <Users className="w-8 h-8 text-green-600" />
+                              <div>
+                                <h3 className="font-semibold text-gray-800">{familyProfile.familyName || 'Your Family'}</h3>
+                                <p className="text-sm text-gray-600">
+                                  {familyProfile.children.length} {familyProfile.children.length === 1 ? 'child' : 'children'} •
+                                  {familyProfile.custodyArrangement === '50-50' ? ' 50/50 custody' :
+                                    familyProfile.custodyArrangement === 'primary-secondary' ? ' Primary/Secondary custody' :
+                                      ' Custom custody'}
+                                  {familyProfile.differentTimezones && ' • Different time zones'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              {familyProfile.children.map((child) => (
+                                <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                  {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-lg bg-white/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-2">
+                            Family Code
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="font-mono text-lg bg-white px-4 py-2 rounded-md border border-green-200 text-green-800 shadow-sm">
+                              {familyProfile.familyCode || 'Not yet generated'}
+                            </span>
+                            {familyProfile.familyCode && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCopyFamilyCode}
+                                className="border-green-200 text-green-700 hover:bg-green-100"
+                              >
+                                Copy
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-3">
+                            Share this code with your co-parent when they create their own Bridge-it account so they can link to this family.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-green-200 bg-white/70 p-6 text-center text-sm text-green-800">
+                        Complete your family onboarding to generate a Family Code.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Custody Distribution Section */}
+                <Card className="border-2 border-purple-200 bg-purple-50 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-purple-800">
+                      <Users className="w-5 h-5" />
+                      Custody Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs
+                      value={custodyViewPeriod}
+                      onValueChange={(value) => {
+                        setCustodyDistribution(null);
+                        setCustodyViewPeriod(value as 'weekly' | 'yearly');
+                      }}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                        <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="weekly">
+                        {loadingCustody ? (
+                          <div className="text-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                            <p className="text-sm text-gray-600 mt-2">Loading weekly custody details...</p>
+                          </div>
+                        ) : custodyDistribution ? (
+                          <div className="space-y-4 pt-4">
+                            <div className="flex justify-around text-center">
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
+                              </div>
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
+                              </div>
+                            </div>
+                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
+                          </div>
+                        ) : (
+                          <div className="text-center text-sm text-gray-600 py-4">
+                            Weekly custody distribution data is not available.
+                          </div>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="yearly">
+                        {loadingCustody ? (
+                          <div className="text-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                            <p className="text-sm text-gray-600 mt-2">Loading yearly custody details...</p>
+                          </div>
+                        ) : custodyDistribution ? (
+                          <div className="space-y-4 pt-4">
+                            <div className="flex justify-around text-center">
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent1.percentage.toFixed(1)}%</p>
+                              </div>
+                              <div>
+                                <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent2.days}</p>
+                                <p className="text-sm text-gray-600">{custodyDistribution.parent2.name} Days</p>
+                                <p className="text-xs text-gray-500">{custodyDistribution.parent2.percentage.toFixed(1)}%</p>
+                              </div>
+                            </div>
+                            <Progress value={custodyDistribution.parent1.percentage} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-purple-400 [&>div]:to-pink-400" />
+                          </div>
+                        ) : (
+                          <div className="text-center text-sm text-gray-600 py-4">
+                            Yearly custody distribution data is not available.
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
               </TabsContent>
+
+              <TabsContent value="profile" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {profileInitials}
+                    </div>
+                    <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
+                      <Camera className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {[settings.profile.firstName, settings.profile.lastName].filter(Boolean).join(' ') || 'Your name'}
+                    </h3>
+                    <p className="text-gray-600">{settings.profile.email || 'Add your email address'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="firstName"
+                        value={settings.profile.firstName}
+                        onChange={(e) => updateSetting('profile', 'firstName', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        id="lastName"
+                        value={settings.profile.lastName}
+                        onChange={(e) => updateSetting('profile', 'lastName', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={settings.profile.email}
+                      onChange={(e) => updateSetting('profile', 'email', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative mt-1">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="phone"
+                      value={settings.profile.phone}
+                      onChange={(e) => updateSetting('profile', 'phone', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="timezone">Time Zone</Label>
+                  <Select value={settings.profile.timezone} onValueChange={(value) => updateSetting('profile', 'timezone', value)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EST">Eastern Time (EST)</SelectItem>
+                      <SelectItem value="CST">Central Time (CST)</SelectItem>
+                      <SelectItem value="MST">Mountain Time (MST)</SelectItem>
+                      <SelectItem value="PST">Pacific Time (PST)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="bio">Bio (Optional)</Label>
+                  <Textarea
+                    id="bio"
+                    value={settings.profile.bio}
+                    onChange={(e) => updateSetting('profile', 'bio', e.target.value)}
+                    placeholder="Tell your co-parent a bit about yourself..."
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="preferences" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
+                {/* Language Selection */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Languages className="w-5 h-5 mr-2 text-blue-600" />
+                    Language Preference
+                  </h3>
+                  <Select value={settings.preferences.language} onValueChange={(value) => updateSetting('preferences', 'language', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="english">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Message Tone Preference */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
+                    Default Message Tone
+                  </h3>
+                  <Select value={settings.preferences.messageTone} onValueChange={(value) => updateSetting('preferences', 'messageTone', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="friendly">
+                        <div>
+                          <div className="font-medium">Friendly</div>
+                          <div className="text-xs text-gray-500">Warm and collaborative tone</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="matter-of-fact">
+                        <div>
+                          <div className="font-medium">Matter-of-fact</div>
+                          <div className="text-xs text-gray-500">Direct and clear communication</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="neutral-legal">
+                        <div>
+                          <div className="font-medium">Neutral Legal</div>
+                          <div className="text-xs text-gray-500">Professional and documented</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gentle">
+                        <div>
+                          <div className="font-medium">Gentle</div>
+                          <div className="text-xs text-gray-500">Soft and understanding approach</div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Notification Opt-ins */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Bell className="w-5 h-5 mr-2 text-blue-600" />
+                    Notification Preferences
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'dailyTips', label: 'Daily Co-parenting Tips', desc: 'Receive helpful daily tips and encouragement' },
+                      { key: 'weeklyDigest', label: 'Weekly Summary', desc: 'Weekly digest of your co-parenting activities' },
+                      { key: 'expertArticles', label: 'Expert Articles', desc: 'New articles from psychology and family experts' },
+                      { key: 'communityUpdates', label: 'Community Updates', desc: 'Updates from the Bridge-it co-parenting community' },
+                      { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge-it' },
+                      { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn]}
+                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'notificationOptIn', item.key, checked)}
+                        />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Article Type Preferences */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
+                    Article Types You're Interested In
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'communication', label: 'Communication Strategies', desc: 'Tips for better co-parent communication' },
+                      { key: 'legal', label: 'Legal Guidance', desc: 'Understanding custody laws and agreements' },
+                      { key: 'emotional', label: 'Emotional Support', desc: 'Managing stress and emotional wellbeing' },
+                      { key: 'practical', label: 'Practical Tips', desc: 'Day-to-day co-parenting logistics' },
+                      { key: 'children', label: 'Children & Family', desc: 'Supporting your children through transitions' },
+                      { key: 'financial', label: 'Financial Planning', desc: 'Managing shared expenses and budgeting' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes]}
+                          onCheckedChange={(checked) => updateNestedSetting('preferences', 'articleTypes', item.key, checked)}
+                        />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="notifications" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Email Notifications</Label>
+                        <p className="text-sm text-gray-600">Receive updates via email</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.email}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'email', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">SMS Notifications</Label>
+                        <p className="text-sm text-gray-600">Urgent updates via text</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.sms}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'sms', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Push Notifications</Label>
+                        <p className="text-sm text-gray-600">Real-time alerts on your device</p>
+                      </div>
+                      <Switch
+                        checked={settings.notifications.push}
+                        onCheckedChange={(checked) => updateSetting('notifications', 'push', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">What to notify me about</h3>
+
+                  <div className="space-y-3">
+                    {[
+                      { key: 'calendar', label: 'Calendar Changes', desc: 'Schedule updates and new events' },
+                      { key: 'messages', label: 'New Messages', desc: 'Messages from your co-parent' },
+                      { key: 'expenses', label: 'Expense Updates', desc: 'New expenses and payment requests' },
+                      { key: 'documents', label: 'Document Changes', desc: 'New documents and updates' }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={settings.notifications[item.key as keyof typeof settings.notifications] as boolean}
+                          onCheckedChange={(checked) => updateSetting('notifications', item.key, checked)}
+                        />
+                        <div className="flex-1">
+                          <Label className="font-medium">{item.label}</Label>
+                          <p className="text-sm text-gray-600">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="privacy" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Privacy Controls</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Profile Visibility</Label>
+                      <Select value={settings.privacy.profileVisibility} onValueChange={(value) => updateSetting('privacy', 'profileVisibility', value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="co-parent-only">Co-parent only</SelectItem>
+                          <SelectItem value="family-network">Extended family network</SelectItem>
+                          <SelectItem value="private">Completely private</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Activity Sharing</Label>
+                        <p className="text-sm text-gray-600">Share activity status with co-parent</p>
+                      </div>
+                      <Switch
+                        checked={settings.privacy.activitySharing}
+                        onCheckedChange={(checked) => updateSetting('privacy', 'activitySharing', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-800">Data Security</p>
+                      <p className="text-blue-700">All your data is encrypted and stored securely. You can export or delete your data at any time.</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="bridgette" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Customize Bridge-it</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Bridge-it's Personality</Label>
+                      <Select value={settings.bridgette.personality} onValueChange={(value) => updateSetting('bridgette', 'personality', value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="encouraging">Encouraging & Supportive</SelectItem>
+                          <SelectItem value="direct">Direct & Efficient</SelectItem>
+                          <SelectItem value="detailed">Detailed & Thorough</SelectItem>
+                          <SelectItem value="gentle">Gentle & Calm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Help Level</Label>
+                      <Select value={settings.bridgette.helpLevel} onValueChange={(value) => updateSetting('bridgette', 'helpLevel', value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minimal">Minimal - Only when asked</SelectItem>
+                          <SelectItem value="balanced">Balanced - Helpful suggestions</SelectItem>
+                          <SelectItem value="detailed">Detailed - Comprehensive guidance</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Proactive Help</Label>
+                        <p className="text-sm text-gray-600">Let Bridge-it offer suggestions proactively</p>
+                      </div>
+                      <Switch
+                        checked={settings.bridgette.proactiveHelp}
+                        onCheckedChange={(checked) => updateSetting('bridgette', 'proactiveHelp', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <Label className="font-medium">Daily Tips</Label>
+                        <p className="text-sm text-gray-600">Receive daily co-parenting tips</p>
+                      </div>
+                      <Switch
+                        checked={settings.bridgette.dailyTips}
+                        onCheckedChange={(checked) => updateSetting('bridgette', 'dailyTips', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
             </CardContent>
           </Card>
         </Tabs>
