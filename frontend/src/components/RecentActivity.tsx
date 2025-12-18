@@ -71,8 +71,12 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     let ws: WebSocket | null = null;
     if (currentUser?.email) {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
+      // Ensure we use wss:// if we are on https://
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsBase = API_URL.replace(/^https?:/, wsProtocol).replace(/\/$/, '');
+      const WS_URL = `${wsBase}/api/v1/messaging/ws/${encodeURIComponent(currentUser.email)}`;
       
+      console.log('RecentActivity connecting to WebSocket:', WS_URL);
       ws = new WebSocket(WS_URL);
       
       ws.onopen = () => {

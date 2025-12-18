@@ -245,14 +245,25 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
     if (!currentUser?.email) return;
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
+    // Ensure we use wss:// if we are on https://
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsBase = API_URL.replace(/^https?:/, wsProtocol).replace(/\/$/, '');
+    const WS_URL = `${wsBase}/api/v1/messaging/ws/${encodeURIComponent(currentUser.email)}`;
     
-    console.log('Connecting to WebSocket:', WS_URL);
+    console.log('MessagingInterface connecting to WebSocket:', WS_URL);
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket Connected');
+      console.log('MessagingInterface WebSocket Connected');
+    };
+
+    ws.onerror = (error) => {
+      console.error('MessagingInterface WebSocket Error:', error);
+    };
+
+    ws.onclose = (event) => {
+      console.log('MessagingInterface WebSocket Closed:', event.code, event.reason);
     };
 
     ws.onmessage = (event) => {
