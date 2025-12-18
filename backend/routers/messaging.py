@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/v1/messaging", tags=["messaging"])
 # WebSocket Endpoint
 @router.websocket("/ws/{email}")
 async def websocket_endpoint(websocket: WebSocket, email: str):
-    print(f"[WS] Connection attempt for {email}")
+    print(f"[WS] Connection attempt for {email} from {websocket.client}")
     # Normalize email to lowercase for consistent connection management
     email = email.lower()
     try:
@@ -28,7 +28,9 @@ async def websocket_endpoint(websocket: WebSocket, email: str):
 
     try:
         while True:
+            # Add a heartbeat check or similar if needed, but for now just log receiving
             data = await websocket.receive_text()
+            # print(f"[WS] Received data from {email}: {data[:50]}...") # Log first 50 chars
             try:
                 message = json.loads(data)
                 # Handle typing indicators
@@ -65,10 +67,13 @@ async def websocket_endpoint(websocket: WebSocket, email: str):
                 pass
             except Exception as e:
                 print(f"[WS] Error processing message: {e}")
-    except WebSocketDisconnect:
+    except WebSocketDisconnect as e:
+        print(f"[WS] WebSocketDisconnect for {email}: code={e.code}, reason={e.reason}")
         manager.disconnect(websocket, email)
     except Exception as e:
-        print(f"[WS] Error: {e}")
+        print(f"[WS] Unexpected Error for {email}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         manager.disconnect(websocket, email)
 
 # Get all conversations for the current user's family
