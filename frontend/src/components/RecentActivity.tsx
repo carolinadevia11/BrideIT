@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, DollarSign, Calendar, MessageSquare, AlertCircle } from 'lucide-react';
+import { Users, DollarSign, Calendar, MessageSquare, AlertCircle, X, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { activityAPI } from '@/lib/api';
@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface Activity {
   id: string;
-  type: 'expense_pending' | 'expense_approved' | 'calendar_confirmed' | 'calendar_update' | 'message' | 'change_request';
+  type: 'expense_pending' | 'expense_approved' | 'calendar_confirmed' | 'calendar_update' | 'message' | 'change_request' | 'call';
   title: string;
   description?: string;
   amount?: number;
@@ -23,12 +23,14 @@ interface RecentActivityProps {
   onNavigateToExpenses?: () => void;
   onNavigateToCalendar?: () => void;
   onNavigateToMessages?: () => void;
+  currentUser?: { email: string } | null;
 }
 
 const RecentActivity: React.FC<RecentActivityProps> = ({
   onNavigateToExpenses,
   onNavigateToCalendar,
   onNavigateToMessages,
+  currentUser,
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,21 +63,106 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 
   useEffect(() => {
     fetchActivities();
-    // Poll for new activities every 30 seconds
+    
+    // Poll for new activities every 30 seconds as backup
     const interval = setInterval(fetchActivities, 30000);
-    return () => clearInterval(interval);
-  }, [fetchActivities]);
 
-  const handleReviewExpense = (expenseId: string) => {
-    if (onNavigateToExpenses) {
-      onNavigateToExpenses();
+    // WebSocket for real-time updates
+    let ws: WebSocket | null = null;
+    if (currentUser?.email) {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
+      
+      ws = new WebSocket(WS_URL);
+      
+      ws.onopen = () => {
+        console.log('RecentActivity WebSocket Connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Refresh on specific events or generic refresh
+          if (data.type === 'refresh_activities' ||
+              data.type === 'new_message' ||
+              data.type === 'refresh_calendar' ||
+              data.type === 'refresh_expenses') {
+            console.log('Received refresh event:', data.type);
+            fetchActivities();
+          }
+        } catch (e) {
+          console.error('WebSocket message error:', e);
+        }
+      };
     }
-    // The expense tab will be active, user can review there
+
+    return () => {
+      clearInterval(interval);
+      if (ws) ws.close();
+    };
+  }, [fetchActivities, currentUser]);
+
+  const handleActivityClick = (activity: Activity) => {
+    switch (activity.type) {
+      case 'expense_pending':
+      case 'expense_approved':
+        if (onNavigateToExpenses) onNavigateToExpenses();
+        break;
+      case 'calendar_confirmed':
+      case 'calendar_update':
+      case 'change_request':
+        if (onNavigateToCalendar) onNavigateToCalendar();
+        break;
+      case 'message':
+      case 'call':
+        if (onNavigateToMessages) onNavigateToMessages();
+        break;
+    }
   };
 
-  const handleReviewChangeRequest = () => {
-    if (onNavigateToCalendar) {
-      onNavigateToCalendar();
+  const handleDismiss = async (e: React.MouseEvent, activityId: string) => {
+    e.stopPropagation(); // Prevent triggering the row click
+    
+    // Optimistically remove from UI
+    setActivities(prev => prev.filter(a => a.id !== activityId));
+
+    try {
+      await activityAPI.dismissActivity(activityId);
+    } catch (error) {
+      console.error('Error dismissing activity:', error);
+      toast({
+        title: "Error",
+        description: "Failed to dismiss notification",
+        variant: "destructive",
+      });
+      // Re-fetch to restore state if failed
+      fetchActivities();
+    }
+  };
+
+  const handleDismissAll = async () => {
+    if (activities.length === 0) return;
+
+    // Optimistically clear UI
+    const currentActivities = [...activities];
+    const activityIds = currentActivities.map(a => a.id);
+    setActivities([]);
+
+    try {
+      await activityAPI.dismissAllActivities(activityIds);
+      toast({
+        title: "Cleared",
+        description: "All notifications cleared",
+      });
+    } catch (error) {
+      console.error('Error clearing activities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear notifications",
+        variant: "destructive",
+      });
+      // Restore state if failed
+      setActivities(currentActivities);
     }
   };
 
@@ -125,6 +212,8 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
         return Calendar;
       case 'message':
         return MessageSquare;
+      case 'call':
+        return Phone;
       default:
         return AlertCircle;
     }
@@ -133,11 +222,21 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   if (loading) {
     return (
       <Card className="border-2 border-bridge-blue">
-        <CardHeader className="p-4 sm:p-6">
+        <CardHeader className="p-4 sm:p-6 flex flex-row items-center justify-between">
           <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
             <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
             Recent Activity
           </CardTitle>
+          {activities.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDismissAll}
+              className="text-xs text-gray-500 hover:text-bridge-red hover:bg-red-50 h-8"
+            >
+              Clear All
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
           <div className="flex items-center justify-center py-6 sm:py-8">
@@ -149,30 +248,26 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   }
 
   if (activities.length === 0) {
-    return (
-      <Card className="border-2 border-bridge-blue">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          <p className="text-gray-500 text-xs sm:text-sm text-center py-4">
-            No recent activity to display
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (
     <Card className="border-2 border-bridge-blue">
-      <CardHeader className="p-4 sm:p-6">
+      <CardHeader className="p-4 sm:p-6 flex flex-row items-center justify-between">
         <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
           <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
           Recent Activity
         </CardTitle>
+        {activities.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDismissAll}
+            className="text-xs text-gray-500 hover:text-bridge-red hover:bg-red-50 h-8"
+          >
+            Clear All
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0">
         <div className="space-y-3 sm:space-y-4">
@@ -184,14 +279,23 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
             return (
               <div
                 key={activity.id}
-                className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 ${colorClasses.bg} rounded-lg border-l-4 ${colorClasses.border}`}
+                onClick={() => handleActivityClick(activity)}
+                className={`group relative flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 ${colorClasses.bg} rounded-lg border-l-4 ${colorClasses.border} cursor-pointer hover:shadow-md transition-shadow pr-8`}
               >
-                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <button
+                  onClick={(e) => handleDismiss(e, activity.id)}
+                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-black/5 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Dismiss"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+
+                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-1">
                   <div
                     className={`w-2 h-2 ${colorClasses.dot} rounded-full flex-shrink-0 ${isPulsing ? 'animate-pulse' : ''}`}
                   ></div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-bridge-black break-words">
+                    <p className="text-xs sm:text-sm font-medium text-bridge-black break-words pr-4">
                       {activity.type === 'expense_pending' && (
                         <span className="text-bridge-red font-semibold">PENDING: </span>
                       )}
@@ -208,12 +312,9 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
                         ? 'bg-bridge-red hover:bg-red-600 text-white'
                         : 'bg-bridge-blue hover:bg-blue-600 text-white'
                     }`}
-                    onClick={() => {
-                      if (activity.type === 'expense_pending' && activity.expenseId) {
-                        handleReviewExpense(activity.expenseId);
-                      } else if (activity.type === 'change_request') {
-                        handleReviewChangeRequest();
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleActivityClick(activity);
                     }}
                   >
                     Review

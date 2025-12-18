@@ -27,7 +27,7 @@ import RecentActivity from '@/components/RecentActivity';
 import ProductTour from '@/components/ProductTour';
 import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
-import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI } from '@/lib/api';
+import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI, messagingAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface IndexProps {
@@ -143,7 +143,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     children?: Child[];
   } | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const unreadMessagesCount = 0;
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   type UpcomingEventDetail = { id: string; title: string; dateLabel: string };
   type PendingExpenseDetail = { id: string; description: string; amount?: number; status?: string };
   const [dashboardMetrics, setDashboardMetrics] = useState({
@@ -509,10 +509,17 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
 
       try {
         const now = new Date();
-        const [eventsResponse, expensesResponse] = await Promise.all([
+        const [eventsResponse, expensesResponse, conversationsResponse] = await Promise.all([
           calendarAPI.getEvents(now.getFullYear(), now.getMonth() + 1),
           expensesAPI.getExpenses(),
+          messagingAPI.getConversations(),
         ]);
+
+        // Calculate unread messages
+        if (Array.isArray(conversationsResponse)) {
+          const totalUnread = conversationsResponse.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
+          setUnreadMessagesCount(totalUnread);
+        }
 
         const upcomingEventArray = Array.isArray(eventsResponse)
           ? eventsResponse
@@ -570,6 +577,47 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     };
 
     loadDashboardMetrics();
+
+    // Set up polling for dashboard metrics (every 30 seconds) as backup
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadDashboardMetrics();
+      }
+    }, 30000);
+
+    // WebSocket for real-time updates
+    let ws: WebSocket | null = null;
+    if (currentUser?.email && currentUser.role !== 'admin') {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
+      
+      ws = new WebSocket(WS_URL);
+      
+      ws.onopen = () => {
+        console.log('Dashboard WebSocket Connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Refresh on specific events or generic refresh
+          if (data.type === 'refresh_activities' ||
+              data.type === 'new_message' ||
+              data.type === 'refresh_calendar' ||
+              data.type === 'refresh_expenses') {
+            console.log('Dashboard received refresh event:', data.type);
+            loadDashboardMetrics();
+          }
+        } catch (e) {
+          console.error('WebSocket message error:', e);
+        }
+      };
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (ws) ws.close();
+    };
   }, [familyProfile, currentUser]);
 
   // Removed problematic bidirectional sync useEffect
@@ -1296,12 +1344,19 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                   <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
                   <span className="truncate">Calendar</span>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="messages" 
+                <TabsTrigger
+                  value="messages"
                   data-tour="messages-tab"
-                  className="flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
+                  className="relative flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-0.5 lg:space-x-2 data-[state=active]:bg-bridge-yellow data-[state=active]:text-bridge-black px-0.5 sm:px-1 lg:px-3 py-1 sm:py-1 lg:py-1.5 text-[9px] sm:text-[10px] lg:text-sm min-w-0"
                 >
-                  <MessageSquare className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                  <div className="relative">
+                    <MessageSquare className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                    {unreadMessagesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 flex h-2 w-2 sm:h-2.5 sm:w-2.5 items-center justify-center rounded-full bg-red-500 ring-1 ring-white">
+                        <span className="sr-only">New messages</span>
+                      </span>
+                    )}
+                  </div>
                   <span className="truncate">Messages</span>
                 </TabsTrigger>
                 <TabsTrigger 
@@ -1354,7 +1409,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                           </p>
                           <ul className="space-y-2">
                             {dashboardMetrics.pendingExpenseDetails.map((expense) => (
-                              <li key={expense.id} className="flex items-start gap-2 text-sm text-bridge-black/80">
+                              <li
+                                key={expense.id}
+                                className="flex items-start gap-2 text-sm text-bridge-black/80 cursor-pointer hover:text-bridge-black transition-colors hover:bg-white/50 p-1 rounded -ml-1"
+                                onClick={() => changeTab('expenses')}
+                              >
                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-bridge-red flex-shrink-0" />
                                 <span className="break-words">
                                   <span className="font-medium">Expense Review:</span> {expense.description}
@@ -1363,7 +1422,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                               </li>
                             ))}
                             {dashboardMetrics.upcomingEventDetails.map((event) => (
-                              <li key={event.id} className="flex items-start gap-2 text-sm text-bridge-black/80">
+                              <li
+                                key={event.id}
+                                className="flex items-start gap-2 text-sm text-bridge-black/80 cursor-pointer hover:text-bridge-black transition-colors hover:bg-white/50 p-1 rounded -ml-1"
+                                onClick={() => changeTab('calendar')}
+                              >
                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-bridge-green flex-shrink-0" />
                                 <span className="break-words">
                                   <span className="font-medium">Upcoming Event:</span> {event.title} on {event.dateLabel}
@@ -1468,6 +1531,7 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                   onNavigateToExpenses={() => changeTab('expenses')}
                   onNavigateToCalendar={() => changeTab('calendar')}
                   onNavigateToMessages={() => changeTab('messages')}
+                  currentUser={currentUser}
                 />
               </div>
 

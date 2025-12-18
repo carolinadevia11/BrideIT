@@ -159,6 +159,7 @@ class InMemoryDB:
         self.expenses = InMemoryCollection()
         self.documents = InMemoryCollection()
         self.document_folders = InMemoryCollection()
+        self.dismissed_activities = InMemoryCollection()
         # Mock GridFS for in-memory DB (basic placeholder)
         self.fs = SimpleNamespace(put=lambda x, **y: "mock_file_id", get=lambda x: None, delete=lambda x: None)
 

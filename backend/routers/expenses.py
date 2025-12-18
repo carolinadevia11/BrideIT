@@ -12,6 +12,7 @@ from pathlib import Path
 from models import Expense, ExpenseCreate, ExpenseUpdate, User
 from routers.auth import get_current_user
 from database import db, fs
+from websocket import manager
 
 router = APIRouter(prefix="/api/v1/expenses", tags=["expenses"])
 
@@ -164,6 +165,22 @@ async def create_expense(
         }
         
         db.expenses.insert_one(expense_doc)
+
+        # Notify family members
+        participants = [family["parent1_email"]]
+        if family.get("parent2_email"):
+            participants.append(family["parent2_email"])
+        
+        for email in participants:
+            if email:
+                await manager.send_personal_message({
+                    "type": "refresh_expenses",
+                    "action": "create",
+                    "expense_id": expense_id
+                }, email)
+                await manager.send_personal_message({
+                    "type": "refresh_activities",
+                }, email)
         
         return {
             "id": expense_id,
@@ -243,6 +260,22 @@ async def update_expense(
                 {"_id": expense.get("_id")},
                 {"$set": update_data}
             )
+
+        # Notify family members
+        participants = [family["parent1_email"]]
+        if family.get("parent2_email"):
+            participants.append(family["parent2_email"])
+        
+        for email in participants:
+            if email:
+                await manager.send_personal_message({
+                    "type": "refresh_expenses",
+                    "action": "update",
+                    "expense_id": expense_id
+                }, email)
+                await manager.send_personal_message({
+                    "type": "refresh_activities",
+                }, email)
         
         # Get updated expense using the same lookup logic
         updated_expense = db.expenses.find_one({"id": expense_id})
@@ -323,6 +356,22 @@ async def delete_expense(
             db.expenses.delete_one({"id": expense_id})
         else:
             db.expenses.delete_one({"_id": expense.get("_id")})
+
+        # Notify family members
+        participants = [family["parent1_email"]]
+        if family.get("parent2_email"):
+            participants.append(family["parent2_email"])
+        
+        for email in participants:
+            if email:
+                await manager.send_personal_message({
+                    "type": "refresh_expenses",
+                    "action": "delete",
+                    "expense_id": expense_id
+                }, email)
+                await manager.send_personal_message({
+                    "type": "refresh_activities",
+                }, email)
         
         return {"message": "Expense deleted successfully"}
     except HTTPException:

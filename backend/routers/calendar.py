@@ -15,6 +15,7 @@ from models import (
 from routers.auth import get_current_user
 from database import db
 from services.email_service import email_service
+from websocket import manager
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
 
@@ -199,6 +200,19 @@ async def create_calendar_event(
 
     db.events.insert_one(event_doc)
 
+    # Notify family members via WebSocket
+    recipients_ws = [family.get("parent1_email"), family.get("parent2_email")]
+    for email in recipients_ws:
+        if email:
+            await manager.send_personal_message({
+                "type": "refresh_calendar",
+                "action": "create",
+                "event_id": event_id
+            }, email)
+            await manager.send_personal_message({
+                "type": "refresh_activities",
+            }, email)
+
     # Send email notification
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
@@ -265,6 +279,19 @@ async def update_calendar_event(
     db.events.update_one({"_id": event_doc.get("_id")}, {"$set": update_fields})
     event_doc.update(update_fields)
 
+    # Notify family members via WebSocket
+    recipients_ws = [family.get("parent1_email"), family.get("parent2_email")]
+    for email in recipients_ws:
+        if email:
+            await manager.send_personal_message({
+                "type": "refresh_calendar",
+                "action": "update",
+                "event_id": event_id
+            }, email)
+            await manager.send_personal_message({
+                "type": "refresh_activities",
+            }, email)
+
     # Send email notification
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
@@ -316,6 +343,19 @@ async def delete_calendar_event(
         )
 
     db.events.delete_one({"_id": event_doc.get("_id")})
+
+    # Notify family members via WebSocket
+    recipients_ws = [family.get("parent1_email"), family.get("parent2_email")]
+    for email in recipients_ws:
+        if email:
+            await manager.send_personal_message({
+                "type": "refresh_calendar",
+                "action": "delete",
+                "event_id": event_id
+            }, email)
+            await manager.send_personal_message({
+                "type": "refresh_activities",
+            }, email)
 
     # Send email notification
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
@@ -414,6 +454,19 @@ async def create_change_request(
 
     db.change_requests.insert_one(change_request_doc)
 
+    # Notify family members via WebSocket
+    recipients_ws = [family.get("parent1_email"), family.get("parent2_email")]
+    for email in recipients_ws:
+        if email:
+            await manager.send_personal_message({
+                "type": "refresh_calendar",
+                "action": "change_request_create",
+                "request_id": change_request_id
+            }, email)
+            await manager.send_personal_message({
+                "type": "refresh_activities",
+            }, email)
+
     # Send email notification to both parents about the request
     # family already fetched at start
     
@@ -465,6 +518,19 @@ async def update_change_request(
         {"_id": change_request_doc.get("_id")},
         {"$set": {"status": update_data.status, "resolvedBy_email": current_user.email}},
     )
+
+    # Notify family members via WebSocket
+    recipients_ws = [family.get("parent1_email"), family.get("parent2_email")]
+    for email in recipients_ws:
+        if email:
+            await manager.send_personal_message({
+                "type": "refresh_calendar",
+                "action": "change_request_update",
+                "request_id": request_id
+            }, email)
+            await manager.send_personal_message({
+                "type": "refresh_activities",
+            }, email)
 
     # Send email notification to both parents about the resolution
     recipients = [family.get("parent1_email"), family.get("parent2_email")]

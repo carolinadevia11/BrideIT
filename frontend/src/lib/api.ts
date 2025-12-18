@@ -503,6 +503,18 @@ export const activityAPI = {
   getRecentActivity: async () => {
     return fetchWithAuth('/api/v1/activity', {}, true);
   },
+  dismissActivity: async (activityId: string) => {
+    return fetchWithAuth('/api/v1/activity/dismiss', {
+      method: 'POST',
+      body: JSON.stringify({ activity_id: activityId }),
+    });
+  },
+  dismissAllActivities: async (activityIds: string[]) => {
+    return fetchWithAuth('/api/v1/activity/dismiss-all', {
+      method: 'POST',
+      body: JSON.stringify({ activity_ids: activityIds }),
+    });
+  },
 };
 
 // Documents API
