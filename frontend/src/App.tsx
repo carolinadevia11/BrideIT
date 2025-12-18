@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminFamilyDetail from "./pages/AdminFamilyDetail";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <WebSocketProvider isAuthenticated={isAuthenticated}>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -208,6 +210,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        </WebSocketProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

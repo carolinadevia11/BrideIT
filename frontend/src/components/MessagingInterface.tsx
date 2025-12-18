@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import BridgetteAvatar from './BridgetteAvatar';
 import { messagingAPI, authAPI } from '@/lib/api';
+import { useWebSocket } from '@/contexts/WebSocketContext';
+
 interface MessagingInterfaceProps {
   onStartCall?: (conversationId: string, type: 'video' | 'audio') => void;
   activeConversationId?: string | null;
@@ -72,9 +74,9 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const conversationPollingRef = useRef<number | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { lastMessage, sendMessage: sendWebSocketMessage } = useWebSocket();
   const activeConversationRef = useRef<string | null>(null);
   // Keep ref in sync with state
   useEffect(() => {
@@ -240,80 +242,43 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
     };
   }, [fetchCurrentUser, fetchConversations]);
 
-  // WebSocket Connection
+  // Handle WebSocket messages
   useEffect(() => {
-    if (!currentUser?.email) return;
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    // Ensure we use wss:// if we are on https://
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsBase = API_URL.replace(/^https?:/, wsProtocol).replace(/\/$/, '');
-    const WS_URL = `${wsBase}/api/v1/messaging/ws/${encodeURIComponent(currentUser.email)}`;
+    if (!lastMessage) return;
     
-    console.log('MessagingInterface connecting to WebSocket:', WS_URL);
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
+    const data = lastMessage;
+    
+    // Typing Indicator
+    if (data.type === 'typing') {
+      setActiveConversation(currentActive => {
+        if (currentActive === data.conversationId) {
+          setIsTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        }
+        return currentActive;
+      });
+      return;
+    }
 
-    ws.onopen = () => {
-      console.log('MessagingInterface WebSocket Connected');
-    };
-
-    ws.onerror = (error) => {
-      console.error('MessagingInterface WebSocket Error:', error);
-    };
-
-    ws.onclose = (event) => {
-      console.log('MessagingInterface WebSocket Closed:', event.code, event.reason);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+    // New Message
+    if (data.type === 'new_message' || data.id) {
+        // Clear typing indicator on new message
+        setIsTyping(false);
         
-        // Typing Indicator
-        if (data.type === 'typing') {
-          setActiveConversation(currentActive => {
-            if (currentActive === data.conversationId) {
-              setIsTyping(true);
-              if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-              typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
-            }
-            return currentActive;
-          });
-          return;
+        // Check if message belongs to active conversation
+        const msgConvId = data.conversationId || data.conversation_id;
+        
+        if (activeConversationRef.current && activeConversationRef.current === msgConvId) {
+          // Refresh messages for the active conversation to ensure we have the latest state
+          // This is safer than manual appending as it handles formatting and optimistic states correctly
+          fetchMessages(msgConvId, 1, { silent: true });
         }
-
-        // New Message
-        if (data.type === 'new_message' || data.id) {
-           // Clear typing indicator on new message
-           setIsTyping(false);
-           
-           // Check if message belongs to active conversation
-           const msgConvId = data.conversationId || data.conversation_id;
-           
-           if (activeConversationRef.current && activeConversationRef.current === msgConvId) {
-             // Refresh messages for the active conversation to ensure we have the latest state
-             // This is safer than manual appending as it handles formatting and optimistic states correctly
-             fetchMessages(msgConvId, 1, { silent: true });
-           }
-           
-           // Always refresh conversations list to update unread counts and ordering in sidebar
-           fetchConversations({ silent: true });
-        }
-      } catch (e) {
-        console.error('WebSocket message error:', e);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket Disconnected');
-      // Simple reconnect logic could go here
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, [currentUser, fetchConversations, fetchMessages]);
+        
+        // Always refresh conversations list to update unread counts and ordering in sidebar
+        fetchConversations({ silent: true });
+    }
+  }, [lastMessage, fetchConversations, fetchMessages]);
 
   // Fetch messages when active conversation changes
   useEffect(() => {
@@ -374,7 +339,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
   const activeConv = conversations.find(conv => conv.id === activeConversation);
 
   const handleTyping = () => {
-    if (!wsRef.current || !activeConversation || !currentUser) return;
+    if (!activeConversation || !currentUser) return;
     
     // Find recipient
     const currentConv = conversations.find(c => c.id === activeConversation);
@@ -382,11 +347,11 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
     
     if (recipient) {
       // Send typing event (debouncing could be added here if needed)
-      wsRef.current.send(JSON.stringify({
+      sendWebSocketMessage({
         type: 'typing',
         conversationId: activeConversation,
         recipientEmail: recipient
-      }));
+      });
     }
   };
 

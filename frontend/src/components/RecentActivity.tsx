@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { activityAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
 interface Activity {
   id: string;
@@ -36,6 +37,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const { lastMessage } = useWebSocket();
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -62,49 +64,28 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   }, [toast]);
 
   useEffect(() => {
+    if (lastMessage) {
+        const data = lastMessage;
+        if (data.type === 'refresh_activities' ||
+            data.type === 'new_message' ||
+            data.type === 'refresh_calendar' ||
+            data.type === 'refresh_expenses') {
+          // console.log('Received refresh event:', data.type);
+          fetchActivities();
+        }
+    }
+  }, [lastMessage, fetchActivities]);
+
+  useEffect(() => {
     fetchActivities();
     
     // Poll for new activities every 30 seconds as backup
     const interval = setInterval(fetchActivities, 30000);
 
-    // WebSocket for real-time updates
-    let ws: WebSocket | null = null;
-    if (currentUser?.email) {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      // Ensure we use wss:// if we are on https://
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsBase = API_URL.replace(/^https?:/, wsProtocol).replace(/\/$/, '');
-      const WS_URL = `${wsBase}/api/v1/messaging/ws/${encodeURIComponent(currentUser.email)}`;
-      
-      console.log('RecentActivity connecting to WebSocket:', WS_URL);
-      ws = new WebSocket(WS_URL);
-      
-      ws.onopen = () => {
-        console.log('RecentActivity WebSocket Connected');
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          // Refresh on specific events or generic refresh
-          if (data.type === 'refresh_activities' ||
-              data.type === 'new_message' ||
-              data.type === 'refresh_calendar' ||
-              data.type === 'refresh_expenses') {
-            console.log('Received refresh event:', data.type);
-            fetchActivities();
-          }
-        } catch (e) {
-          console.error('WebSocket message error:', e);
-        }
-      };
-    }
-
     return () => {
       clearInterval(interval);
-      if (ws) ws.close();
     };
-  }, [fetchActivities, currentUser]);
+  }, [fetchActivities]);
 
   const handleActivityClick = (activity: Activity) => {
     switch (activity.type) {

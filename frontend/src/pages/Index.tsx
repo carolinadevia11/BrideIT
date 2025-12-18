@@ -31,6 +31,7 @@ import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
 import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI, messagingAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
 interface IndexProps {
   onLogout: () => void;
@@ -175,13 +176,96 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [callType, setCallType] = useState<'video' | 'audio'>('video');
   const [activeCallConversationId, setActiveCallConversationId] = useState<string | null>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const isVideoCallOpenRef = useRef<boolean>(false);
+  const { lastMessage, sendMessage } = useWebSocket();
 
   // Keep ref in sync with state for WS
   useEffect(() => {
     isVideoCallOpenRef.current = isVideoCallOpen;
   }, [isVideoCallOpen]);
+
+  // Handle WebSocket messages from context
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    try {
+      const data = lastMessage;
+
+      // Call Events
+      if (data.type === 'video_call_started') {
+        const initiator = data.initiatorEmail?.trim().toLowerCase();
+        const me = currentUser?.email?.trim().toLowerCase();
+
+        console.log('[Index WS] Call started event:', { initiator, me, isInCall: isVideoCallOpenRef.current });
+
+        if (currentUser && initiator && me && initiator !== me && !isVideoCallOpenRef.current) {
+            setIncomingCall({
+              callerName: data.initiatorName,
+              roomName: data.roomName,
+              conversationId: data.conversationId,
+              initiatorEmail: data.initiatorEmail,
+              callType: data.callType || 'video'
+            });
+        }
+      }
+
+      if (data.type === 'call_rejected' || data.type === 'call_end' || (data.messageType === 'call_end')) {
+        if (data.type === 'call_rejected') {
+          toast({
+            title: "Call Declined",
+            description: "The other party unavailable or declined the call.",
+            variant: "default",
+          });
+        }
+        setIsVideoCallOpen(false);
+        setActiveCallConversationId(null);
+      }
+
+      // Refresh on specific events or generic refresh
+      if (data.type === 'refresh_activities' ||
+          data.type === 'new_message' ||
+          data.type === 'refresh_calendar' ||
+          data.type === 'refresh_expenses') {
+        // console.log('Dashboard received refresh event:', data.type);
+        // We'll trigger a reload of metrics here if needed, or rely on polling/cache invalidation
+        // But for now, let's just trigger the load function if it's available
+        // Since loadDashboardMetrics is defined inside useEffect, we can't call it directly here easily
+        // without refactoring or using a trigger state.
+        // For simplicity in this refactor, we'll ignore the direct reload here and rely on
+        // the fact that many of these events might trigger other component updates or the user will refresh.
+        // Ideally, loadDashboardMetrics should be a useCallback available here.
+        // Let's use a workaround:
+        setDashboardMetricsLoaded(prev => {
+            // Just a dummy update to trigger effect? No, that won't work well.
+            // A better way is to move loadDashboardMetrics outside or use a ref.
+            // For now, let's just log. The critical part is call handling.
+            return prev;
+        });
+        
+        // Also check for call end messages
+        if (data.type === 'new_message' && (data.messageType === 'call_end' || data.content === 'Call ended')) {
+            setIsVideoCallOpen(false);
+            setActiveCallConversationId(null);
+        }
+      }
+    } catch (e) {
+      console.error('Error processing WebSocket message:', e);
+    }
+  }, [lastMessage, currentUser, toast]);
+
+  // Reload dashboard metrics when relevant WS events occur (using a separate effect for clarity)
+  useEffect(() => {
+     if (lastMessage &&
+        ['refresh_activities', 'new_message', 'refresh_calendar', 'refresh_expenses'].includes(lastMessage.type)) {
+         // We need to trigger a reload.
+         // Since loadDashboardMetrics is inside an effect, we can't call it.
+         // Let's set a "lastUpdate" timestamp to trigger the main effect.
+         setLastUpdateTimestamp(Date.now());
+     }
+  }, [lastMessage]);
+
+  const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(Date.now());
+
 
   // Confetti helper function
   const triggerConfetti = () => {
@@ -609,92 +693,8 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       }
     }, 30000);
 
-    // WebSocket for real-time updates
-    if (currentUser?.email && currentUser.role !== 'admin') {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      // Ensure we use wss:// if we are on https://
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsBase = API_URL.replace(/^https?:/, wsProtocol).replace(/\/$/, '');
-      const WS_URL = `${wsBase}/api/v1/messaging/ws/${encodeURIComponent(currentUser.email)}`;
-      
-      console.log('Dashboard connecting to WebSocket:', WS_URL);
-      const ws = new WebSocket(WS_URL);
-      wsRef.current = ws;
-      
-      ws.onopen = () => {
-        console.log('Dashboard WebSocket Connected');
-      };
-
-      ws.onerror = (error) => {
-        console.error('Dashboard WebSocket Error:', error);
-      };
-
-      ws.onclose = (event) => {
-        console.log('Dashboard WebSocket Closed:', event.code, event.reason);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          // Call Events
-          if (data.type === 'video_call_started') {
-            const initiator = data.initiatorEmail?.trim().toLowerCase();
-            const me = currentUser?.email?.trim().toLowerCase();
-            
-            console.log('[Index WS] Call started event:', { initiator, me, isInCall: isVideoCallOpenRef.current });
-
-            if (currentUser && initiator && me && initiator !== me && !isVideoCallOpenRef.current) {
-               setIncomingCall({
-                 callerName: data.initiatorName,
-                 roomName: data.roomName,
-                 conversationId: data.conversationId,
-                 initiatorEmail: data.initiatorEmail,
-                 callType: data.callType || 'video'
-               });
-            }
-          }
-
-          if (data.type === 'call_rejected' || data.type === 'call_end' || (data.messageType === 'call_end')) {
-            if (data.type === 'call_rejected') {
-              toast({
-                title: "Call Declined",
-                description: "The other party unavailable or declined the call.",
-                variant: "default",
-              });
-            }
-            setIsVideoCallOpen(false);
-            setActiveCallConversationId(null);
-          }
-
-          // Refresh on specific events or generic refresh
-          if (data.type === 'refresh_activities' ||
-              data.type === 'new_message' ||
-              data.type === 'refresh_calendar' ||
-              data.type === 'refresh_expenses') {
-            console.log('Dashboard received refresh event:', data.type);
-            loadDashboardMetrics();
-            
-            // Also check for call end messages
-            if (data.type === 'new_message' && (data.messageType === 'call_end' || data.content === 'Call ended')) {
-               setIsVideoCallOpen(false);
-               setActiveCallConversationId(null);
-            }
-          }
-        } catch (e) {
-          console.error('WebSocket message error:', e);
-        }
-      };
-
-      return () => {
-        clearInterval(intervalId);
-        ws.close();
-        wsRef.current = null;
-      };
-    } else {
-      return () => clearInterval(intervalId);
-    }
-  }, [familyProfile, currentUser, toast]);
+    return () => clearInterval(intervalId);
+  }, [familyProfile, currentUser, toast, lastUpdateTimestamp]);
 
   // Removed problematic bidirectional sync useEffect
 
@@ -720,15 +720,15 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   }, [incomingCall]);
 
   const handleDeclineCall = useCallback(() => {
-    if (incomingCall && wsRef.current) {
-      wsRef.current.send(JSON.stringify({
+    if (incomingCall) {
+      sendMessage({
         type: 'call_rejected',
         conversationId: incomingCall.conversationId,
         recipientEmail: incomingCall.initiatorEmail
-      }));
+      });
     }
     setIncomingCall(null);
-  }, [incomingCall]);
+  }, [incomingCall, sendMessage]);
 
   const handleCallEnded = useCallback(async () => {
     setIsVideoCallOpen(false);
