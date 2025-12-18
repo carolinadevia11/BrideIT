@@ -226,23 +226,25 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   useEffect(() => {
     if (familyProfileLoading || !currentUser) return;
 
-    // We use a versioned key to force the celebration to show up for testing if we change logic
-    const sessionKey = 'hasSeenCelebration_v1';
-    const hasSeenCelebration = sessionStorage.getItem(sessionKey);
+    // Use a user-specific key in localStorage to persist celebration status across sessions
+    // This prevents the confetti from showing up every time the user opens a new tab/window
+    const userKey = currentUser.email || 'unknown';
+    const completionKey = `hasSeenCompletion_${userKey}_v1`;
+    const progressKey = `hasSeenProgress_${userKey}_v1`;
     
-    console.log('Checking celebration status:', {
-      hasSeenCelebration,
-      onboardingCompleted: familyProfile?.onboardingCompleted,
-      childrenCount: familyProfile?.children?.length,
-      custodyArrangement: familyProfile?.custodyArrangement
-    });
-
-    // Check for full completion
-    if (familyProfile?.onboardingCompleted && !hasSeenCelebration) {
-       console.log('Triggering completion celebration');
-       triggerConfetti();
-       setCelebrationMessage(`🎉 Great job completing your setup, ${currentUser.firstName}!`);
-       sessionStorage.setItem(sessionKey, 'true');
+    const hasSeenCompletion = localStorage.getItem(completionKey);
+    const hasSeenProgress = localStorage.getItem(progressKey);
+    
+    // Check for full completion first
+    if (familyProfile?.onboardingCompleted) {
+       if (!hasSeenCompletion) {
+         console.log('Triggering completion celebration');
+         triggerConfetti();
+         setCelebrationMessage(`🎉 Great job completing your setup, ${currentUser.firstName}!`);
+         localStorage.setItem(completionKey, 'true');
+         // Also mark progress as seen so we don't trigger it later if we downgrade/change logic
+         localStorage.setItem(progressKey, 'true');
+       }
        return;
     }
 
@@ -250,11 +252,11 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     const hasProgress = (familyProfile?.children && familyProfile.children.length > 0) ||
                         (familyProfile?.custodyArrangement);
 
-    if (hasProgress && !hasSeenCelebration) {
+    if (hasProgress && !hasSeenProgress) {
        console.log('Triggering progress celebration');
        triggerConfetti();
        setCelebrationMessage(`✨ Great job making progress, ${currentUser.firstName}!`);
-       sessionStorage.setItem(sessionKey, 'true');
+       localStorage.setItem(progressKey, 'true');
        return;
     }
   }, [familyProfile, familyProfileLoading, currentUser]);

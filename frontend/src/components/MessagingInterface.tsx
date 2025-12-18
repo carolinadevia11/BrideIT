@@ -409,7 +409,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
         prev.map((msg) => (msg.id === tempId ? response : msg))
       );
       fetchConversations({ silent: true });
-     // fetchMessages(activeConversation, { silent: true }); // No need to refetch entire list, we updated optimistically and WS will confirm if needed
+      // fetchMessages(activeConversation, 1, { silent: true }); // No need to refetch entire list, we updated optimistically and WS will confirm if needed
       
       // Removed "Message sent" toast as requested
     } catch (error) {
