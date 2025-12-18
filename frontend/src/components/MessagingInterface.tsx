@@ -12,8 +12,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import BridgetteAvatar from './BridgetteAvatar';
 import { messagingAPI, authAPI } from '@/lib/api';
-import VideoCallModal from './VideoCallModal';
-import IncomingCallAlert from './IncomingCallAlert';
+interface MessagingInterfaceProps {
+  onStartCall?: (conversationId: string, type: 'video' | 'audio') => void;
+  activeConversationId?: string | null;
+}
 
 interface Message {
   id: string;
@@ -45,11 +47,19 @@ interface CurrentUser {
   role?: string;
 }
 
-const MessagingInterface: React.FC = () => {
+const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, activeConversationId }) => {
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
+
+  // Sync active conversation with prop (for calls)
+  useEffect(() => {
+    if (activeConversationId) {
+      setActiveConversation(activeConversationId);
+    }
+  }, [activeConversationId]);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedTone, setSelectedTone] = useState<'matter-of-fact' | 'friendly' | 'neutral-legal'>('friendly');
@@ -66,8 +76,6 @@ const MessagingInterface: React.FC = () => {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeConversationRef = useRef<string | null>(null);
-  const isVideoCallOpenRef = useRef<boolean>(false);
-
   // Keep ref in sync with state
   useEffect(() => {
     activeConversationRef.current = activeConversation;
@@ -75,20 +83,6 @@ const MessagingInterface: React.FC = () => {
   
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
-
-  // Sync ref with state
-  useEffect(() => {
-    isVideoCallOpenRef.current = isVideoCallOpen;
-  }, [isVideoCallOpen]);
-  const [callType, setCallType] = useState<'video' | 'audio'>('video');
-  const [incomingCall, setIncomingCall] = useState<{
-    callerName: string;
-    roomName: string;
-    conversationId: string;
-    initiatorEmail: string;
-    callType?: 'video' | 'audio';
-  } | null>(null);
   
   // Pagination State
   const [page, setPage] = useState(1);
@@ -278,55 +272,8 @@ const MessagingInterface: React.FC = () => {
           return;
         }
 
-        // Call Rejected or Ended
-        if (data.type === 'call_rejected' || data.type === 'call_end') {
-          setIsVideoCallOpen(false);
-          if (data.type === 'call_rejected') {
-            toast({
-              title: "Call Declined",
-              description: "The other party unavailable or declined the call.",
-              variant: "default",
-            });
-          }
-          return;
-        }
-
-        // Video Call Started
-        if (data.type === 'video_call_started') {
-          const initiator = data.initiatorEmail?.trim().toLowerCase();
-          const me = currentUser?.email?.trim().toLowerCase();
-          
-          console.log('[WS] Call started event:', { initiator, me, isInCall: isVideoCallOpenRef.current });
-
-          // Also check if we are already in a call (using ref to avoid stale closure)
-          if (currentUser && initiator && me && initiator !== me && !isVideoCallOpenRef.current) {
-             setIncomingCall({
-               callerName: data.initiatorName,
-               roomName: data.roomName,
-               conversationId: data.conversationId,
-               initiatorEmail: data.initiatorEmail,
-               callType: data.callType || 'video'
-             });
-          } else {
-            console.log('[WS] Ignoring call event - either own call or already in call');
-          }
-          return;
-        }
-
         // New Message
         if (data.type === 'new_message' || data.id) {
-           // Check for call_end type specifically to close modal
-           // The backend sends 'type' as the message type ('text', 'call_end', etc.)
-           // BUT our backend wrapper might put it in a different field or the structure varies.
-           // Based on backend code: ws_payload = {**response_data, "type": "new_message"}
-           // So the original type is likely overwritten or lost if not careful.
-           // Let's check the message content or other fields if available.
-           // Actually, in the previous step I updated backend to preserve messageType.
-           
-           if (data.messageType === 'call_end' || data.content === 'Call ended') {
-              setIsVideoCallOpen(false);
-           }
-
            // Clear typing indicator on new message
            setIsTyping(false);
            
@@ -540,63 +487,8 @@ const MessagingInterface: React.FC = () => {
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   };
 
-  const handleAcceptCall = useCallback(() => {
-    if (incomingCall) {
-      setActiveConversation(incomingCall.conversationId);
-      setCallType(incomingCall.callType || 'video');
-      setIsVideoCallOpen(true);
-      setIncomingCall(null);
-    }
-  }, [incomingCall]);
-
-  const handleDeclineCall = useCallback(() => {
-    if (incomingCall && wsRef.current) {
-      // Notify server about rejection
-      wsRef.current.send(JSON.stringify({
-        type: 'call_rejected',
-        conversationId: incomingCall.conversationId,
-        recipientEmail: incomingCall.initiatorEmail // Reply directly to caller
-      }));
-    }
-    setIncomingCall(null);
-  }, [incomingCall]);
-
-  const handleCallEnded = async () => {
-    setIsVideoCallOpen(false);
-    if (activeConversation) {
-      try {
-        await messagingAPI.sendMessage({
-          conversation_id: activeConversation,
-          content: "Call ended",
-          tone: "neutral-legal",
-          type: "call_end"
-        });
-        
-        // Notify the other user via WebSocket to close their modal too
-        // We do this by sending a specific WebSocket message, if needed,
-        // OR relying on the 'call_end' message type if the backend forwards it properly.
-        // The current backend implementation for 'sendMessage' already broadcasts the new message.
-        // We just need to handle the 'call_end' message type in the frontend's onmessage handler (done above).
-
-        // Refresh conversations to show new message
-        fetchConversations({ silent: true });
-      } catch (error) {
-        console.error("Failed to log call end:", error);
-      }
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Incoming Call Alert */}
-      {incomingCall && (
-        <IncomingCallAlert
-          callerName={incomingCall.callerName}
-          callType={incomingCall.callType || 'video'}
-          onAccept={handleAcceptCall}
-          onDecline={handleDeclineCall}
-        />
-      )}
       {/* Bridgette Helper */}
       <Card className="border-2 border-blue-200 bg-blue-50">
         <CardContent className="p-4">
@@ -826,8 +718,9 @@ const MessagingInterface: React.FC = () => {
                       size="sm"
                       className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                       onClick={() => {
-                        setCallType('audio');
-                        setIsVideoCallOpen(true);
+                        if (onStartCall && activeConv) {
+                          onStartCall(activeConv.id, 'audio');
+                        }
                       }}
                       title="Voice Call"
                     >
@@ -838,8 +731,9 @@ const MessagingInterface: React.FC = () => {
                       size="sm"
                       className="hidden sm:flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
                       onClick={() => {
-                        setCallType('video');
-                        setIsVideoCallOpen(true);
+                        if (onStartCall && activeConv) {
+                          onStartCall(activeConv.id, 'video');
+                        }
                       }}
                     >
                       <Video className="w-4 h-4" />
@@ -848,7 +742,11 @@ const MessagingInterface: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setIsVideoCallOpen(true)}
+                      onClick={() => {
+                        if (onStartCall && activeConv) {
+                          onStartCall(activeConv.id, 'video');
+                        }
+                      }}
                       className="sm:hidden text-blue-600"
                     >
                       <Video className="w-4 h-4" />
@@ -1073,16 +971,6 @@ const MessagingInterface: React.FC = () => {
         </div>
       </div>
 
-      {/* Video Call Modal */}
-      {activeConv && currentUser && (
-        <VideoCallModal
-          isOpen={isVideoCallOpen}
-          onClose={handleCallEnded}
-          roomName={`room-${activeConv.id}`}
-          username={`${currentUser.firstName} ${currentUser.lastName}`}
-          isVideo={callType === 'video'}
-        />
-      )}
     </div>
   );
 };

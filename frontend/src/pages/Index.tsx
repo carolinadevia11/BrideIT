@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, MessageSquare, DollarSign, FileText, Settings, Home, Heart, Users, Trophy, BookOpen, Scale, AlertTriangle, HelpCircle, Baby, LogOut, UserCheck, UserX, BarChart3, Bot, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ import FamilyOnboarding from '@/components/FamilyOnboarding';
 import ChildManagement from '@/components/ChildManagement';
 import RecentActivity from '@/components/RecentActivity';
 import ProductTour from '@/components/ProductTour';
+import IncomingCallAlert from '@/components/IncomingCallAlert';
+import VideoCallModal from '@/components/VideoCallModal';
 import { FamilyProfile, Child } from '@/types/family';
 import DashboardShell, { DashboardNavItem } from '@/components/dashboard/DashboardShell';
 import { authAPI, familyAPI, childrenAPI, adminAPI, calendarAPI, expensesAPI, messagingAPI } from '@/lib/api';
@@ -160,6 +162,26 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
   const [familyProfileLoading, setFamilyProfileLoading] = useState(true);
   const [adminError, setAdminError] = useState<string | null>(null);
   const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null);
+
+  // Call State
+  const [incomingCall, setIncomingCall] = useState<{
+    callerName: string;
+    roomName: string;
+    conversationId: string;
+    initiatorEmail: string;
+    callType?: 'video' | 'audio';
+  } | null>(null);
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  const [callType, setCallType] = useState<'video' | 'audio'>('video');
+  const [activeCallConversationId, setActiveCallConversationId] = useState<string | null>(null);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const isVideoCallOpenRef = useRef<boolean>(false);
+
+  // Keep ref in sync with state for WS
+  useEffect(() => {
+    isVideoCallOpenRef.current = isVideoCallOpen;
+  }, [isVideoCallOpen]);
 
   // Confetti helper function
   const triggerConfetti = () => {
@@ -586,12 +608,12 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     }, 30000);
 
     // WebSocket for real-time updates
-    let ws: WebSocket | null = null;
     if (currentUser?.email && currentUser.role !== 'admin') {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const WS_URL = API_URL.replace(/^http/, 'ws') + `/api/v1/messaging/ws/${currentUser.email}`;
       
-      ws = new WebSocket(WS_URL);
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
       
       ws.onopen = () => {
         console.log('Dashboard WebSocket Connected');
@@ -600,6 +622,37 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          
+          // Call Events
+          if (data.type === 'video_call_started') {
+            const initiator = data.initiatorEmail?.trim().toLowerCase();
+            const me = currentUser?.email?.trim().toLowerCase();
+            
+            console.log('[Index WS] Call started event:', { initiator, me, isInCall: isVideoCallOpenRef.current });
+
+            if (currentUser && initiator && me && initiator !== me && !isVideoCallOpenRef.current) {
+               setIncomingCall({
+                 callerName: data.initiatorName,
+                 roomName: data.roomName,
+                 conversationId: data.conversationId,
+                 initiatorEmail: data.initiatorEmail,
+                 callType: data.callType || 'video'
+               });
+            }
+          }
+
+          if (data.type === 'call_rejected' || data.type === 'call_end' || (data.messageType === 'call_end')) {
+            if (data.type === 'call_rejected') {
+              toast({
+                title: "Call Declined",
+                description: "The other party unavailable or declined the call.",
+                variant: "default",
+              });
+            }
+            setIsVideoCallOpen(false);
+            setActiveCallConversationId(null);
+          }
+
           // Refresh on specific events or generic refresh
           if (data.type === 'refresh_activities' ||
               data.type === 'new_message' ||
@@ -607,18 +660,27 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               data.type === 'refresh_expenses') {
             console.log('Dashboard received refresh event:', data.type);
             loadDashboardMetrics();
+            
+            // Also check for call end messages
+            if (data.type === 'new_message' && (data.messageType === 'call_end' || data.content === 'Call ended')) {
+               setIsVideoCallOpen(false);
+               setActiveCallConversationId(null);
+            }
           }
         } catch (e) {
           console.error('WebSocket message error:', e);
         }
       };
-    }
 
-    return () => {
-      clearInterval(intervalId);
-      if (ws) ws.close();
-    };
-  }, [familyProfile, currentUser]);
+      return () => {
+        clearInterval(intervalId);
+        ws.close();
+        wsRef.current = null;
+      };
+    } else {
+      return () => clearInterval(intervalId);
+    }
+  }, [familyProfile, currentUser, toast]);
 
   // Removed problematic bidirectional sync useEffect
 
@@ -631,6 +693,53 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     : 'expenses';
 
   const expensesVerb = dashboardMetricsLoaded && dashboardMetrics.pendingExpenses === 1 ? "there's" : "there are";
+
+  // Call Handlers
+  const handleAcceptCall = useCallback(() => {
+    if (incomingCall) {
+      setActiveCallConversationId(incomingCall.conversationId);
+      setCallType(incomingCall.callType || 'video');
+      setIsVideoCallOpen(true);
+      setIncomingCall(null);
+      changeTab('messages');
+    }
+  }, [incomingCall]);
+
+  const handleDeclineCall = useCallback(() => {
+    if (incomingCall && wsRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: 'call_rejected',
+        conversationId: incomingCall.conversationId,
+        recipientEmail: incomingCall.initiatorEmail
+      }));
+    }
+    setIncomingCall(null);
+  }, [incomingCall]);
+
+  const handleCallEnded = useCallback(async () => {
+    setIsVideoCallOpen(false);
+    const convId = activeCallConversationId;
+    setActiveCallConversationId(null);
+    
+    if (convId) {
+      try {
+        await messagingAPI.sendMessage({
+          conversation_id: convId,
+          content: "Call ended",
+          tone: "neutral-legal",
+          type: "call_end"
+        });
+      } catch (error) {
+        console.error("Failed to log call end:", error);
+      }
+    }
+  }, [activeCallConversationId]);
+
+  const handleStartCall = (conversationId: string, type: 'video' | 'audio') => {
+    setActiveCallConversationId(conversationId);
+    setCallType(type);
+    setIsVideoCallOpen(true);
+  };
 
   // Show onboarding explanation (check this first as it's a direct user action)
   if (showOnboardingExplanation) {
@@ -842,6 +951,25 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
           initialProfile={currentUser || undefined}
           familyProfile={familyProfile}
         />
+        {/* Global Call Components */}
+        {incomingCall && (
+          <IncomingCallAlert
+            callerName={incomingCall.callerName}
+            callType={incomingCall.callType || 'video'}
+            onAccept={handleAcceptCall}
+            onDecline={handleDeclineCall}
+          />
+        )}
+        
+        {activeCallConversationId && currentUser && (
+          <VideoCallModal
+            isOpen={isVideoCallOpen}
+            onClose={handleCallEnded}
+            roomName={`room-${activeCallConversationId}`}
+            username={`${currentUser.firstName} ${currentUser.lastName}`}
+            isVideo={callType === 'video'}
+          />
+        )}
       </DashboardShell>
     );
   }
@@ -879,6 +1007,25 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
               } : null);
             }}
           />
+          {/* Global Call Components */}
+          {incomingCall && (
+            <IncomingCallAlert
+              callerName={incomingCall.callerName}
+              callType={incomingCall.callType || 'video'}
+              onAccept={handleAcceptCall}
+              onDecline={handleDeclineCall}
+            />
+          )}
+          
+          {activeCallConversationId && currentUser && (
+            <VideoCallModal
+              isOpen={isVideoCallOpen}
+              onClose={handleCallEnded}
+              roomName={`room-${activeCallConversationId}`}
+              username={`${currentUser.firstName} ${currentUser.lastName}`}
+              isVideo={callType === 'video'}
+            />
+          )}
         </div>
       </div>
     );
@@ -1546,7 +1693,12 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             </TabsContent>
 
             <TabsContent value="messages">
-              <MessagingInterface />
+              <MessagingInterface
+                onStartCall={(conversationId, type) => {
+                  handleStartCall(conversationId, type);
+                }}
+                activeConversationId={activeCallConversationId}
+              />
             </TabsContent>
 
             <TabsContent value="expenses">
@@ -1562,6 +1714,26 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
             </TabsContent>
           </Tabs>
         </div>
+        {/* Global Call Components */}
+        {incomingCall && (
+          <IncomingCallAlert
+            callerName={incomingCall.callerName}
+            callType={incomingCall.callType || 'video'}
+            onAccept={handleAcceptCall}
+            onDecline={handleDeclineCall}
+          />
+        )}
+        
+        {activeCallConversationId && currentUser && (
+          <VideoCallModal
+            isOpen={isVideoCallOpen}
+            onClose={handleCallEnded}
+            roomName={`room-${activeCallConversationId}`}
+            username={`${currentUser.firstName} ${currentUser.lastName}`}
+            isVideo={callType === 'video'}
+          />
+        )}
+
         <SupportChatbot
           isOpen={showSupportChatbot}
           onClose={() => setShowSupportChatbot(false)}
