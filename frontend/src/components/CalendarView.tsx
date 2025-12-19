@@ -184,6 +184,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const today = new Date().getDate();
+
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showDayOptions, setShowDayOptions] = useState(false);
+  const [isMaterializing, setIsMaterializing] = useState(false);
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
@@ -399,10 +403,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       apiRequest.eventDate
     );
 
-    const swapEvent = apiRequest.swapEventId
+    const swapEvent = (apiRequest.swapEventId || apiRequest.swapEventDate)
       ? buildCalendarEventFromSnapshot(
-          apiRequest.swapEventId,
-          apiRequest.swapEventTitle || 'Swap Event',
+          apiRequest.swapEventId || 'virtual-swap',
+          apiRequest.swapEventTitle || 'Custody Day',
           apiRequest.eventType || 'custody',
           apiRequest.eventParent,
           apiRequest.swapEventDate
@@ -988,10 +992,65 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }, [familyProfile]);
 
   /**
-   * Determine which parent has custody on a given day based on custody agreement
-   * Supports various schedule types: week-on/week-off, 2-2-3, custom schedules
+   * Determine which parent has custody on a given date based on custody agreement
    */
-  const getCustodyParentForDay = (day: number): 'mom' | 'dad' | 'both' | null => {
+  const getCustodyParentForDate = (date: Date): 'mom' | 'dad' | 'both' | null => {
+    if (!familyProfile || !custodyAgreement || !custodyAgreement.custodySchedule) {
+      return null;
+    }
+
+    const custodySchedule = custodyAgreement.custodySchedule.toLowerCase();
+
+    // 2-2-3 schedule (14-day cycle)
+    if (custodySchedule.includes('2-2-3') || custodySchedule.includes('two-two-three')) {
+      const referenceDate = new Date(date.getFullYear(), 0, 1); // January 1st
+      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      const pattern = ['mom', 'mom', 'dad', 'dad', 'mom', 'mom', 'mom', 'dad', 'dad', 'mom', 'mom', 'dad', 'dad', 'dad'];
+      const dayInCycle = ((daysSinceReference % 14) + 14) % 14; // Handle negative days safely
+      return pattern[dayInCycle] as 'mom' | 'dad';
+    }
+
+    // Week-on/week-off
+    if (custodySchedule.includes('week-on') || custodySchedule.includes('week off') ||
+        custodySchedule.includes('alternat') || custodySchedule.includes('week-on/week-off') ||
+        custodySchedule.includes('every other')) {
+      const referenceDate = new Date(date.getFullYear(), 0, 1);
+      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      const weekNumber = Math.floor(daysSinceReference / 7);
+      return weekNumber % 2 === 0 ? 'mom' : 'dad';
+    }
+
+    // Custom schedule
+    if (custodySchedule.includes('custom') || custodySchedule.includes('custody on')) {
+      const dayOfWeek = date.getDay();
+      const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      const dayName = dayNames[dayOfWeek];
+      const parent1Section = custodySchedule.split('parent 2')[0] || custodySchedule;
+      const parent2Section = custodySchedule.split('parent 2')[1] || '';
+      
+      if (parent1Section.includes(dayName)) return 'mom';
+      else if (parent2Section.includes(dayName)) return 'dad';
+    }
+
+    // Default fallback
+    if (custodySchedule.includes('50') || custodySchedule.includes('equal') || custodySchedule.includes('split')) {
+      const referenceDate = new Date(date.getFullYear(), 0, 1);
+      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      const weekNumber = Math.floor(daysSinceReference / 7);
+      return weekNumber % 2 === 0 ? 'mom' : 'dad';
+    }
+
+    return null;
+  };
+
+  const getCustodyParentForDay = (day: number) => {
+    return getCustodyParentForDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+  };
+
+  /**
+   * Legacy wrapper kept for diff minimization, logic moved to getCustodyParentForDate
+   */
+  const _legacy_getCustodyParentForDay = (day: number): 'mom' | 'dad' | 'both' | null => {
     // ONLY show custody colors if there's an actual custody agreement configured
     // Don't show colors based on just the custody arrangement setting
     if (!familyProfile || !custodyAgreement || !custodyAgreement.custodySchedule) {
@@ -1015,51 +1074,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       return pattern[dayInCycle] as 'mom' | 'dad';
     }
 
-    // Week-on/week-off or alternating weeks
-    if (custodySchedule.includes('week-on') || custodySchedule.includes('week off') ||
-        custodySchedule.includes('alternat') || custodySchedule.includes('week-on/week-off')) {
-      const referenceDate = new Date(date.getFullYear(), 0, 1); // January 1st
-      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
-      const weekNumber = Math.floor(daysSinceReference / 7);
-      // Alternate weeks: even weeks = Parent 1 (mom), odd weeks = Parent 2 (dad)
-      return weekNumber % 2 === 0 ? 'mom' : 'dad';
-    }
-    
-    // Every other week (similar to week-on/week-off)
-    if (custodySchedule.includes('every other week') || custodySchedule.includes('every other')) {
-      const referenceDate = new Date(date.getFullYear(), 0, 1);
-      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
-      const weekNumber = Math.floor(daysSinceReference / 7);
-      return weekNumber % 2 === 0 ? 'mom' : 'dad';
-    }
+    return null; // Legacy function body removed to avoid duplicates, handled by getCustodyParentForDate
+  };
 
-    // Custom schedule - try to parse day names from the schedule string
-    if (custodySchedule.includes('custom') || custodySchedule.includes('custody on')) {
-      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-      const dayName = dayNames[dayOfWeek];
-      
-      // Check if this day is mentioned for parent 1 or parent 2
-      // Use "parent 2" as delimiter but handle if real names are used (less robust without NLP but simple check)
-      const parent1Section = custodySchedule.split('parent 2')[0] || custodySchedule;
-      const parent2Section = custodySchedule.split('parent 2')[1] || '';
-      
-      if (parent1Section.includes(dayName)) {
-        return 'mom';
-      } else if (parent2Section.includes(dayName)) {
-        return 'dad';
-      }
+  const getEffectiveCustodyParent = (day: number): 'mom' | 'dad' | 'both' | null => {
+    // Check for explicit custody event (override)
+    const overrideEvent = events.find(e => e.date === day && e.type === 'custody');
+    if (overrideEvent && overrideEvent.parent) {
+      return overrideEvent.parent;
     }
-
-    // Default fallback for any 50-50 type schedule in agreement
-    if (custodySchedule.includes('50') || custodySchedule.includes('equal') || custodySchedule.includes('split')) {
-      const referenceDate = new Date(date.getFullYear(), 0, 1);
-      const daysSinceReference = Math.floor((date.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
-      const weekNumber = Math.floor(daysSinceReference / 7);
-      return weekNumber % 2 === 0 ? 'mom' : 'dad';
-    }
-
-    return null;
+    // Fallback to agreement
+    return getCustodyParentForDay(day);
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -1095,7 +1120,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setNewEventDate(formatDateInputValue(defaultDate));
     setNewEventTitle("");
     setNewEventType("custody");
-    setNewEventParent("both");
+    
+    // Auto-select the correct parent based on custody agreement
+    const custodyParent = getCustodyParentForDay(defaultDate.getDate());
+    setNewEventParent(custodyParent || "both");
+    
     setNewEventSwappable(true);
     setNewEventTime('');
     setEditingEvent(null);
@@ -1198,6 +1227,44 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           if (!proceed) return;
         }
       }
+
+      // Check if trying to override custody agreement manually (For ALL event types)
+      const agreementParent = getCustodyParentForDay(day);
+      
+      // General Rule: You cannot assign events to a parent who does not have custody that day
+      // (Unless the day is shared "both", or the event is assigned to "both" which we might allow or restrict)
+      // Stricter Rule: The Event Parent must match the Agreement Parent
+      
+      if (agreementParent && agreementParent !== 'both') {
+          // If I'm trying to assign to the "other" parent (who doesn't have custody)
+          // e.g. It's Mom's day, but I assign to Dad.
+          // OR It's Dad's day, but I assign to Mom (Myself) -> This blocks the reported loophole
+          if (newEventParent !== 'both' && newEventParent !== agreementParent) {
+            const agreementParentName = getParentDisplayName(agreementParent);
+            const assignedParentName = getParentDisplayName(newEventParent);
+            
+            toast({
+              title: "Responsibility Mismatch",
+              description: `This day belongs to ${agreementParentName}. You cannot unilaterally assign an event to ${assignedParentName}. Please create the event for the correct parent, or use a Request to change responsibilities.`,
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          // If I'm trying to assign to "Both" (forcing the other parent) on a single-parent day
+          if (newEventParent === 'both') {
+              // Only block strict "Custody" type overrides
+              // Allow "Both" for School, Activity, etc. as they often involve both parents regardless of custody
+              if (newEventType === 'custody') {
+                toast({
+                  title: "Custody Mismatch",
+                  description: `This is explicitly ${agreementParent === 'mom' ? "Mom's" : "Dad's"} day. You cannot make it a shared 'Both' custody day manually. Please use Request Swap.`,
+                  variant: "destructive"
+                });
+                return;
+              }
+          }
+      }
       
       // Check for general schedule density (warn if > 3 events)
       if (dayEvents.length >= 3 && (!isEditingMode || dayEvents.find(e => e.id === editingEvent?.id))) {
@@ -1253,9 +1320,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleRequestChangeFromDetails = () => {
-    if (!selectedEvent || !selectedEvent.isSwappable) {
+    if (!selectedEvent) {
       return;
     }
+    // Allow requesting changes even if isSwappable is false (mediation flow)
     setShowEventDetails(false);
     setShowChangeRequest(true);
   };
@@ -1263,13 +1331,55 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const calculateConsequences = (): string[] => {
     if (!selectedEvent) return [];
 
-    const consequences = [];
-    
-    if (changeType === 'swap' && swapDate) {
-      const swapEvent = events.find(e => e.date === swapDate);
+    // Create a temporary request object to reuse logic
+    const tempRequest: ChangeRequest = {
+      id: 'temp',
+      type: changeType,
+      requestedBy: getParentRoleForEmail(currentUser?.email),
+      requestedByEmail: currentUser?.email || '',
+      originalDate: selectedEvent.date,
+      newDate: newDate ?? undefined,
+      swapWithDate: swapDate ?? undefined,
+      swapEventId: undefined, // Not needed for logic
+      reason: changeReason,
+      status: 'pending',
+      timestamp: new Date(),
+      consequences: [],
+      originalEvent: selectedEvent,
+      affectedEvents: [] // Not strictly needed for logic
+    };
+
+    return getDynamicConsequences(tempRequest);
+  };
+
+  const getDynamicConsequences = (request: ChangeRequest, forEmail: boolean = false): string[] => {
+    const consequences: string[] = [];
+    const { type, originalEvent, newDate, swapWithDate, requestedBy } = request;
+    const isCurrentUserRequester = currentUser?.email === request.requestedByEmail;
+    const requestedByName = getParentDisplayName(requestedBy);
+    const otherParentName = getParentDisplayName(requestedBy === 'mom' ? 'dad' : 'mom');
+
+    if (type === 'swap' && swapWithDate) {
+      let swapEvent = events.find(e => e.date === swapWithDate && e.type === 'custody');
+      
+      // If no event exists, simulate one based on custody schedule
+      if (!swapEvent) {
+         const parent = getEffectiveCustodyParent(swapWithDate);
+         const parentName = parent ? getParentDisplayName(parent) : 'Other Parent';
+         swapEvent = {
+            id: 'simulated',
+            title: `Custody Day (${parentName})`,
+            date: swapWithDate,
+            fullDate: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), swapWithDate),
+            type: 'custody',
+            parent: parent || 'both',
+            isSwappable: true
+         } as CalendarEvent;
+      }
+
       if (swapEvent) {
-        consequences.push(`${selectedEvent.title} moves from ${selectedEvent.date} to ${swapDate}`);
-        consequences.push(`${swapEvent.title} moves from ${swapDate} to ${selectedEvent.date}`);
+        consequences.push(`${originalEvent.title} moves from ${originalEvent.date} to ${swapEvent.date}`);
+        consequences.push(`${swapEvent.title} moves from ${swapEvent.date} to ${originalEvent.date}`);
         
         // Check for school day implications
         const isSchoolWeek = (date: number) => {
@@ -1277,24 +1387,66 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
         };
         
-        if (isSchoolWeek(swapDate) && selectedEvent.type === 'custody') {
+        if (isSchoolWeek(swapWithDate) && originalEvent.type === 'custody') {
           consequences.push('⚠️ This change affects school week custody - pickup/dropoff responsibilities will change');
         }
         
-        if (Math.abs(swapDate - selectedEvent.date) > 7) {
+        if (Math.abs(swapWithDate - originalEvent.date) > 7) {
           consequences.push('⚠️ This is a significant schedule change - consider impact on Emma\'s routine');
         }
+
+        // Check for other events on the swap date (Target Date)
+        // These are events currently on the date being ACQUIRED by the requester
+        const eventsOnSwapDate = events.filter(e =>
+          e.date === swapWithDate &&
+          e.type !== 'custody'
+        );
+        
+        if (eventsOnSwapDate.length > 0) {
+          const eventNames = eventsOnSwapDate.map(e => e.title).join(', ');
+          // If I am the requester: "You will be responsible"
+          // If I am the approver: "Requester will be responsible"
+          let who;
+          if (forEmail) {
+             who = requestedByName;
+          } else {
+             who = isCurrentUserRequester ? 'You' : requestedByName;
+          }
+          consequences.push(`⚠️ This swap includes: ${eventNames}. ${who} will be responsible for these events.`);
+        }
+
+        // Check for other events on the original date (Source Date)
+        // These are events currently on the date being GIVEN UP by the requester
+        const eventsOnOriginalDate = events.filter(e =>
+          e.date === originalEvent.date &&
+          e.type !== 'custody' &&
+          e.id !== originalEvent.id
+        );
+
+        if (eventsOnOriginalDate.length > 0) {
+          const eventNames = eventsOnOriginalDate.map(e => e.title).join(', ');
+          const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long' });
+          // If I am the requester: "Co-parent will be responsible"
+          // If I am the approver: "You will be responsible"
+          let who;
+          if (forEmail) {
+             who = otherParentName;
+          } else {
+             who = isCurrentUserRequester ? 'Your co-parent' : 'You';
+          }
+          consequences.push(`⚠️ ${who} will be responsible for: ${eventNames} on ${monthName} ${originalEvent.date}.`);
+        }
       }
-    } else if (changeType === 'modify' && newDate) {
-      consequences.push(`${selectedEvent.title} moves from ${selectedEvent.date} to ${newDate}`);
+    } else if (type === 'modify' && newDate) {
+      consequences.push(`${originalEvent.title} moves from ${originalEvent.date} to ${newDate}`);
       
       // Check for conflicts
-      const conflictingEvents = getEventsForDay(newDate);
+      const conflictingEvents = events.filter(e => e.date === newDate);
       if (conflictingEvents.length > 0) {
         consequences.push(`⚠️ Conflict: ${conflictingEvents.map(e => e.title).join(', ')} already scheduled for ${newDate}`);
       }
-    } else if (changeType === 'cancel') {
-      consequences.push(`${selectedEvent.title} on ${selectedEvent.date} will be cancelled`);
+    } else if (type === 'cancel') {
+      consequences.push(`${originalEvent.title} on ${originalEvent.date} will be cancelled`);
       consequences.push('⚠️ This may affect the overall custody balance for the month');
     }
 
@@ -1305,16 +1457,24 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     if (!selectedEvent || !changeReason.trim()) return;
 
     const payload: {
-      event_id: string;
+      event_id?: string;
+      eventDate?: string;
       requestType: 'swap' | 'modify' | 'cancel';
       reason: string;
       newDate?: string;
       swapEventId?: string;
+      swapDate?: string;
     } = {
-      event_id: selectedEvent.id,
       requestType: changeType,
       reason: changeReason,
     };
+
+    // Determine Source Identifier (ID or Date)
+    if (selectedEvent.id.startsWith('virtual-')) {
+       payload.eventDate = selectedEvent.fullDate.toISOString();
+    } else {
+       payload.event_id = selectedEvent.id;
+    }
 
     if (changeType === 'modify') {
       if (!newDate) {
@@ -1342,30 +1502,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         });
         return;
       }
-      const swapEvent = events.find(e => e.date === swapDate);
-      if (!swapEvent) {
-        toast({
-          title: "Event not found",
-          description: "The event you're trying to swap with could not be found.",
-          variant: "destructive",
-        });
-        return;
+      
+      // Check if target has an existing custody event
+      const existingSwapEvent = events.find(e => e.date === swapDate && e.type === 'custody');
+      
+      if (existingSwapEvent) {
+        payload.swapEventId = existingSwapEvent.id;
+      } else {
+        // Use Date for target (Day Swap)
+        const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), swapDate);
+        payload.swapDate = dateObj.toISOString();
       }
-      payload.swapEventId = swapEvent.id;
     }
 
+    setIsMaterializing(true);
     try {
       await calendarAPI.createChangeRequest(payload);
       toast({
         title: "Change request submitted",
         description: "We'll notify your co-parent to review this request.",
       });
+      
+      await Promise.all([loadEvents(), loadChangeRequests()]);
+
       setShowChangeRequest(false);
       setSelectedEvent(null);
       setChangeReason('');
       setSwapDate(null);
       setNewDate(null);
-      await loadChangeRequests();
     } catch (error) {
       console.error('Error submitting change request:', error);
       toast({
@@ -1373,6 +1537,47 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         description: error instanceof Error ? error.message : "Failed to submit change request.",
         variant: "destructive",
       });
+    } finally {
+       setIsMaterializing(false);
+    }
+  };
+
+  const handleDayClick = (date: Date) => {
+    setSelectedDay(date);
+    setShowDayOptions(true);
+  };
+
+  const handleSwapFromDayOptions = async () => {
+    if (!selectedDay) return;
+    
+    const day = selectedDay.getDate();
+    const existingEvent = events.find(e => e.date === day && e.type === 'custody');
+    
+    if (existingEvent) {
+      setSelectedEvent(existingEvent);
+      setShowDayOptions(false);
+      setChangeType('swap');
+      setShowChangeRequest(true);
+    } else {
+      // Create a VIRTUAL event for the current day (do not save to DB yet)
+      const parent = getEffectiveCustodyParent(day);
+      const title = `${parent ? getParentDisplayName(parent) : 'Custody'} Day`;
+      
+      const virtualEvent: CalendarEvent = {
+         id: `virtual-${day}`, // Placeholder ID
+         date: day,
+         fullDate: selectedDay,
+         type: 'custody',
+         title: title,
+         parent: parent || 'both',
+         isSwappable: true,
+         hasTime: false
+      };
+      
+      setSelectedEvent(virtualEvent);
+      setShowDayOptions(false);
+      setChangeType('swap');
+      setShowChangeRequest(true);
     }
   };
 
@@ -1390,6 +1595,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           approvedBy: getParentRoleForEmail(currentUser?.email),
           approvedAt: new Date(),
         };
+        // Update consequences with dynamic logic for the email, using explicit names
+        approvedRequest.consequences = getDynamicConsequences(approvedRequest, true);
+        
         const email = generateApprovalEmail(approvedRequest);
         setGeneratedEmail(email);
         setEmailHistory(prev => [email, ...prev]);
@@ -1724,7 +1932,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   pendingRequests.length > 0 ? 'ring-2 ring-[hsl(45,100%,80%)]' : ''
                 } ${isToday ? 'ring-2 ring-[hsl(217,92%,39%)] shadow-md' : ''}`}
                 onClick={() =>
-                  openCreateEventModal(
+                  handleDayClick(
                     new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
                   )
                 }
@@ -1747,6 +1955,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   {allItems.map((item) => {
                     if (item.type === 'event') {
                       const event = item.data as CalendarEvent;
+                      // Hide system-generated Custody Day events from the list
+                      // They are only for background color logic
+                      if (event.type === 'custody' && event.title === 'Custody Day') {
+                        return null;
+                      }
+                      
                       return (
                         <div
                           key={item.id}
@@ -1966,13 +2180,31 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   <SelectValue placeholder="Select parent" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mom">
-                    {getParentDisplayName("mom")}
-                  </SelectItem>
-                  <SelectItem value="dad">
-                    {getParentDisplayName("dad")}
-                  </SelectItem>
-                  <SelectItem value="both">Both parents</SelectItem>
+                  {(() => {
+                    // Check custody for the selected date
+                    const dateForCheck = newEventDate ? new Date(newEventDate) : new Date();
+                    const custodyForDate = getCustodyParentForDate(dateForCheck);
+                    
+                    return (
+                      <>
+                        <SelectItem
+                          value="mom"
+                          disabled={custodyForDate === 'dad'}
+                          className={custodyForDate === 'dad' ? 'text-gray-400' : ''}
+                        >
+                          {getParentDisplayName("mom")} {custodyForDate === 'dad' && '(Not Custodial)'}
+                        </SelectItem>
+                        <SelectItem
+                          value="dad"
+                          disabled={custodyForDate === 'mom'}
+                          className={custodyForDate === 'mom' ? 'text-gray-400' : ''}
+                        >
+                          {getParentDisplayName("dad")} {custodyForDate === 'mom' && '(Not Custodial)'}
+                        </SelectItem>
+                        <SelectItem value="both">Both parents</SelectItem>
+                      </>
+                    );
+                  })()}
                 </SelectContent>
               </Select>
             </div>
@@ -2140,7 +2372,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                   <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
                                     <p className="text-xs font-medium text-yellow-800 mb-1">What will change:</p>
                                     <ul className="text-xs text-yellow-700 space-y-0.5">
-                                      {request.consequences.slice(0, 2).map((consequence, idx) => (
+                                      {request.consequences.map((consequence, idx) => (
                                         <li key={idx} className="flex items-start">
                                           <span className="mr-1">•</span>
                                           <span>{consequence}</span>
@@ -2262,8 +2494,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                ) : selectedEvent.isSwappable ? (
-                  // Other parent can request change
+                ) : (
+                  // Other parent can request change (for any event)
                   <Button
                     onClick={handleRequestChangeFromDetails}
                     className="flex-1"
@@ -2271,7 +2503,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     <Edit3 className="w-4 h-4 mr-2" />
                     Request Change
                   </Button>
-                ) : null}
+                )}
                 <Button
                   variant="outline"
                   onClick={() => setShowEventDetails(false)}
@@ -2394,20 +2626,33 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     {getDaysInMonth().map((day, index) => {
                       if (day === null) return <div key={index}></div>;
                       
-                      const dayEvents = getEventsForDay(day);
-                      const swappableEvents = dayEvents.filter(e => e.isSwappable);
-                      const canSwap = swappableEvents.length > 0 && day !== selectedEvent.date;
+                      // Check if the target day belongs to the same parent as the source event
+                      // If so, swapping is meaningless (you already have custody).
+                      const targetParent = getEffectiveCustodyParent(day);
+                      const sourceParent = selectedEvent.parent;
                       
+                      const isSameParent = targetParent && sourceParent &&
+                                          targetParent === sourceParent &&
+                                          targetParent !== 'both';
+
+                      const canSwap = day !== selectedEvent.date && !isSameParent;
+                      
+                      let title = "";
+                      if (day === selectedEvent.date) title = "Cannot swap with same date";
+                      else if (isSameParent) title = "You already have custody on this day";
+                      else title = "Select to swap";
+
                       return (
                         <button
                           key={day}
                           onClick={() => canSwap && setSwapDate(day)}
                           disabled={!canSwap}
                           className={`h-8 text-xs rounded ${
-                            swapDate === day ? 'bg-[hsl(217,92%,39%)] text-white' : 
-                            canSwap ? 'bg-green-100 hover:bg-green-200 text-green-800' : 
+                            swapDate === day ? 'bg-[hsl(217,92%,39%)] text-white' :
+                            canSwap ? 'bg-green-100 hover:bg-green-200 text-green-800' :
                             'bg-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
+                          title={title}
                         >
                           {day}
                         </button>
@@ -2415,7 +2660,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     })}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Green dates have swappable events.
+                    Select a date belonging to the other parent to swap with.
                   </p>
                 </div>
               )}
@@ -2571,7 +2816,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         What will change:
                       </h4>
                       <ul className="space-y-1 text-sm text-yellow-700">
-                        {request.consequences.map((consequence, index) => (
+                        {getDynamicConsequences(request).map((consequence, index) => (
                           <li key={index} className="flex items-start">
                             <span className="mr-2">•</span>
                             <span>{consequence}</span>
@@ -2835,6 +3080,52 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Options Dialog */}
+      <Dialog open={showDayOptions} onOpenChange={setShowDayOptions}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDay ? `${monthNames[selectedDay.getMonth()]} ${selectedDay.getDate()}` : 'Date Options'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+             {selectedDay && (() => {
+                const day = selectedDay.getDate();
+                const parent = getEffectiveCustodyParent(day);
+                const hasEvent = events.some(e => e.date === day);
+                return (
+                   <div className="text-sm text-gray-600 mb-2">
+                      <p><strong>Custody:</strong> {parent ? getParentDisplayName(parent) : 'Not assigned'}</p>
+                   </div>
+                );
+             })()}
+            <Button
+              onClick={() => {
+                if (selectedDay) {
+                   handleSwapFromDayOptions();
+                }
+              }}
+              disabled={isMaterializing}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {isMaterializing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRightLeft className="w-4 h-4 mr-2" />}
+              Request Custody Swap
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDayOptions(false);
+                if (selectedDay) openCreateEventModal(selectedDay);
+              }}
+              className="w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Specific Event
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

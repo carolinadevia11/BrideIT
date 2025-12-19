@@ -410,45 +410,68 @@ async def create_change_request(
 ):
     """Submit a change request for a calendar event."""
     family, family_ids = _get_family_for_user(current_user)
-    event_doc = _find_event_for_family(request_data.event_id, family_ids)
-    
     primary_family_id = family_ids[0] if family_ids else str(family.get("_id"))
-
     change_request_id = str(uuid.uuid4())
     change_type = request_data.requestType
+
     if change_type not in {"swap", "modify", "cancel"}:
         raise HTTPException(status_code=400, detail="Invalid request type.")
 
     change_request_doc = {
         "id": change_request_id,
         "family_id": primary_family_id,
-        "event_id": event_doc.get("id"),
         "requestedBy_email": current_user.email,
         "status": "pending",
         "reason": request_data.reason,
         "createdAt": datetime.utcnow(),
         "requestType": change_type,
-        "eventTitle": event_doc.get("title"),
-        "eventType": event_doc.get("type"),
-        "eventParent": event_doc.get("parent"),
-        "eventDate": _ensure_datetime(event_doc.get("date")),
     }
 
+    # Handle Source Event/Date
+    if request_data.event_id:
+        event_doc = _find_event_for_family(request_data.event_id, family_ids)
+        change_request_doc.update({
+            "event_id": event_doc.get("id"),
+            "eventTitle": event_doc.get("title"),
+            "eventType": event_doc.get("type"),
+            "eventParent": event_doc.get("parent"),
+            "eventDate": _ensure_datetime(event_doc.get("date")),
+        })
+    elif request_data.eventDate:
+        # Day Swap (no existing event)
+        change_request_doc.update({
+            "event_id": None,
+            "eventTitle": "Custody Day", # Default title for day swap
+            "eventType": "custody",
+            "eventParent": None, # Implicit
+            "eventDate": _ensure_datetime(request_data.eventDate),
+        })
+    else:
+        raise HTTPException(status_code=400, detail="Either event_id or eventDate must be provided.")
+
+    # Handle Change Logic
     if change_type == "modify":
         if not request_data.newDate:
             raise HTTPException(
                 status_code=400, detail="newDate is required for a modify request."
             )
         change_request_doc["newDate"] = _ensure_datetime(request_data.newDate)
+        
     elif change_type == "swap":
-        if not request_data.swapEventId:
+        if request_data.swapEventId:
+            swap_event_doc = _find_event_for_family(request_data.swapEventId, family_ids)
+            change_request_doc["swapEventId"] = swap_event_doc.get("id")
+            change_request_doc["swapEventTitle"] = swap_event_doc.get("title")
+            change_request_doc["swapEventDate"] = _ensure_datetime(swap_event_doc.get("date"))
+        elif request_data.swapDate:
+            # Day Swap Target
+            change_request_doc["swapEventId"] = None
+            change_request_doc["swapEventTitle"] = "Custody Day"
+            change_request_doc["swapEventDate"] = _ensure_datetime(request_data.swapDate)
+        else:
             raise HTTPException(
-                status_code=400, detail="swapEventId is required for a swap request."
+                status_code=400, detail="swapEventId or swapDate is required for a swap request."
             )
-        swap_event_doc = _find_event_for_family(request_data.swapEventId, family_ids)
-        change_request_doc["swapEventId"] = swap_event_doc.get("id")
-        change_request_doc["swapEventTitle"] = swap_event_doc.get("title")
-        change_request_doc["swapEventDate"] = _ensure_datetime(swap_event_doc.get("date"))
     else:
         change_request_doc["newDate"] = None
 
@@ -479,8 +502,8 @@ async def create_change_request(
         requester_email,
         recipient_email,
         requester_name,
-        event_doc.get("title"),
-        str(event_doc.get("date"))
+        change_request_doc.get("eventTitle"),
+        str(change_request_doc.get("eventDate"))
     )
 
     return _serialize_change_request_document(change_request_doc)
@@ -560,26 +583,123 @@ async def update_change_request(
     request_type = change_request_doc.get("requestType", "modify")
     if update_data.status == "approved":
         if request_type == "swap":
+            # Check if we are swapping specific events or days
+            event_id = change_request_doc.get("event_id")
             swap_event_id = change_request_doc.get("swapEventId")
-            if not swap_event_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Swap request missing swapEventId.",
+            
+            # Case 1: Swapping existing events (Event Swap)
+            if event_id and swap_event_id:
+                event_doc = _find_event_for_family(event_id, family_ids)
+                swap_event_doc = _find_event_for_family(swap_event_id, family_ids)
+
+                event_date = _ensure_datetime(event_doc.get("date"))
+                swap_date = _ensure_datetime(swap_event_doc.get("date"))
+
+                db.events.update_one(
+                    {"_id": event_doc.get("_id")},
+                    {"$set": {"date": swap_date, "updatedAt": datetime.utcnow()}},
                 )
-            event_doc = _find_event_for_family(change_request_doc.get("event_id"), family_ids)
-            swap_event_doc = _find_event_for_family(swap_event_id, family_ids)
+                db.events.update_one(
+                    {"_id": swap_event_doc.get("_id")},
+                    {"$set": {"date": event_date, "updatedAt": datetime.utcnow()}},
+                )
+            
+            # Case 2: Swapping Days (Virtual/Custody Swap)
+            else:
+                # We need to override the custody for these days by creating explicit events
+                date1 = _ensure_datetime(change_request_doc.get("eventDate"))
+                date2 = _ensure_datetime(change_request_doc.get("swapEventDate"))
+                
+                requester_email = change_request_doc.get("requestedBy_email")
+                
+                # Determine the 'other' parent email
+                other_parent_email = family.get("parent1_email") if family.get("parent2_email") == requester_email else family.get("parent2_email")
+                
+                # Logic:
+                # Requester (P1) initiated swap for Date 1.
+                # It means Date 1 WAS P1's day (or P1 wanted to give it up).
+                # And Date 2 WAS P2's day.
+                # AFTER SWAP:
+                # Date 1 should belong to P2.
+                # Date 2 should belong to P1.
+                
+                # Helper to upsert custody event for a date
+                def upsert_custody_event(date_val, parent_email, parent_role):
+                    # Check if event exists
+                    existing = db.events.find_one({
+                        "family_id": {"$in": family_ids},
+                        "date": date_val,
+                        "type": "custody"
+                    })
+                    
+                    if existing:
+                        # Update owner
+                        db.events.update_one(
+                            {"_id": existing["_id"]},
+                            {"$set": {"parent": parent_role, "updatedAt": datetime.utcnow()}}
+                        )
+                    else:
+                        # Create new event
+                        primary_fid = family.get("id") or str(family.get("_id"))
+                        new_event = {
+                            "id": str(uuid.uuid4()),
+                            "family_id": primary_fid,
+                            "date": date_val,
+                            "type": "custody",
+                            "title": "Custody Day",
+                            "parent": parent_role,
+                            "isSwappable": True,
+                            "createdBy_email": "system",
+                            "createdAt": datetime.utcnow(),
+                            "updatedAt": datetime.utcnow(),
+                        }
+                        db.events.insert_one(new_event)
 
-            event_date = _ensure_datetime(event_doc.get("date"))
-            swap_date = _ensure_datetime(swap_event_doc.get("date"))
+                # Determine roles (mom/dad) based on emails
+                def get_role(email):
+                    if email == family.get("parent1_email"): return "mom"
+                    if email == family.get("parent2_email"): return "dad"
+                    return "both"
 
-            db.events.update_one(
-                {"_id": event_doc.get("_id")},
-                {"$set": {"date": swap_date, "updatedAt": datetime.utcnow()}},
-            )
-            db.events.update_one(
-                {"_id": swap_event_doc.get("_id")},
-                {"$set": {"date": event_date, "updatedAt": datetime.utcnow()}},
-            )
+                requester_role = get_role(requester_email)
+                other_role = get_role(other_parent_email)
+                
+                # Apply the swap
+                # Date 1 (originally Requester's) -> Now Other's
+                upsert_custody_event(date1, other_parent_email, other_role)
+                
+                # Date 2 (originally Other's) -> Now Requester's
+                upsert_custody_event(date2, requester_email, requester_role)
+
+                # TRANSFER RESPONSIBILITY FOR NON-CUSTODY EVENTS
+                # Rule: If a parent gives up a day, any events assigned specifically to them
+                # on that day should be transferred to the new custodial parent.
+                # We do NOT touch events assigned to "both".
+
+                # Update events on Date 1 (Now belonging to Other Parent)
+                # If they were assigned to Requester, move to Other
+                db.events.update_many(
+                    {
+                        "family_id": {"$in": family_ids},
+                        "date": date1,
+                        "type": {"$ne": "custody"},
+                        "parent": requester_role
+                    },
+                    {"$set": {"parent": other_role, "updatedAt": datetime.utcnow()}}
+                )
+
+                # Update events on Date 2 (Now belonging to Requester)
+                # If they were assigned to Other, move to Requester
+                db.events.update_many(
+                    {
+                        "family_id": {"$in": family_ids},
+                        "date": date2,
+                        "type": {"$ne": "custody"},
+                        "parent": other_role
+                    },
+                    {"$set": {"parent": requester_role, "updatedAt": datetime.utcnow()}}
+                )
+                
         elif request_type == "modify":
             new_date = change_request_doc.get("newDate")
             if not new_date:

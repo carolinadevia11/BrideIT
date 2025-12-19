@@ -379,10 +379,12 @@ export const calendarAPI = {
   },
 
   createChangeRequest: async (requestData: {
-    event_id: string;
+    event_id?: string;
+    eventDate?: string;
     requestType: 'swap' | 'modify' | 'cancel';
     newDate?: string;
     swapEventId?: string;
+    swapDate?: string;
     reason?: string;
   }) => {
     return fetchWithAuth('/api/v1/calendar/change-requests', {

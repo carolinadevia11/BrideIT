@@ -149,7 +149,7 @@ class EventCreate(BaseModel):
 
 class ChangeRequest(BaseModel):
     id: Optional[str] = None
-    event_id: str
+    event_id: Optional[str] = None
     requestedBy_email: str  # Email of the user who requested the change
     status: str = "pending"  # pending, approved, rejected
     reason: Optional[str] = None
@@ -157,8 +157,8 @@ class ChangeRequest(BaseModel):
     updatedAt: Optional[datetime] = None
     resolvedBy_email: Optional[str] = None
     requestType: str  # swap, modify, cancel
-    eventTitle: str
-    eventType: str
+    eventTitle: Optional[str] = None
+    eventType: Optional[str] = None
     eventParent: Optional[str] = None
     eventDate: datetime
     newDate: Optional[datetime] = None
@@ -167,10 +167,12 @@ class ChangeRequest(BaseModel):
     swapEventDate: Optional[datetime] = None
 
 class ChangeRequestCreate(BaseModel):
-    event_id: str
+    event_id: Optional[str] = None
+    eventDate: Optional[datetime] = None
     requestType: str
     newDate: Optional[datetime] = None
     swapEventId: Optional[str] = None
+    swapDate: Optional[datetime] = None
     reason: Optional[str] = None
 
 class ChangeRequestUpdate(BaseModel):
