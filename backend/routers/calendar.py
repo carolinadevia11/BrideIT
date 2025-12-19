@@ -129,6 +129,38 @@ def _find_change_request_for_family(request_id: str, family_ids: List[str]) -> d
     return change_request
 
 
+def _get_user_role(family: dict, email: str) -> str:
+    if email == family.get("parent1_email"):
+        return "mom"
+    elif email == family.get("parent2_email"):
+        return "dad"
+    return "unknown"
+
+
+def _check_custody_access(family_ids: List[str], date_val: datetime, user_role: str):
+    """
+    Check if the user is allowed to add/edit events on the given date based on custody.
+    Raises HTTPException if access is denied.
+    """
+    # Find custody event for this date
+    custody_event = db.events.find_one({
+        "family_id": {"$in": family_ids},
+        "date": date_val,
+        "type": "custody"
+    })
+    
+    if custody_event:
+        owner = custody_event.get("parent")
+        # If there is an owner, it's not "both", and we know the user's role
+        if owner and owner != "both" and user_role != "unknown":
+            # If the custody owner is not the current user, deny access
+            if owner != user_role:
+                 raise HTTPException(
+                    status_code=403,
+                    detail=f"You cannot add or edit events on a day assigned to the other parent."
+                )
+
+
 @router.get("/events", response_model=List[Event])
 async def get_calendar_events(
     year: int = Query(..., description="Year to fetch events for"),
@@ -217,6 +249,15 @@ async def create_calendar_event(
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
 
+    # Determine current user's role for custody checks
+    user_role = _get_user_role(family, current_user.email)
+    
+    # Check custody permission for non-custody events
+    # If it IS a custody event, the conflict check below handles it (preventing duplicates)
+    # But for other events, we must ensure we own the day.
+    if event_data.type != "custody":
+        _check_custody_access(family_ids, _ensure_datetime(event_data.date), user_role)
+
     # Check for conflicts
     existing_events = db.events.find_one({
         "family_id": {"$in": family_ids},
@@ -266,6 +307,14 @@ async def update_calendar_event(
             status_code=403,
             detail="Only the event creator can edit this event. Please use a change request instead."
         )
+
+    # Determine current user's role for custody checks
+    user_role = _get_user_role(family, current_user.email)
+    
+    # Check custody permission for the NEW date (if date changed, or just current date)
+    # We check permission to put an event on this date
+    if event_data.type != "custody":
+        _check_custody_access(family_ids, _ensure_datetime(event_data.date), user_role)
 
     update_fields = {
         "date": _ensure_datetime(event_data.date),

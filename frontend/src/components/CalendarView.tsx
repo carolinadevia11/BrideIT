@@ -188,6 +188,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showDayOptions, setShowDayOptions] = useState(false);
   const [isMaterializing, setIsMaterializing] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
@@ -460,6 +462,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMonth]); // Functions depend on currentMonth which is in the dependency array
 
+  // Auto-update parent in create modal when date changes
+  useEffect(() => {
+    if (showCreateEvent && !isEditingMode && newEventDate) {
+      const effectiveParent = getEffectiveParentForDate(newEventDate);
+      if (effectiveParent) {
+        setNewEventParent(effectiveParent);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newEventDate, showCreateEvent, isEditingMode]);
+
   useEffect(() => {
     loadChangeRequests();
   }, [familyProfile]);
@@ -511,7 +524,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       } else {
         console.error('Error loading events:', error);
         // Only log real errors, don't show toast
-        setEvents([]);
+        if (!background) setEvents([]);
       }
     } finally {
       if (!background) setIsLoadingEvents(false);
@@ -537,7 +550,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       } else {
         console.error('Error loading change requests:', error);
         // Only log real errors, don't show toast
-        setChangeRequests([]);
+        if (!background) setChangeRequests([]);
       }
     } finally {
       if (!background) setIsLoadingRequests(false);
@@ -1087,6 +1100,36 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return getCustodyParentForDay(day);
   };
 
+  /**
+   * Helper to determine the effective parent for a given FULL DATE object or string.
+   * Consolidates logic used in multiple places (modal open, dropdown render, submission).
+   */
+  const getEffectiveParentForDate = (dateInput: Date | string): 'mom' | 'dad' | 'both' | null => {
+    let dateObj: Date;
+    let dateString: string;
+
+    if (dateInput instanceof Date) {
+      dateObj = dateInput;
+      dateString = formatDateInputValue(dateInput);
+    } else {
+      dateString = dateInput;
+      const parts = dateInput.split('-').map(Number);
+      dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    // 1. Check for Override (Swap/Custody Event)
+    const existingCustodyEvent = events.find(e =>
+      formatDateInputValue(e.fullDate) === dateString && e.type === 'custody'
+    );
+
+    if (existingCustodyEvent?.parent) {
+      return existingCustodyEvent.parent;
+    }
+
+    // 2. Fallback to Static Agreement
+    return getCustodyParentForDate(dateObj);
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
@@ -1121,9 +1164,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setNewEventTitle("");
     setNewEventType("custody");
     
-    // Auto-select the correct parent based on custody agreement
-    const custodyParent = getCustodyParentForDay(defaultDate.getDate());
-    setNewEventParent(custodyParent || "both");
+    // Auto-select the correct parent based on effective custody (including swaps)
+    const effectiveParent = getEffectiveParentForDate(defaultDate);
+    setNewEventParent(effectiveParent || "both");
     
     setNewEventSwappable(true);
     setNewEventTime('');
@@ -1220,56 +1263,72 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         );
         
         if (existingCustody) {
-          const proceed = window.confirm(
-            `Possible Conflict: There is already a custody event for ${existingCustody.parent ? getParentDisplayName(existingCustody.parent) : 'a parent'} on this date.\n\nDo you want to proceed with adding this event?`
-          );
-          
-          if (!proceed) return;
+          toast({
+            title: "Schedule Conflict",
+            description: `There is already a custody event for ${existingCustody.parent ? getParentDisplayName(existingCustody.parent) : 'a parent'} on this date. Please use the Swap feature to change custody.`,
+            variant: "destructive"
+          });
+          return;
         }
-      }
-
-      // Check if trying to override custody agreement manually (For ALL event types)
-      const agreementParent = getCustodyParentForDay(day);
-      
-      // General Rule: You cannot assign events to a parent who does not have custody that day
-      // (Unless the day is shared "both", or the event is assigned to "both" which we might allow or restrict)
-      // Stricter Rule: The Event Parent must match the Agreement Parent
-      
-      if (agreementParent && agreementParent !== 'both') {
-          // If I'm trying to assign to the "other" parent (who doesn't have custody)
-          // e.g. It's Mom's day, but I assign to Dad.
-          // OR It's Dad's day, but I assign to Mom (Myself) -> This blocks the reported loophole
-          if (newEventParent !== 'both' && newEventParent !== agreementParent) {
-            const agreementParentName = getParentDisplayName(agreementParent);
-            const assignedParentName = getParentDisplayName(newEventParent);
-            
-            toast({
-              title: "Responsibility Mismatch",
-              description: `This day belongs to ${agreementParentName}. You cannot unilaterally assign an event to ${assignedParentName}. Please create the event for the correct parent, or use a Request to change responsibilities.`,
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          // If I'm trying to assign to "Both" (forcing the other parent) on a single-parent day
-          if (newEventParent === 'both') {
-              // Only block strict "Custody" type overrides
-              // Allow "Both" for School, Activity, etc. as they often involve both parents regardless of custody
-              if (newEventType === 'custody') {
-                toast({
-                  title: "Custody Mismatch",
-                  description: `This is explicitly ${agreementParent === 'mom' ? "Mom's" : "Dad's"} day. You cannot make it a shared 'Both' custody day manually. Please use Request Swap.`,
-                  variant: "destructive"
-                });
-                return;
-              }
-          }
       }
       
       // Check for general schedule density (warn if > 3 events)
       if (dayEvents.length >= 3 && (!isEditingMode || dayEvents.find(e => e.id === editingEvent?.id))) {
          // Just a soft check, maybe don't block, but good to know logic is possible here
       }
+    }
+
+    // Check if trying to override custody agreement manually (For ALL event types)
+    // Applied to ALL dates (even outside current view) using parsedDate
+    
+    // 1. Calculate Static Agreement Parent
+    const staticAgreementParent = getCustodyParentForDate(parsedDate);
+
+    // 2. Check for Effective Parent (accounting for Swaps/Overrides)
+    // We need to check if there is an existing 'custody' event on this date in our events list
+    // Note: 'events' state might only contain current month, so for dates far outside,
+    // we assume static agreement (safe fallback), or we'd need to fetch.
+    // For now, checking loaded events is the best "client-side" check we can do.
+    const dateKey = parsedDate.toDateString();
+    const existingCustodyEvent = events.find(e =>
+      e.fullDate.toDateString() === dateKey && e.type === 'custody'
+    );
+
+    const effectiveParent = existingCustodyEvent?.parent || staticAgreementParent;
+    
+    // General Rule: You cannot assign events to a parent who does not have custody that day
+    // (Unless the day is shared "both", or the event is assigned to "both" which we might allow or restrict)
+    // Stricter Rule: The Event Parent must match the Agreement Parent
+    
+    if (effectiveParent && effectiveParent !== 'both') {
+        // If I'm trying to assign to the "other" parent (who doesn't have custody)
+        // e.g. It's Mom's day, but I assign to Dad.
+        // OR It's Dad's day, but I assign to Mom (Myself) -> This blocks the reported loophole
+        if (newEventParent !== 'both' && newEventParent !== effectiveParent) {
+          const effectiveParentName = getParentDisplayName(effectiveParent);
+          const assignedParentName = getParentDisplayName(newEventParent);
+          
+          toast({
+            title: "Responsibility Mismatch",
+            description: `This day belongs to ${effectiveParentName} (either by agreement or swap). You cannot unilaterally assign an event to ${assignedParentName}.`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // If I'm trying to assign to "Both" (forcing the other parent) on a single-parent day
+        if (newEventParent === 'both') {
+            // Only block strict "Custody" type overrides
+            // Allow "Both" for School, Activity, etc. as they often involve both parents regardless of custody
+            if (newEventType === 'custody') {
+              toast({
+                title: "Custody Mismatch",
+                description: `This is explicitly ${effectiveParent === 'mom' ? "Mom's" : "Dad's"} day. You cannot make it a shared 'Both' custody day manually. Please use Request Swap.`,
+                variant: "destructive"
+              });
+              return;
+            }
+        }
     }
 
     setCreatingEvent(true);
@@ -1582,8 +1641,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleRequestResponse = async (requestId: string, response: 'approved' | 'rejected') => {
+    setProcessingRequestId(requestId);
     const existingRequest = changeRequests.find(r => r.id === requestId);
-    if (!existingRequest) return;
+    if (!existingRequest) {
+      setProcessingRequestId(null);
+      return;
+    }
 
     try {
       await calendarAPI.updateChangeRequest(requestId, response);
@@ -1625,6 +1688,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         description: error instanceof Error ? error.message : "Failed to update change request.",
         variant: "destructive",
       });
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -2181,25 +2246,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {(() => {
-                    // Check custody for the selected date
-                    const dateForCheck = newEventDate ? new Date(newEventDate) : new Date();
-                    const custodyForDate = getCustodyParentForDate(dateForCheck);
+                    const effectiveParent = getEffectiveParentForDate(newEventDate);
                     
                     return (
                       <>
                         <SelectItem
                           value="mom"
-                          disabled={custodyForDate === 'dad'}
-                          className={custodyForDate === 'dad' ? 'text-gray-400' : ''}
+                          disabled={effectiveParent === 'dad'}
+                          className={effectiveParent === 'dad' ? 'text-gray-400' : ''}
                         >
-                          {getParentDisplayName("mom")} {custodyForDate === 'dad' && '(Not Custodial)'}
+                          {getParentDisplayName("mom")} {effectiveParent === 'dad' && '(Not Custodial)'}
                         </SelectItem>
                         <SelectItem
                           value="dad"
-                          disabled={custodyForDate === 'mom'}
-                          className={custodyForDate === 'mom' ? 'text-gray-400' : ''}
+                          disabled={effectiveParent === 'mom'}
+                          className={effectiveParent === 'mom' ? 'text-gray-400' : ''}
                         >
-                          {getParentDisplayName("dad")} {custodyForDate === 'mom' && '(Not Custodial)'}
+                          {getParentDisplayName("dad")} {effectiveParent === 'mom' && '(Not Custodial)'}
                         </SelectItem>
                         <SelectItem value="both">Both parents</SelectItem>
                       </>
@@ -2233,8 +2296,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={creatingEvent} className="w-full sm:w-auto text-sm sm:text-base">
-                {creatingEvent 
-                  ? (isEditingMode ? "Updating..." : "Creating...") 
+                {creatingEvent && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {creatingEvent
+                  ? (isEditingMode ? "Updating..." : "Creating...")
                   : (isEditingMode ? "Update Event" : "Create Event")}
               </Button>
             </div>
@@ -2387,6 +2451,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
+                                      disabled={processingRequestId === request.id}
                                       onClick={async () => {
                                         try {
                                           await handleRequestResponse(request.id, 'approved');
@@ -2397,12 +2462,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                       }}
                                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                                     >
-                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      {processingRequestId === request.id ? (
+                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                      ) : (
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                      )}
                                       Approve
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      disabled={processingRequestId === request.id}
                                       onClick={async () => {
                                         try {
                                           await handleRequestResponse(request.id, 'rejected');
@@ -2413,7 +2483,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                       }}
                                       className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
                                     >
-                                      <XCircle className="w-3 h-3 mr-1" />
+                                      {processingRequestId === request.id ? (
+                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                      )}
                                       Reject
                                     </Button>
                                   </div>
@@ -2429,6 +2503,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      disabled={processingRequestId === request.id}
                                       onClick={async () => {
                                         try {
                                           await handleRequestResponse(request.id, 'rejected');
@@ -2443,7 +2518,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                       }}
                                       className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
                                     >
-                                      <XCircle className="w-3 h-3 mr-1" />
+                                      {processingRequestId === request.id ? (
+                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                      )}
                                       Cancel Request
                                     </Button>
                                   </div>
@@ -2530,8 +2609,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             <AlertDialogCancel onClick={() => setEventToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
-              onClick={async () => {
+              disabled={isDeletingEvent}
+              onClick={async (e) => {
+                e.preventDefault();
                 if (eventToDelete) {
+                  setIsDeletingEvent(true);
                   try {
                     await calendarAPI.deleteEvent(eventToDelete.id);
                     toast({
@@ -2540,6 +2622,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     });
                     await loadEvents();
                     setShowEventDetails(false);
+                    setDeleteConfirmationOpen(false);
+                    setEventToDelete(null);
                   } catch (error) {
                     console.error("Error deleting event:", error);
                     toast({
@@ -2548,12 +2632,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       variant: "destructive",
                     });
                   } finally {
-                    setDeleteConfirmationOpen(false);
-                    setEventToDelete(null);
+                    setIsDeletingEvent(false);
                   }
                 }
               }}
             >
+              {isDeletingEvent && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -2737,13 +2821,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
               {/* Actions */}
               <div className="flex space-x-3">
-                <Button 
+                <Button
                   onClick={submitChangeRequest}
-                  disabled={!changeReason.trim() || 
-                    (changeType === 'swap' && !swapDate) || 
+                  disabled={isMaterializing || !changeReason.trim() ||
+                    (changeType === 'swap' && !swapDate) ||
                     (changeType === 'modify' && !newDate)}
                   className="flex-1"
                 >
+                  {isMaterializing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Send Request to Co-Parent
                 </Button>
                 <Button 
@@ -2841,50 +2926,65 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     {canApproveReject ? (
                       // Show Approve/Reject buttons if current user is NOT the requester
                       <div className="flex space-x-3">
-                        <Button 
-                          onClick={() => handleRequestResponse(request.id, 'approved')}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
+                      <Button
+                        onClick={() => handleRequestResponse(request.id, 'approved')}
+                        disabled={processingRequestId === request.id}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          Approve Change
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => handleRequestResponse(request.id, 'rejected')}
-                          className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-                        >
+                        )}
+                        Approve Change
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRequestResponse(request.id, 'rejected')}
+                        disabled={processingRequestId === request.id}
+                        className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
                           <XCircle className="w-4 h-4 mr-2" />
-                          Decline
-                        </Button>
+                        )}
+                        Decline
+                      </Button>
+                    </div>
+                  ) : (
+                    // Show Cancel button if current user is the requester
+                    <div className="space-y-2">
+                      <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                        <p className="text-sm text-blue-800 text-center">
+                          <Clock className="w-4 h-4 inline mr-1" />
+                          Waiting for your co-parent to respond to your request
+                        </p>
                       </div>
-                    ) : (
-                      // Show Cancel button if current user is the requester
-                      <div className="space-y-2">
-                        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                          <p className="text-sm text-blue-800 text-center">
-                            <Clock className="w-4 h-4 inline mr-1" />
-                            Waiting for your co-parent to respond to your request
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              await handleRequestResponse(request.id, 'rejected');
-                              toast({
-                                title: "Request cancelled",
-                                description: "Your change request has been cancelled.",
-                              });
-                            } catch (error) {
-                              console.error('Error cancelling request:', error);
-                            }
-                          }}
-                          className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
-                        >
+                      <Button
+                        variant="outline"
+                        disabled={processingRequestId === request.id}
+                        onClick={async () => {
+                          try {
+                            await handleRequestResponse(request.id, 'rejected');
+                            toast({
+                              title: "Request cancelled",
+                              description: "Your change request has been cancelled.",
+                            });
+                          } catch (error) {
+                            console.error('Error cancelling request:', error);
+                          }
+                        }}
+                        className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
                           <XCircle className="w-4 h-4 mr-2" />
-                          Cancel My Request
-                        </Button>
-                      </div>
+                        )}
+                        Cancel My Request
+                      </Button>
+                    </div>
                     )}
 
                     <p className="text-xs text-gray-500 text-center">

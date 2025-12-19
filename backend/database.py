@@ -79,6 +79,25 @@ class InMemoryCollection:
                     return False
                 continue
 
+            # Handle operators in value
+            if isinstance(value, dict):
+                matched_operator = True
+                for op, op_val in value.items():
+                    actual = self._normalize(self._get_value(document, key))
+                    if op == "$in":
+                        if actual not in [self._normalize(v) for v in op_val]:
+                            matched_operator = False
+                            break
+                    elif op == "$ne":
+                        expected = self._normalize(op_val)
+                        if actual == expected:
+                            matched_operator = False
+                            break
+                    # Add other operators as needed
+                if not matched_operator:
+                    return False
+                continue
+
             expected = self._normalize(value)
             actual = self._normalize(self._get_value(document, key))
             if actual != expected:
