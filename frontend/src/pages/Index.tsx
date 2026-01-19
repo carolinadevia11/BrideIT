@@ -24,6 +24,7 @@ import UserSettings from '@/components/UserSettings';
 import FamilyOnboarding from '@/components/FamilyOnboarding';
 import ChildManagement from '@/components/ChildManagement';
 import RecentActivity from '@/components/RecentActivity';
+import CoparentingBalance from '@/components/CoparentingBalance';
 import ProductTour from '@/components/ProductTour';
 import IncomingCallAlert from '@/components/IncomingCallAlert';
 import VideoCallModal from '@/components/VideoCallModal';
@@ -1555,12 +1556,12 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                       <img
                         src="/bridgette-avatar.png"
                         alt="Bridgette"
-                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white shadow-md bg-white object-contain p-1"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
                       />
                     </div>
                     <div className="flex-1 min-w-0 speech-bubble">
                       <h2 className="text-lg sm:text-xl font-bold mb-1 text-bridge-black">
-                        {celebrationMessage || `Good morning${currentUser ? ` ${currentUser.firstName}` : ''}, hope you are having a wonderful day.`}
+                        {celebrationMessage || `Put your child first${currentUser ? `, ${currentUser.firstName}` : ''}, every choice today shapes their tomorrow.`}
                       </h2>
                       
                       {dashboardMetricsLoaded && (dashboardMetrics.pendingExpenseDetails.length > 0 || dashboardMetrics.upcomingEventDetails.length > 0) && (
@@ -1672,28 +1673,18 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
                 </Card>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <ProgressBar
-                  progress={85}
-                  title="Co-parenting Balance"
-                  subtitle="Great progress this month!"
-                  showTrophy={false}
-                />
-                <ProgressBar
-                  progress={100}
-                  title="January Setup"
-                  subtitle="All systems ready!"
-                  showTrophy={true}
-                />
-              </div>
-
-              <div data-tour="recent-activity">
-                <RecentActivity
-                  onNavigateToExpenses={() => changeTab('expenses')}
-                  onNavigateToCalendar={() => changeTab('calendar')}
-                  onNavigateToMessages={() => changeTab('messages')}
-                  currentUser={currentUser}
-                />
+              <div className="space-y-4 sm:space-y-6">
+                <div className="w-full">
+                  <CoparentingBalance />
+                </div>
+                <div data-tour="recent-activity" className="w-full">
+                  <RecentActivity
+                    onNavigateToExpenses={() => changeTab('expenses')}
+                    onNavigateToCalendar={() => changeTab('calendar')}
+                    onNavigateToMessages={() => changeTab('messages')}
+                    currentUser={currentUser}
+                  />
+                </div>
               </div>
 
             </TabsContent>

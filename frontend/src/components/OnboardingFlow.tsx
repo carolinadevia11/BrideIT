@@ -3,7 +3,7 @@ import { Calendar, MessageSquare, DollarSign, FileText, Users, ArrowRight, Arrow
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -14,7 +14,7 @@ interface OnboardingStep {
   title: string;
   description: string;
   bridgetteMessage: string;
-  bridgetteExpression: 'happy' | 'thinking' | 'encouraging' | 'celebrating' | 'waving';
+  bridgetteExpression: 'thinking' | 'encouraging' | 'balanced';
   icon: React.ComponentType<any>;
   color: string;
   features: string[];
@@ -30,7 +30,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       title: 'Welcome to Bridge-it! 🌟',
       description: 'Your journey to better co-parenting starts here',
       bridgetteMessage: "Hi there! I'm Bridge-it, your personal co-parenting assistant! I'm so excited to show you around Bridge-it and help you create a positive environment for your family! 🎉",
-      bridgetteExpression: 'waving',
+      bridgetteExpression: 'encouraging',
       icon: Heart,
       color: 'from-bridge-blue to-bridge-blue/80',
       features: [
@@ -66,7 +66,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       title: 'Secure Communication 💬',
       description: 'Keep conversations focused and documented',
       bridgetteMessage: "Communication is key to successful co-parenting! Bridge-it will help you choose the right tone for your messages and keep everything documented for your records. No more misunderstandings! 💬🤝",
-      bridgetteExpression: 'happy',
+      bridgetteExpression: 'encouraging',
       icon: MessageSquare,
       color: 'from-bridge-green to-emerald-600',
       features: [
@@ -138,7 +138,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       title: 'You\'re All Set! 🎉',
       description: 'Ready to start your co-parenting journey',
       bridgetteMessage: "Congratulations! You're now ready to use Bridge-it to create a positive co-parenting experience! Remember, Bridge-it is always here to help guide you through any challenges. You've got this! 🌟👏",
-      bridgetteExpression: 'celebrating',
+      bridgetteExpression: 'encouraging',
       icon: Star,
       color: 'from-bridge-yellow to-bridge-green',
       features: [
@@ -198,13 +198,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression={currentStepData.bridgetteExpression}
-              animation={currentStepData.bridgetteExpression === 'celebrating' ? 'celebrate' : 'float'}
               showSpeechBubble={true}
               message={currentStepData.bridgetteMessage}
-              position="center"
             />
           </div>
 

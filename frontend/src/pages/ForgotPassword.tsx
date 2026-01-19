@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
-import AnimatedBridgette from '@/components/AnimatedBridgette';
+import BridgetteAvatar from '@/components/BridgetteAvatar';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
@@ -57,13 +57,11 @@ const ForgotPassword = () => {
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
         {/* Bridge-it Welcome */}
         <div className="text-center order-2 md:order-1">
-          <AnimatedBridgette
-            size="xl"
+          <BridgetteAvatar
+            size="lg"
             expression="thinking"
-            animation="float"
             showSpeechBubble={true}
             message="Don't worry! It happens to everyone. Let's get you back into your account. 🔐"
-            position="center"
           />
         </div>
 

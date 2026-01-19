@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 import { familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -180,19 +180,17 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left order-first lg:order-last">
-            <AnimatedBridgette
-              size="xl"
-              expression={parsedData ? "celebrating" : isParsing ? "thinking" : "encouraging"}
-              animation={parsedData ? "celebrate" : isParsing ? "thinking" : "float"}
+            <BridgetteAvatar
+              size="lg"
+              expression={parsedData ? "encouraging" : isParsing ? "thinking" : "encouraging"}
               showSpeechBubble={true}
               message={
-                parsedData 
+                parsedData
                   ? "Analysis complete! I've extracted the key terms from your agreement. This will help me keep your co-parenting on track automatically! 📋✨"
                   : isParsing
                   ? "I'm analyzing your document now... Looking for schedules, holiday rules, and expense arrangements. Almost done! 🤔📄"
                   : "Upload your custody agreement and I'll use AI to organize everything for you. It's the easiest way to ensure we never miss a detail! 🤖"
               }
-              position="center"
             />
           </div>
 

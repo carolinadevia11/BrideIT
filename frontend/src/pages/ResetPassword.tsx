@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
-import AnimatedBridgette from '@/components/AnimatedBridgette';
+import BridgetteAvatar from '@/components/BridgetteAvatar';
 import { Separator } from '@/components/ui/separator';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
@@ -112,13 +112,11 @@ const ResetPassword = () => {
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
         {/* Bridge-it Welcome */}
         <div className="text-center order-2 md:order-1">
-          <AnimatedBridgette
-            size="xl"
-            expression="celebrating"
-            animation="bounce"
+          <BridgetteAvatar
+            size="lg"
+            expression="encouraging"
             showSpeechBubble={true}
             message="Almost there! Set your new password and you'll be back in no time. 🎉"
-            position="center"
           />
         </div>
 

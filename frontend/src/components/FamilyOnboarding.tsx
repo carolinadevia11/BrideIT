@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 import { Child, FamilyProfile } from '@/types/family';
 import { familyAPI, childrenAPI, authAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +29,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bridgetteExpression, setBridgetteExpression] = useState<'thinking' | 'encouraging' | 'celebrating' | 'balanced' | 'mediating'>('encouraging');
+  const [bridgetteExpression, setBridgetteExpression] = useState<'thinking' | 'encouraging' | 'balanced'>('encouraging');
   const [bridgetteMessage, setBridgetteMessage] = useState("Hi! I'm so excited to help you set up your family profile! This will help me organize everything perfectly for your unique situation! 🌟");
 
   const [familyData, setFamilyData] = useState<Partial<FamilyProfile>>({
@@ -175,7 +175,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       allergies: []
     });
 
-    setBridgetteExpression('celebrating');
+    setBridgetteExpression('encouraging');
     setBridgetteMessage(`Wonderful! ${child.firstName} has been added to your family! 🎉`);
   };
 
@@ -224,12 +224,12 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
       "Let's review everything to make sure it's perfect! You're almost ready to start using Bridge! ✨"
     ];
     setBridgetteMessage(messages[step]);
-    setBridgetteExpression(step === steps.length - 1 ? 'celebrating' : 'encouraging');
+    setBridgetteExpression(step === steps.length - 1 ? 'encouraging' : 'encouraging');
   };
 
   const completeOnboarding = () => {
     // Pass updated data to parent component
-    setBridgetteExpression('celebrating');
+    setBridgetteExpression('encouraging');
     setBridgetteMessage("Perfect! Your family profile is all set up! 🎉");
     
     confetti({
@@ -842,13 +842,11 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression={bridgetteExpression}
-              animation={bridgetteExpression === 'celebrating' ? 'celebrate' : 'float'}
               showSpeechBubble={true}
               message={bridgetteMessage}
-              position="center"
             />
           </div>
 

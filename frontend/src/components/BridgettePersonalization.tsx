@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 
 interface BridgettePersonalizationProps {
   onComplete: (preferences: {
@@ -302,10 +302,9 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression="encouraging"
-              animation="float"
               showSpeechBubble={true}
               message={
                 currentStep === 0
@@ -314,7 +313,6 @@ const BridgettePersonalization: React.FC<BridgettePersonalizationProps> = ({ onC
                   ? "Perfect! Now let's set up how you want to communicate with your co-parent. 💬"
                   : "Almost done! Choose how you want to stay updated on everything. 🔔"
               }
-              position="center"
             />
           </div>
 

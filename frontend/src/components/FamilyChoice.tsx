@@ -2,7 +2,6 @@ import React from 'react';
 import { Users, Link2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import AnimatedBridgette from './AnimatedBridgette';
 import BridgetteAvatar from './BridgetteAvatar';
 
 interface FamilyChoiceProps {
@@ -18,13 +17,11 @@ const FamilyChoice: React.FC<FamilyChoiceProps> = ({ onCreateNew, onLinkExisting
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left order-2 lg:order-1">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression="encouraging"
-              animation="float"
               showSpeechBubble={true}
               message="Welcome! Are you the first parent setting up your family, or are you joining an existing family profile? Choose the option that's right for you! 🤝"
-              position="center"
             />
           </div>
 

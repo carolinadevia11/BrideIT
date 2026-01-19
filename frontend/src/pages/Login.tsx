@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
-import AnimatedBridgette from '@/components/AnimatedBridgette';
+import BridgetteAvatar from '@/components/BridgetteAvatar';
 import { Separator } from '@/components/ui/separator';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -101,13 +101,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="w-full max-w-md flex flex-col gap-8 items-center">
         {/* Bridge-it Welcome */}
         <div className="text-center">
-          <AnimatedBridgette
-            size="xl"
+          <BridgetteAvatar
+            size="lg"
             expression="encouraging"
-            animation="idle"
             showSpeechBubble={true}
             message="Welcome, I am here to support you"
-            position="center"
           />
         </div>
 

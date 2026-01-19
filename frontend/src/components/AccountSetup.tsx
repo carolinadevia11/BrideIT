@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 import { authAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +19,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bridgetteExpression, setBridgetteExpression] = useState<'happy' | 'thinking' | 'encouraging' | 'celebrating' | 'waving' | 'balanced' | 'mediating'>('waving');
+  const [bridgetteExpression, setBridgetteExpression] = useState<'thinking' | 'encouraging' | 'balanced'>('encouraging');
   const [bridgetteMessage, setBridgetteMessage] = useState("Hi there! Bridge-it is so excited to help you create your Bridge-it account! Let's get started! 🌟");
 
   const [formData, setFormData] = useState({
@@ -73,7 +73,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
 
     // Update Bridgette's expression based on user actions
     if (field === 'firstName' && value) {
-      setBridgetteExpression('happy');
+      setBridgetteExpression('encouraging');
       setBridgetteMessage(`Nice to meet you, ${value}! 😊`);
     } else if (field === 'email' && value.includes('@')) {
       setBridgetteExpression('encouraging');
@@ -86,7 +86,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
 
   const nextStep = async () => {
     if (currentStep < steps.length - 1) {
-      setBridgetteExpression('celebrating');
+      setBridgetteExpression('encouraging');
       setBridgetteMessage("Awesome! You're doing great! Let's keep going! ✨");
       setTimeout(() => {
         setCurrentStep(currentStep + 1);
@@ -108,7 +108,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
         // Auto-login after signup
         await authAPI.login(formData.email, formData.password);
 
-      setBridgetteExpression('celebrating');
+      setBridgetteExpression('encouraging');
       setBridgetteMessage("🎉 Welcome to Bridge-it! Your account is all set up and ready to go!");
         
         toast({
@@ -421,13 +421,11 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression={bridgetteExpression}
-              animation={bridgetteExpression === 'celebrating' ? 'celebrate' : 'float'}
               showSpeechBubble={true}
               message={bridgetteMessage}
-              position="center"
             />
           </div>
 

@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { authAPI } from '@/lib/api';
 import { Link, useNavigate } from 'react-router-dom';
 import OnboardingExplanation from '@/components/OnboardingExplanation';
-import AnimatedBridgette from '@/components/AnimatedBridgette';
+import BridgetteAvatar from '@/components/BridgetteAvatar';
 import { ArrowRight, ArrowLeft, Check, Smartphone, User, Globe, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -156,14 +156,12 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
     if (currentStep === 1) {
       return {
         message: "First things first! I just need your name and email to create your secure private space. 🛡️",
-        expression: "encouraging" as const,
-        animation: "float" as const
+        expression: "encouraging" as const
       };
     } else {
       return {
         message: "Almost there! Adding a phone number helps secure your account, but you can skip this if you're in a rush! 🏃💨",
-        expression: "happy" as const,
-        animation: "bounce" as const
+        expression: "encouraging" as const
       };
     }
   };
@@ -176,13 +174,11 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
         
         {/* Left Side: Bridgette (Hidden on small screens, shown on large) */}
         <div className="hidden lg:flex flex-1 flex-col items-center text-center">
-            <AnimatedBridgette
-                size="xl"
+            <BridgetteAvatar
+                size="lg"
                 expression={bridgetteConfig.expression}
-                animation={bridgetteConfig.animation}
                 showSpeechBubble={true}
                 message={bridgetteConfig.message}
-                position="center"
             />
         </div>
 
@@ -214,14 +210,11 @@ const Signup: React.FC<SignupProps> = ({ onLogin }) => {
                     
                     {/* Mobile Bridgette (Small) */}
                     <div className="lg:hidden flex justify-center mb-4">
-                         <AnimatedBridgette
+                         <BridgetteAvatar
                             size="md"
                             expression={bridgetteConfig.expression}
-                            animation="idle"
                             showSpeechBubble={true}
-                            bubblePosition="bottom"
                             message={bridgetteConfig.message}
-                            position="center"
                         />
                     </div>
 

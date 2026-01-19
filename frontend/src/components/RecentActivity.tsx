@@ -39,24 +39,46 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   const [loading, setLoading] = useState(true);
   const { lastMessage } = useWebSocket();
 
-  const fetchActivities = useCallback(async () => {
+  const fetchActivities = useCallback(async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) {
+        setLoading(true);
+      }
       const data = await activityAPI.getRecentActivity();
       // If no family exists (404), data will be null - just show empty state
-      setActivities(data || []);
+      const newData = data || [];
+      
+      setActivities(prev => {
+        // Deep compare to avoid unnecessary re-renders
+        if (JSON.stringify(prev) === JSON.stringify(newData)) {
+          return prev;
+        }
+        return newData;
+      });
     } catch (error: any) {
       // Only show error if it's not a 404 (no family found)
-      if (!error.message?.includes('404') && !error.message?.includes('not found')) {
-        console.error('Error fetching activities:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load recent activity",
-          variant: "destructive",
-        });
-      } else {
-        // No family found - just show empty state silently
+      // Only clear activities if it's explicitly a "not found" (404) error
+      // which means the user has no family linked yet.
+      // For network errors or server errors during background refresh,
+      // we should KEEP the old data to avoid the banner disappearing/flickering.
+      
+      const isNotFound = error.message?.includes('404') || error.message?.includes('not found');
+      
+      if (isNotFound) {
         setActivities([]);
+      } else {
+        console.error('Error fetching activities:', error);
+        // Only show toast if this was a user-initiated (foreground) load
+        // to avoid spamming user with toasts during background polling
+        if (!isBackground) {
+            toast({
+              title: "Error",
+              description: "Failed to refresh activity",
+              variant: "destructive",
+            });
+        }
+        // IMPORTANT: We do NOT clear setActivities([]) here for other errors
+        // This keeps the stale data visible if the network hiccups
       }
     } finally {
       setLoading(false);
@@ -71,16 +93,16 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
             data.type === 'refresh_calendar' ||
             data.type === 'refresh_expenses') {
           // console.log('Received refresh event:', data.type);
-          fetchActivities();
+          fetchActivities(true);
         }
     }
   }, [lastMessage, fetchActivities]);
 
   useEffect(() => {
-    fetchActivities();
+    fetchActivities(false);
     
     // Poll for new activities every 30 seconds as backup
-    const interval = setInterval(fetchActivities, 30000);
+    const interval = setInterval(() => fetchActivities(true), 30000);
 
     return () => {
       clearInterval(interval);

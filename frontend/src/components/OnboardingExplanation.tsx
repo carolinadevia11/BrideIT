@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 import { User, Smartphone, ArrowRight } from 'lucide-react';
 
 interface OnboardingExplanationProps {
@@ -17,13 +17,11 @@ const OnboardingExplanation: React.FC<OnboardingExplanationProps> = ({ onStartJo
         {/* Left Side: Bridgette */}
         <div className="flex-1 flex flex-col items-center text-center">
             <div className="mb-6 relative">
-                 <AnimatedBridgette
-                    size="xl"
-                    expression="waving"
-                    animation="bounce"
+                 <BridgetteAvatar
+                    size="lg"
+                    expression="encouraging"
                     showSpeechBubble={true}
                     message="I'll help you create your Bridge account in just 2 quick steps!"
-                    position="center"
                  />
             </div>
         </div>

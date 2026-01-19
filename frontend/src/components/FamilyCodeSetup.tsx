@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import AnimatedBridgette from './AnimatedBridgette';
+import BridgetteAvatar from './BridgetteAvatar';
 import { familyAPI, childrenAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Child } from '@/types/family';
@@ -232,16 +232,14 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Bridgette Side */}
             <div className="text-center lg:text-left order-first lg:order-last">
-              <AnimatedBridgette
-                size="xl"
-                expression={generatedCode ? "celebrating" : "encouraging"}
-                animation={generatedCode ? "celebrate" : "float"}
+              <BridgetteAvatar
+                size="lg"
+                expression="encouraging"
                 showSpeechBubble={true}
-                message={generatedCode 
+                message={generatedCode
                   ? "Your family profile is ready! Share this code with your co-parent so they can join. It's the key to connecting your accounts! 🗝️✨"
                   : "Almost there! I just need to generate a unique code for your family. This keeps your data secure and helps your co-parent connect easily! 🛡️"
                 }
-                position="center"
               />
             </div>
 
@@ -381,13 +379,11 @@ const FamilyCodeSetup: React.FC<FamilyCodeSetupProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Bridgette Side */}
           <div className="text-center lg:text-left order-first lg:order-last">
-            <AnimatedBridgette
-              size="xl"
+            <BridgetteAvatar
+              size="lg"
               expression="encouraging"
-              animation="float"
               showSpeechBubble={true}
               message="Welcome! Enter the 6-digit code your co-parent shared with you. This will securely link your accounts so you can manage everything together! 🤝"
-              position="center"
             />
           </div>
 
