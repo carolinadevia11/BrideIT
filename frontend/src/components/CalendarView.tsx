@@ -1202,30 +1202,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     parent?: string;
     isSwappable?: boolean;
   }) => {
-    try {
-      await calendarAPI.createEvent({
-        date: eventData.date.toISOString(),
-        type: eventData.type,
-        title: eventData.title,
-        parent: eventData.parent,
-        isSwappable: eventData.isSwappable,
-      });
-
-      toast({
-        title: "Success!",
-        description: "Event created successfully.",
-      });
-
-      // Reload events
-      await loadEvents();
-    } catch (error) {
-      console.error('Error creating event:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create event.",
-        variant: "destructive",
-      });
-    }
+    // This helper now only performs the API call and throws on error
+    // It does not handle UI state or refreshing, allowing the caller to optimize timing
+    await calendarAPI.createEvent({
+      date: eventData.date.toISOString(),
+      type: eventData.type,
+      title: eventData.title,
+      parent: eventData.parent,
+      isSwappable: eventData.isSwappable,
+    });
   };
 
   const handleCreateEventSubmit = async (
@@ -1349,14 +1334,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           parent: newEventParent,
           isSwappable: newEventSwappable,
         });
+        
+        // Close UI immediately after success
+        setShowCreateEvent(false);
+        setEditingEvent(null);
+        setIsEditingMode(false);
+        
         toast({
           title: "Success!",
           description: "Event updated successfully.",
         });
-        await loadEvents();
-        setShowCreateEvent(false);
-        setEditingEvent(null);
-        setIsEditingMode(false);
+        
+        // Refresh in background
+        loadEvents();
       } else {
         // Create new event
         await createNewEvent({
@@ -1366,7 +1356,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           parent: newEventParent,
           isSwappable: newEventSwappable,
         });
+        
+        // Close UI immediately after success
         setShowCreateEvent(false);
+        
+        toast({
+          title: "Success!",
+          description: "Event created successfully.",
+        });
+        
+        // Refresh in background
+        loadEvents();
       }
     } catch (error) {
       console.error('Error saving event:', error);
@@ -1584,18 +1584,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     setIsMaterializing(true);
     try {
       await calendarAPI.createChangeRequest(payload);
-      toast({
-        title: "Change request submitted",
-        description: "We'll notify your co-parent to review this request.",
-      });
       
-      await Promise.all([loadEvents(), loadChangeRequests()]);
-
+      // Close UI immediately
       setShowChangeRequest(false);
       setSelectedEvent(null);
       setChangeReason('');
       setSwapDate(null);
       setNewDate(null);
+
+      toast({
+        title: "Change request submitted",
+        description: "We'll notify your co-parent to review this request.",
+      });
+      
+      // Refresh in background
+      Promise.all([loadEvents(), loadChangeRequests()]);
     } catch (error) {
       console.error('Error submitting change request:', error);
       toast({
@@ -1658,6 +1661,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     try {
       await calendarAPI.updateChangeRequest(requestId, response);
 
+      // Refresh in background immediately
+      const refreshPromise = Promise.all([loadEvents(), loadChangeRequests()]);
+
       if (response === 'approved') {
         const approvedRequest: ChangeRequest = {
           ...existingRequest,
@@ -1671,6 +1677,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         const email = generateApprovalEmail(approvedRequest);
         setGeneratedEmail(email);
         setEmailHistory(prev => [email, ...prev]);
+        
+        // Show next steps immediately
         setShowEmailPreview(true);
         toast({
           title: "Request approved",
@@ -1680,14 +1688,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         setDeclinedRequest(existingRequest);
         const alternatives = generateBridgetteAlternatives(existingRequest);
         setBridgetteAlternatives(alternatives);
+        
+        // Show next steps immediately
         setShowBridgetteAlternatives(true);
         toast({
           title: "Request rejected",
           description: "Consider sharing an alternative solution.",
         });
       }
-
-      await Promise.all([loadEvents(), loadChangeRequests()]);
+      
+      // Let the refresh happen in the background without blocking the UI
+      // This ensures the dialog closes immediately
     } catch (error) {
       console.error('Error updating change request:', error);
       toast({
@@ -1695,6 +1706,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         description: error instanceof Error ? error.message : "Failed to update change request.",
         variant: "destructive",
       });
+      // Re-throw error so the caller knows it failed and doesn't close the dialog
+      throw error;
     } finally {
       setProcessingRequestId(null);
     }
@@ -2623,14 +2636,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   setIsDeletingEvent(true);
                   try {
                     await calendarAPI.deleteEvent(eventToDelete.id);
+                    
+                    // Close UI immediately
+                    setShowEventDetails(false);
+                    setDeleteConfirmationOpen(false);
+                    setEventToDelete(null);
+                    
                     toast({
                       title: "Event deleted",
                       description: "The event has been removed from the calendar.",
                     });
-                    await loadEvents();
-                    setShowEventDetails(false);
-                    setDeleteConfirmationOpen(false);
-                    setEventToDelete(null);
+                    
+                    // Refresh in background
+                    loadEvents();
                   } catch (error) {
                     console.error("Error deleting event:", error);
                     toast({

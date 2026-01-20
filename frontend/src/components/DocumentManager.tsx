@@ -325,18 +325,19 @@ const DocumentManager: React.FC = () => {
         bg_color: selectedColorData.bg,
       });
 
-      toast({
-        title: "Success",
-        description: "Custom folder created successfully",
-      });
-
+      // Close UI immediately
       setShowCreateFolder(false);
       setNewFolderName('');
       setNewFolderDescription('');
       setSelectedIcon('Folder');
       setSelectedColor('blue');
+
+      toast({
+        title: "Success",
+        description: "Custom folder created successfully",
+      });
       
-      // Refresh folders
+      // Refresh in background
       fetchFolders();
     } catch (error: any) {
       console.error('Error creating folder:', error);
@@ -417,17 +418,18 @@ const DocumentManager: React.FC = () => {
         file_name: uploadFile.name,
       });
 
+      // Close UI immediately
+      setShowUpload(false);
+      setUploadFile(null);
+      setUploadDescription('');
+      setUploadFolder('');
+      
       toast({
         title: "Success",
         description: "Document uploaded successfully",
       });
 
-      setShowUpload(false);
-      setUploadFile(null);
-      setUploadDescription('');
-      setUploadFolder('');
-
-      // Refresh documents
+      // Refresh in background
       if (currentFolder) {
         fetchDocuments(currentFolder);
       } else {

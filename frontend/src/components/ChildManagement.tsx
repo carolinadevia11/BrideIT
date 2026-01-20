@@ -82,8 +82,17 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
           title: "Success!",
           description: "Child information updated successfully.",
         });
+        
+        // Close UI immediately
+        setShowAddDialog(false);
+        resetForm();
       } else {
         // Add new child
+        // For new children, we still await the ID from the server to ensure consistency
+        // but we can make it feel snappier by closing the dialog once we have the basics,
+        // or just by optimizing the flow.
+        // Since we need the ID for subsequent edits/deletes, we'll keep the await here
+        // but ensure the UI update is efficient.
         const response = await childrenAPI.addChild({
           name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
           dateOfBirth: birthDate.toISOString().split('T')[0],
@@ -114,10 +123,11 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
           title: "Success!",
           description: "Child added successfully.",
         });
+        
+        // Close UI immediately
+        setShowAddDialog(false);
+        resetForm();
       }
-
-      setShowAddDialog(false);
-      resetForm();
     } catch (error) {
       console.error('Error saving child:', error);
       toast({
@@ -138,6 +148,10 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
 
   const handleDelete = async (childId: string) => {
     try {
+      // Optimistically remove from UI first if we wanted,
+      // but here we just ensure the toast and update happens after
+      // For delete, waiting for confirmation is safer to avoid "ghost" children reappearing if it fails
+      // However, we can update the parent state immediately if we trust the API
       await childrenAPI.deleteChild(childId);
       onRemoveChild(childId);
       toast({

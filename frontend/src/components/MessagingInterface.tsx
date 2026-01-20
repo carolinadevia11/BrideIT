@@ -85,6 +85,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
   
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   
   // Pagination State
   const [page, setPage] = useState(1);
@@ -402,6 +403,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
     if (!newConversationSubject.trim()) return;
 
     try {
+      setIsCreatingConversation(true);
       const newConv = await messagingAPI.createConversation({
         subject: newConversationSubject,
         category: newConversationCategory,
@@ -425,6 +427,8 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
         description,
         variant: "destructive",
       });
+    } finally {
+      setIsCreatingConversation(false);
     }
   };
 
@@ -533,10 +537,11 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
                       </Select>
                     </div>
                     <div className="flex space-x-2">
-                      <Button onClick={createNewConversation} className="flex-1">
+                      <Button onClick={createNewConversation} className="flex-1" disabled={isCreatingConversation}>
+                        {isCreatingConversation && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                         Start Conversation
                       </Button>
-                      <Button variant="outline" onClick={() => setShowNewConversation(false)}>
+                      <Button variant="outline" onClick={() => setShowNewConversation(false)} disabled={isCreatingConversation}>
                         Cancel
                       </Button>
                     </div>

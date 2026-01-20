@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
 from typing import List
 from datetime import datetime, date
 from bson import ObjectId
@@ -135,7 +136,8 @@ async def create_expense(
         # Save receipt if provided
         gridfs_id = None
         if expense_data.receipt_content and expense_data.receipt_file_name:
-            gridfs_id = save_receipt(
+            gridfs_id = await run_in_threadpool(
+                save_receipt,
                 expense_data.receipt_content,
                 expense_data.receipt_file_name,
                 expense_id
@@ -347,7 +349,7 @@ async def delete_expense(
         gridfs_id = expense.get("gridfs_id")
         if gridfs_id:
             try:
-                fs.delete(ObjectId(gridfs_id))
+                await run_in_threadpool(fs.delete, ObjectId(gridfs_id))
             except Exception as e:
                 print(f"Warning: Could not delete receipt from GridFS {gridfs_id}: {e}")
 

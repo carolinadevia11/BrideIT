@@ -191,11 +191,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
         children_ids: [], // TODO: Add child selection
       });
 
-      toast({
-        title: "Success",
-        description: "Expense added successfully",
-      });
-
+      // Close UI immediately
       setShowAddExpense(false);
       setNewExpense({
         description: '',
@@ -204,6 +200,13 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
         date: new Date().toISOString().split('T')[0],
         receiptFile: null,
       });
+      
+      toast({
+        title: "Success",
+        description: "Expense added successfully",
+      });
+
+      // Refresh in background
       fetchExpenses();
     } catch (error) {
       console.error('Error creating expense:', error);
@@ -248,13 +251,17 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ familyProfile }) => {
         status: 'disputed',
         dispute_reason: disputeReason,
       });
+      // Close UI immediately
+      setShowDisputeDialog(false);
+      setDisputeReason('');
+      setSelectedExpense(null);
+      
       toast({
         title: "Expense Disputed",
         description: "The other parent has been notified",
       });
-      setShowDisputeDialog(false);
-      setDisputeReason('');
-      setSelectedExpense(null);
+      
+      // Refresh in background
       fetchExpenses();
     } catch (error) {
       console.error('Error disputing expense:', error);

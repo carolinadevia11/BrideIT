@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from starlette.concurrency import run_in_threadpool
 from typing import List
 import uuid
 import random
@@ -482,7 +483,7 @@ async def parse_and_update_contract(
         )
         
         # Clean up auto-generated events (we no longer generate 365 days of events)
-        generate_custody_events(family_id, agreement_dict)
+        await run_in_threadpool(generate_custody_events, family_id, agreement_dict)
         
     except Exception as e:
         print(f"Error in background parsing: {e}")
@@ -546,7 +547,8 @@ async def upload_contract(
         recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
         user_name = f"{current_user.firstName} {current_user.lastName}"
         
-        await email_service.send_contract_notification(
+        background_tasks.add_task(
+            email_service.send_contract_notification,
             recipients,
             "upload",
             user_name
@@ -803,7 +805,7 @@ async def save_manual_custody(
         
         async def update_events_background(family_id, agreement_data, family_oid):
             try:
-                generate_custody_events(family_id, agreement_data)
+                await run_in_threadpool(generate_custody_events, family_id, agreement_data)
                 # Update status to completed
                 db.families.update_one(
                     {"_id": family_oid},
@@ -834,7 +836,8 @@ async def save_manual_custody(
         recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
         user_name = f"{current_user.firstName} {current_user.lastName}"
         
-        await email_service.send_contract_notification(
+        background_tasks.add_task(
+            email_service.send_contract_notification,
             recipients,
             "upload",
             user_name
@@ -852,7 +855,10 @@ async def save_manual_custody(
         )
 
 @router.delete("/api/v1/family/contract")
-async def delete_contract(current_user: User = Depends(get_current_user)):
+async def delete_contract(
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """Delete custody agreement and associated events."""
     # Find the user's family
     user_family = db.families.find_one({"$or": [{"parent1_email": current_user.email}, {"parent2_email": current_user.email}]})
@@ -882,7 +888,8 @@ async def delete_contract(current_user: User = Depends(get_current_user)):
         recipients = [user_family.get("parent1_email"), user_family.get("parent2_email")]
         user_name = f"{current_user.firstName} {current_user.lastName}"
         
-        await email_service.send_contract_notification(
+        background_tasks.add_task(
+            email_service.send_contract_notification,
             recipients,
             "delete",
             user_name

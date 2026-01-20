@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, Header
+from fastapi import APIRouter, Depends, HTTPException, Body, Header, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from passlib.context import CryptContext
@@ -76,6 +76,7 @@ async def create_user(user_data: User):
 @router.post("/api/v1/auth/forgot-password")
 async def forgot_password(
     reset_request: PasswordResetRequest,
+    background_tasks: BackgroundTasks,
     origin: Union[str, None] = Header(default=None)
 ):
     user = db.users.find_one({"email": reset_request.email})
@@ -109,7 +110,7 @@ async def forgot_password(
     reset_link = f"{frontend_url}/reset-password?token={reset_token}"
     
     # Send email
-    await email_service.send_password_reset_email(user["email"], reset_link)
+    background_tasks.add_task(email_service.send_password_reset_email, user["email"], reset_link)
     
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 

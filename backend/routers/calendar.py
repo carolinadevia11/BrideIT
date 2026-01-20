@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, BackgroundTasks
 from typing import List, Optional
 import uuid
 from datetime import datetime
@@ -208,6 +208,7 @@ async def get_calendar_events(
 @router.post("/events", response_model=Event)
 async def create_calendar_event(
     event_data: EventCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     """Create a new calendar event."""
@@ -278,7 +279,8 @@ async def create_calendar_event(
             detail=f"A custody event already exists on this date. Please use a Swap or Change Request to modify the schedule."
         )
 
-    await email_service.send_event_notification(
+    background_tasks.add_task(
+        email_service.send_event_notification,
         recipients,
         "create",
         event_data.title,
@@ -294,6 +296,7 @@ async def create_calendar_event(
 async def update_calendar_event(
     event_id: str,
     event_data: EventCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     """Update an existing calendar event. Only the creator can edit directly."""
@@ -362,7 +365,8 @@ async def update_calendar_event(
             detail=f"A custody event already exists on this date. Please use a Swap or Change Request to modify the schedule."
         )
 
-    await email_service.send_event_notification(
+    background_tasks.add_task(
+        email_service.send_event_notification,
         recipients,
         "update",
         event_data.title,
@@ -377,6 +381,7 @@ async def update_calendar_event(
 @router.delete("/events/{event_id}", status_code=204)
 async def delete_calendar_event(
     event_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     """Delete a calendar event."""
@@ -410,7 +415,8 @@ async def delete_calendar_event(
     recipients = [family.get("parent1_email"), family.get("parent2_email")]
     user_name = f"{current_user.firstName} {current_user.lastName}"
 
-    await email_service.send_event_notification(
+    background_tasks.add_task(
+        email_service.send_event_notification,
         recipients,
         "delete",
         event_doc.get("title"),
@@ -455,6 +461,7 @@ async def get_change_requests(current_user: User = Depends(get_current_user)):
 @router.post("/change-requests", response_model=ChangeRequest)
 async def create_change_request(
     request_data: ChangeRequestCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     """Submit a change request for a calendar event."""
@@ -547,7 +554,8 @@ async def create_change_request(
     recipient_email = family.get("parent1_email") if family.get("parent2_email") == requester_email else family.get("parent2_email")
     requester_name = f"{current_user.firstName} {current_user.lastName}"
 
-    await email_service.send_swap_request_created(
+    background_tasks.add_task(
+        email_service.send_swap_request_created,
         requester_email,
         recipient_email,
         requester_name,
@@ -562,6 +570,7 @@ async def create_change_request(
 async def update_change_request(
     request_id: str,
     update_data: ChangeRequestUpdate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     """Approve or reject a change request."""
@@ -620,7 +629,8 @@ async def update_change_request(
     elif request_type == "modify":
         details["new_date"] = str(change_request_doc.get("newDate"))
 
-    await email_service.send_swap_resolution_notification(
+    background_tasks.add_task(
+        email_service.send_swap_resolution_notification,
         recipients,
         change_request_doc.get("eventTitle"),
         update_data.status,

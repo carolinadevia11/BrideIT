@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Query, Header, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
 from typing import List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId
@@ -524,7 +525,8 @@ async def upload_document(
         file_size = len(base64.b64decode(document_data.file_content))
         
         # Save file
-        gridfs_id = save_document_file(
+        gridfs_id = await run_in_threadpool(
+            save_document_file,
             document_data.file_content,
             document_data.file_name,
             document_id
@@ -610,7 +612,8 @@ async def upload_document(
         recipients = [family.get("parent1_email"), family.get("parent2_email")]
         user_name = f"{current_user.firstName} {current_user.lastName}"
         
-        await email_service.send_document_notification(
+        background_tasks.add_task(
+            email_service.send_document_notification,
             recipients,
             "upload",
             document_data.name,
@@ -646,6 +649,7 @@ async def upload_document(
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user)
 ):
     """Delete a document"""
@@ -685,7 +689,7 @@ async def delete_document(
         gridfs_id = document.get("gridfs_id")
         if gridfs_id:
             try:
-                fs.delete(ObjectId(gridfs_id))
+                await run_in_threadpool(fs.delete, ObjectId(gridfs_id))
             except Exception as e:
                 print(f"Warning: Could not delete file from GridFS {gridfs_id}: {e}")
         
@@ -701,7 +705,8 @@ async def delete_document(
         recipients = [family.get("parent1_email"), family.get("parent2_email")]
         user_name = f"{current_user.firstName} {current_user.lastName}"
         
-        await email_service.send_document_notification(
+        background_tasks.add_task(
+            email_service.send_document_notification,
             recipients,
             "delete",
             document.get("name"),
@@ -825,7 +830,7 @@ async def create_custody_events(
 
         if parsed_data and parsed_data.get("custodySchedule"):
             family_id = str(family["_id"])
-            generate_custody_events(family_id, parsed_data)
+            await run_in_threadpool(generate_custody_events, family_id, parsed_data)
         else:
             print("No custody schedule found in document")
 
