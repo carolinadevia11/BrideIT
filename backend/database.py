@@ -93,6 +93,23 @@ class InMemoryCollection:
                         if actual == expected:
                             matched_operator = False
                             break
+                    elif op == "$gte":
+                        if isinstance(actual, datetime) and isinstance(op_val, datetime):
+                           if not (actual >= op_val):
+                               matched_operator = False
+                               break
+                        # Handle basic comparisons if not datetime (fallback)
+                        elif actual is None or actual < self._normalize(op_val):
+                            matched_operator = False
+                            break
+                    elif op == "$lte":
+                        if isinstance(actual, datetime) and isinstance(op_val, datetime):
+                           if not (actual <= op_val):
+                               matched_operator = False
+                               break
+                        elif actual is None or actual > self._normalize(op_val):
+                            matched_operator = False
+                            break
                     # Add other operators as needed
                 if not matched_operator:
                     return False

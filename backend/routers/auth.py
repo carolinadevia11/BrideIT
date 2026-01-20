@@ -79,11 +79,17 @@ async def forgot_password(
     background_tasks: BackgroundTasks,
     origin: Union[str, None] = Header(default=None)
 ):
-    user = db.users.find_one({"email": reset_request.email})
+    print(f"[DEBUG] Password reset requested for: {reset_request.email}")
+    # Ensure email is lowercase for matching
+    email = reset_request.email.lower()
+    
+    user = db.users.find_one({"email": email})
     if not user:
+        print(f"[DEBUG] User not found for email: {email}")
         # Don't reveal if user exists
         return {"message": "If an account with that email exists, a password reset link has been sent."}
     
+    print(f"[DEBUG] User found: {user.get('email')}. generating reset token.")
     # Generate reset token
     expires_delta = timedelta(hours=1)
     reset_token = create_access_token(

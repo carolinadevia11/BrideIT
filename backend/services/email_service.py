@@ -12,6 +12,8 @@ class EmailService:
         mail_username = os.getenv("MAIL_USERNAME")
         mail_password = os.getenv("MAIL_PASSWORD")
         
+        print(f"[DEBUG] Email Service Init - Username present: {bool(mail_username)}, Password present: {bool(mail_password)}")
+
         if not mail_username or not mail_password:
             print("WARNING: Email credentials not set. Emails will be suppressed/simulated.")
             self.suppress_emails = True
@@ -300,6 +302,7 @@ class EmailService:
 
     async def send_password_reset_email(self, email: str, reset_link: str):
         """Sends a password reset email."""
+        print(f"[DEBUG] Attempting to send password reset email to {email}")
         if self.suppress_emails:
             print(f"Email suppressed (Password Reset): {email}")
             print(f"Reset Link: {reset_link}")
@@ -321,7 +324,10 @@ class EmailService:
                 subtype=MessageType.html
             )
             await self.fastmail.send_message(message)
+            print(f"[DEBUG] Password reset email sent successfully to {email}")
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            print(f"[ERROR] Failed to send email to {email}: {e}")
+            import traceback
+            traceback.print_exc()
 
 email_service = EmailService()

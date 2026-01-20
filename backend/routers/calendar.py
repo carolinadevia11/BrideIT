@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, BackgroundTasks
 from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 
 from models import (
@@ -173,34 +173,49 @@ async def get_calendar_events(
     if not family:
         return []
         
-    events_cursor = db.events.find({"family_id": {"$in": family_ids}})
+    # OPTIMIZATION: Use date filtering in MongoDB query instead of python loop
+    # This significantly reduces the number of documents processed in python
+    
+    # Calculate start and end dates for the query window
+    # We need a buffer for timezone overlaps (previous month end, next month start)
+    
+    # Logic for query window:
+    # Start: 25th of previous month
+    # End: 7th of next month
+    
+    if month == 1:
+        prev_month_year = year - 1
+        prev_month = 12
+    else:
+        prev_month_year = year
+        prev_month = month - 1
+        
+    if month == 12:
+        next_month_year = year + 1
+        next_month = 1
+    else:
+        next_month_year = year
+        next_month = month + 1
+        
+    # Ensure dates are timezone-aware (UTC) to match database format
+    start_date = datetime(prev_month_year, prev_month, 25, tzinfo=timezone.utc)
+    # For end date, we can safely go to the 10th of next month to be safe
+    end_date = datetime(next_month_year, next_month, 10, tzinfo=timezone.utc)
+    
+    # OPTIMIZATION: Use date filtering in MongoDB query instead of fetching all history
+    events_cursor = db.events.find({
+        "family_id": {"$in": family_ids},
+        "date": {
+            "$gte": start_date,
+            "$lte": end_date
+        }
+    })
+    
     events: List[Event] = []
-
-    # Get events for requested month, plus some buffer for timezone overlaps
-    # A generous window (e.g., +/- 2 days) ensures we catch events that might
-    # fall into the current month depending on the user's timezone.
+    
     for event_doc in events_cursor:
         event_obj = _serialize_event_document(event_doc)
-        
-        # Simple inclusion check: if the event falls in the requested month/year
-        # OR if it's very close to the start/end of the month (buffer for timezone)
-        event_year = event_obj.date.year
-        event_month = event_obj.date.month
-        
-        if event_year == year and event_month == month:
-            events.append(event_obj)
-        else:
-            # Check edge cases (e.g. Nov 30th UTC might be Dec 1st locally, or vice versa)
-            # We'll send adjacent events so frontend can filter
-            is_prev_month = (month == 1 and event_month == 12 and event_year == year - 1) or \
-                            (event_month == month - 1 and event_year == year)
-            is_next_month = (month == 12 and event_month == 1 and event_year == year + 1) or \
-                            (event_month == month + 1 and event_year == year)
-            
-            if is_prev_month and event_obj.date.day >= 25:
-                events.append(event_obj)
-            elif is_next_month and event_obj.date.day <= 7:
-                events.append(event_obj)
+        events.append(event_obj)
 
     return events
 
