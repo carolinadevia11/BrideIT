@@ -36,14 +36,13 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Removed loading state to prevent flickering - showing stale or empty data is preferred over spinners
+  // const [loading, setLoading] = useState(true);
   const { lastMessage } = useWebSocket();
 
-  const fetchActivities = useCallback(async (isBackground = false) => {
+  const fetchActivities = useCallback(async (isSilent = true) => {
     try {
-      if (!isBackground) {
-        setLoading(true);
-      }
+      // if (!isSilent) setLoading(true); // Don't set loading state
       const data = await activityAPI.getRecentActivity();
       // If no family exists (404), data will be null - just show empty state
       const newData = data || [];
@@ -70,28 +69,28 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
         console.error('Error fetching activities:', error);
         // Only show toast if this was a user-initiated (foreground) load
         // to avoid spamming user with toasts during background polling
-        if (!isBackground) {
-            toast({
-              title: "Error",
-              description: "Failed to refresh activity",
-              variant: "destructive",
-            });
+        if (!isSilent) {
+             // Suppress error toasts for background updates to avoid annoying the user
+             // unless it's critical, but generally let it fail silently and retry later
         }
         // IMPORTANT: We do NOT clear setActivities([]) here for other errors
         // This keeps the stale data visible if the network hiccups
       }
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (lastMessage) {
         const data = lastMessage;
+        // Check for specific refresh types
         if (data.type === 'refresh_activities' ||
             data.type === 'new_message' ||
             data.type === 'refresh_calendar' ||
-            data.type === 'refresh_expenses') {
+            data.type === 'refresh_expenses' ||
+            // Also catch CRUD actions that should trigger updates
+            (data.type === 'calendar_event' && (data.action === 'create' || data.action === 'update' || data.action === 'delete'))) {
           // console.log('Received refresh event:', data.type);
           fetchActivities(true);
         }
@@ -99,14 +98,16 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   }, [lastMessage, fetchActivities]);
 
   useEffect(() => {
-    fetchActivities(false);
+    // Initial fetch - silent
+    fetchActivities(true);
     
-    // Poll for new activities every 30 seconds as backup
-    const interval = setInterval(() => fetchActivities(true), 30000);
+    // Removed polling to rely on WebSocket triggers as requested
+    // If redundancy is needed, we can re-enable a slower poll (e.g. 5 mins)
+    // const interval = setInterval(() => fetchActivities(true), 30000);
 
-    return () => {
-      clearInterval(interval);
-    };
+    // return () => {
+    //   clearInterval(interval);
+    // };
   }, [fetchActivities]);
 
   const handleActivityClick = (activity: Activity) => {
@@ -226,33 +227,8 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <Card className="border-2 border-bridge-blue">
-        <CardHeader className="p-4 sm:p-6 flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center text-bridge-black text-base sm:text-lg">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bridge-blue" />
-            Recent Activity
-          </CardTitle>
-          {activities.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDismissAll}
-              className="text-xs text-gray-500 hover:text-bridge-red hover:bg-red-50 h-8"
-            >
-              Clear All
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="flex items-center justify-center py-6 sm:py-8">
-            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-bridge-blue"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Loading state removed - if loading, we just show nothing or old data
+  // Only render if we have activities
 
   if (activities.length === 0) {
     return null;

@@ -72,6 +72,14 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         dismissed = db.dismissed_activities.find({"user_email": current_user.email})
         dismissed_ids = set(d["activity_id"] for d in dismissed)
         
+        # Robust: use ALL valid family IDs (UUID and ObjectId) to match calendar behavior
+        family_ids = []
+        if family.get("id"):
+            family_ids.append(family.get("id"))
+        if family.get("_id"):
+            family_ids.append(str(family.get("_id")))
+        
+        # Default family_id for queries that expect a single ID (less strict ones)
         family_id = str(family["_id"])
         
         # Get parent names for display
@@ -107,7 +115,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         # 1a. Get Resolved Change Requests (Approved/Rejected/Cancelled)
         # This handles Swaps, Modifications, and Cancellations that went through the request flow
         resolved_requests = list(db.change_requests.find({
-            "family_id": family_id,
+            "family_id": {"$in": family_ids},
             "status": {"$in": ["approved", "rejected"]},
             "updatedAt": {"$gte": seven_days_ago}
         }).sort("updatedAt", -1))
@@ -153,7 +161,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
 
         # 1b. Get Pending Change Requests (Incoming)
         pending_requests = list(db.change_requests.find({
-            "family_id": family_id,
+            "family_id": {"$in": family_ids},
             "status": "pending",
             "requestedBy_email": {"$ne": current_user.email}
         }).sort("createdAt", -1))
@@ -175,7 +183,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
 
         # 1c. Get Recent Calendar Events (Direct Adds/Updates)
         # Fetch ALL events first to robustly filter in code
-        recent_events_cursor = db.events.find({"family_id": family_id})
+        recent_events_cursor = db.events.find({"family_id": {"$in": family_ids}})
         recent_events = []
         
         for event in recent_events_cursor:
@@ -238,7 +246,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         
         # 2. Get message activities (Text messages - summary per conversation)
         recent_conversations = list(db.conversations.find({
-            "family_id": family_id,
+            "family_id": {"$in": family_ids},
             "last_message_at": {"$gte": seven_days_ago}
         }).sort("last_message_at", -1))
         
@@ -274,7 +282,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         
         # 3. Get Call Activities (Missed calls only)
         # We need to find all conversations for this family first to get IDs
-        all_family_convs = list(db.conversations.find({"family_id": family_id}, {"_id": 1}))
+        all_family_convs = list(db.conversations.find({"family_id": {"$in": family_ids}}, {"_id": 1}))
         all_conv_ids = [str(c["_id"]) for c in all_family_convs]
         
         recent_calls = list(db.messages.find({
@@ -308,7 +316,7 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         # 4. Get expense activities
         # Get all expenses (pending, approved, disputed) sorted by most recent
         # Fetch all for family and filter in python to handle mixed date types safely
-        all_expenses_cursor = list(db.expenses.find({"family_id": family_id}))
+        all_expenses_cursor = list(db.expenses.find({"family_id": {"$in": family_ids}}))
         all_expenses = []
         
         for exp in all_expenses_cursor:
