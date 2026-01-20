@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, Edit3, ArrowRightLeft, Clock, CheckCircle, XCircle, AlertTriangle, Calendar as CalendarIcon, User, Mail, FileText, Lightbulb, SkipForward, ThumbsUp, MessageCircle, DollarSign, Trash2, Loader2 } from 'lucide-react';
 import { calendarAPI, expensesAPI, documentsAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -149,6 +150,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { lastMessage } = useWebSocket();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showChangeRequest, setShowChangeRequest] = useState(false);
   const [showPendingRequests, setShowPendingRequests] = useState(false);
@@ -477,16 +479,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     loadChangeRequests();
   }, [familyProfile]);
 
-  // Auto-refresh data every 5 seconds to ensure real-time sync
+  // Listen for WebSocket updates instead of polling
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      loadEvents(true);
-      loadChangeRequests(true);
-    }, 5000);
-
-    return () => clearInterval(intervalId);
+    if (lastMessage) {
+      const data = lastMessage;
+      if (
+        data.type === 'refresh_calendar' ||
+        data.type === 'calendar_event' ||
+        data.type === 'change_request_update'
+      ) {
+        loadEvents(true);
+        loadChangeRequests(true);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMonth]);
+  }, [lastMessage, currentMonth]);
 
   const loadEvents = async (background = false) => {
     if (!background) setIsLoadingEvents(true);

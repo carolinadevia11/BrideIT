@@ -230,11 +230,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
     fetchCurrentUser();
     fetchConversations();
     
-    // Polling only for conversation list updates (less frequent)
-    conversationPollingRef.current = window.setInterval(() => {
-      fetchConversations({ silent: true });
-    }, 3000); // Increased to 3s to reduce load further
-
+    // Polling removed in favor of WebSocket events
     return () => {
       if (conversationPollingRef.current) {
         window.clearInterval(conversationPollingRef.current);

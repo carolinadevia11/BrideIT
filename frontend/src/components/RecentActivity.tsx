@@ -110,7 +110,11 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     // };
   }, [fetchActivities]);
 
-  const handleActivityClick = (activity: Activity) => {
+  const handleActivityClick = async (activity: Activity) => {
+    // Dismiss the activity first
+    await handleDismiss({ stopPropagation: () => {} } as React.MouseEvent, activity.id);
+
+    // Then navigate
     switch (activity.type) {
       case 'expense_pending':
       case 'expense_approved':

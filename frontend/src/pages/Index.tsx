@@ -686,15 +686,6 @@ const Index: React.FC<IndexProps> = ({ onLogout, startOnboarding = false, startI
     };
 
     loadDashboardMetrics();
-
-    // Set up polling for dashboard metrics (every 30 seconds) as backup
-    const intervalId = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadDashboardMetrics();
-      }
-    }, 30000);
-
-    return () => clearInterval(intervalId);
   }, [familyProfile, currentUser, toast, lastUpdateTimestamp]);
 
   // Removed problematic bidirectional sync useEffect

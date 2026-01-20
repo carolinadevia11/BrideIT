@@ -114,10 +114,12 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
 
         # 1a. Get Resolved Change Requests (Approved/Rejected/Cancelled)
         # This handles Swaps, Modifications, and Cancellations that went through the request flow
+        # ONLY show to the requester (notification that their request was resolved)
         resolved_requests = list(db.change_requests.find({
             "family_id": {"$in": family_ids},
             "status": {"$in": ["approved", "rejected"]},
-            "updatedAt": {"$gte": seven_days_ago}
+            "updatedAt": {"$gte": seven_days_ago},
+            "requestedBy_email": current_user.email
         }).sort("updatedAt", -1))
         
         # Track IDs of events that have resolved requests to avoid duplicates in generic "Updated" events
@@ -146,8 +148,10 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
                 title = f"Request Rejected: {event_title}"
                 desc = f"{req_type.capitalize()} request was declined"
 
+            # Smart ID: Include timestamp to ensure new updates to the same request reappear even if previously dismissed
+            timestamp_suffix = req_updated_at.timestamp()
             calendar_activities.append({
-                "id": f"req_resolved_{req.get('id') or str(req.get('_id'))}",
+                "id": f"req_resolved_{req.get('id') or str(req.get('_id'))}_{timestamp_suffix}",
                 "type": "calendar_confirmed" if status == "approved" else "change_request",
                 "title": title,
                 "description": desc,
@@ -171,8 +175,9 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
             event_title = req.get("eventTitle") or "calendar event"
             request_type = req.get("requestType", "modify")
             
+            timestamp_suffix = req_created_at.timestamp()
             calendar_activities.append({
-                "id": f"change_request_{req.get('id') or str(req.get('_id'))}",
+                "id": f"change_request_{req.get('id') or str(req.get('_id'))}_{timestamp_suffix}",
                 "type": "change_request",
                 "title": f"PENDING: {partner_name} requested {request_type} for {event_title}",
                 "description": f"Reason: {req.get('reason', 'None provided')}",
@@ -187,6 +192,10 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         recent_events = []
         
         for event in recent_events_cursor:
+            # Skip events created by current user (don't notify me about things I did)
+            if event.get("createdBy_email") == current_user.email:
+                continue
+
             created_at = parse_date_safe(event.get("createdAt"))
             updated_at = parse_date_safe(event.get("updatedAt"))
             
@@ -220,8 +229,10 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
                 else:
                     description = "Family event"
                 
+                # Smart ID: Include created_at to unique identify this specific "add" event
+                timestamp_suffix = (event_created_at or datetime.utcnow()).timestamp()
                 calendar_activities.append({
-                    "id": f"calendar_add_{event_id}",
+                    "id": f"calendar_add_{event_id}_{timestamp_suffix}",
                     "type": "calendar_update",
                     "title": f"Event Added: {event_title}",
                     "description": description,
@@ -231,8 +242,10 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
                 })
             elif is_recently_updated:
                 # Recently updated event (direct edit, not via request flow)
+                # Smart ID: Include updated_at so NEW updates reappear even if previous update was dismissed
+                timestamp_suffix = (event_updated_at or datetime.utcnow()).timestamp()
                 calendar_activities.append({
-                    "id": f"calendar_update_{event_id}",
+                    "id": f"calendar_update_{event_id}_{timestamp_suffix}",
                     "type": "calendar_update",
                     "title": f"Event Updated: {event_title}",
                     "description": "Details modified",
@@ -263,6 +276,11 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
             if messages:
                 last_message = messages[0]
                 sender_email = last_message.get("sender_email", "")
+                
+                # Only show if I am NOT the sender (incoming message)
+                if sender_email == current_user.email:
+                    continue
+
                 # sender_name = current_user_name if sender_email == current_user.email else partner_name
                 
                 message_content = last_message.get("content", "")
@@ -293,6 +311,11 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
         
         for call in recent_calls:
             sender_email = call.get("sender_email", "")
+            
+            # Only show if I am NOT the sender/rejector
+            if sender_email == current_user.email:
+                continue
+
             sender_name = current_user_name if sender_email == current_user.email else partner_name
             
             # Since we filter for call_missed only
@@ -367,8 +390,10 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
             
             if exp["status"] == "pending" and exp.get("paid_by_email") != current_user.email:
                 # Pending expense from partner
+                # Smart ID: Include updated_at so if details change, it reappears
+                ts = (exp_updated_at or exp_created_at or datetime.utcnow()).timestamp()
                 expense_activities.append({
-                    "id": f"expense_{exp.get('id') or str(exp.get('_id', ''))}",
+                    "id": f"expense_{exp.get('id') or str(exp.get('_id', ''))}_{ts}",
                     "type": "expense_pending",
                     "title": f"PENDING: {exp['description']} expense needs approval (${exp['amount']:.2f})",
                     "description": f"{exp['description']} - ${exp['amount']:.2f}",
@@ -379,14 +404,20 @@ async def get_recent_activity(current_user: User = Depends(get_current_user)):
                     "actionRequired": True,
                 })
             elif exp["status"] == "approved":
+                # Only show "Approved" notification to the person who submitted the expense
+                # (The person who clicked "Approve" doesn't need a notification)
+                if exp.get("paid_by_email") != current_user.email:
+                    continue
+
                 # For approved items, we stick to the 7-day window to avoid clutter
                 if not (exp_updated_at and exp_updated_at >= seven_days_ago):
                     continue
                 # Recently approved expense
                 paid_by_email = exp.get("paid_by_email", "")
                 paid_by_name = current_user_name if paid_by_email == current_user.email else partner_name
+                ts = (exp_updated_at or exp_created_at or datetime.utcnow()).timestamp()
                 expense_activities.append({
-                    "id": f"expense_{exp.get('id') or str(exp.get('_id', ''))}",
+                    "id": f"expense_{exp.get('id') or str(exp.get('_id', ''))}_{ts}",
                     "type": "expense_approved",
                     "title": f"Expense approved: {exp['description']} (${exp['amount']:.2f})",
                     "description": f"Paid by {paid_by_name}",
