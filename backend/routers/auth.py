@@ -76,7 +76,7 @@ async def create_user(user_data: User):
 @router.post("/api/v1/auth/forgot-password")
 async def forgot_password(
     reset_request: PasswordResetRequest,
-    background_tasks: BackgroundTasks,
+    # background_tasks: BackgroundTasks, # Removing background tasks for debugging
     origin: Union[str, None] = Header(default=None)
 ):
     print(f"[DEBUG] Password reset requested for: {reset_request.email}")
@@ -115,8 +115,17 @@ async def forgot_password(
         
     reset_link = f"{frontend_url}/reset-password?token={reset_token}"
     
-    # Send email
-    background_tasks.add_task(email_service.send_password_reset_email, user["email"], reset_link)
+    # Send email (Awaiting directly for debugging)
+    print(f"[DEBUG] Awaiting email sending directly...")
+    try:
+        await email_service.send_password_reset_email(user["email"], reset_link)
+        print(f"[DEBUG] Email await completed.")
+    except Exception as e:
+        print(f"[ERROR] Email await failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # background_tasks.add_task(email_service.send_password_reset_email, user["email"], reset_link)
     
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
