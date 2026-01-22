@@ -403,6 +403,33 @@ export const calendarAPI = {
   getChangeRequests: async () => {
     return fetchWithAuth('/api/v1/calendar/change-requests');
   },
+
+  // AI Features
+  analyzeConflict: async (date: string) => {
+    try {
+      const response = await fetchWithAuth('/api/v1/calendar/ai/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ date }),
+      });
+      return response;
+    } catch (error) {
+      console.error('Error analyzing conflict:', error);
+      return null;
+    }
+  },
+
+  suggestAlternatives: async (requestId?: string, changeRequest?: any) => {
+    try {
+      const response = await fetchWithAuth('/api/v1/calendar/ai/suggest', {
+        method: 'POST',
+        body: JSON.stringify({ request_id: requestId, change_request: changeRequest }),
+      });
+      return response.alternatives;
+    } catch (error) {
+      console.error('Error suggesting alternatives:', error);
+      return [];
+    }
+  },
 };
 
 // Messaging API

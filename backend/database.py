@@ -183,6 +183,15 @@ class InMemoryCollection:
             return SimpleNamespace(deleted_count=1)
         return SimpleNamespace(deleted_count=0)
 
+    def aggregate(self, pipeline: List[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+        # Extremely basic aggregation support for $match and $project
+        result = self.data
+        for stage in pipeline:
+            if "$match" in stage:
+                result = [doc for doc in result if self._matches(doc, stage["$match"])]
+            # Add more stages as needed
+        return result
+
 
 class InMemoryDB:
     def __init__(self):

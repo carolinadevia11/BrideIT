@@ -107,6 +107,8 @@ export const formatCurrency = (value?: number) => {
   }).format(value);
 };
 
+// IMPORTANT: This is now a fallback if the AI service fails.
+// The primary source of alternatives is now the AI backend.
 export const generateBridgetteAlternatives = (request: ChangeRequest, currentMonth: Date): BridgetteAlternative[] => {
     const alternatives: BridgetteAlternative[] = [];
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

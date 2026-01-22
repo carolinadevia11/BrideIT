@@ -9,7 +9,6 @@ backend/venv/
 venv/
 
 # Environment files
-.env
 backend/.env
 frontend/.env
 frontend/.env.*
@@ -17,3 +16,5 @@ frontend/.env.*
 # Misc
 .DS_Store
 
+config.bat
+node_modules

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, BackgroundTasks
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
 from models import (
@@ -15,6 +15,7 @@ from models import (
 from routers.auth import get_current_user
 from database import db
 from services.email_service import email_service
+from services.calendar_assistant import CalendarAssistant
 from websocket import manager
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
@@ -579,6 +580,132 @@ async def create_change_request(
     )
 
     return _serialize_change_request_document(change_request_doc)
+
+
+# AI Assistant Endpoints
+
+@router.post("/ai/analyze", response_model=dict)
+async def analyze_calendar_conflict(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Analyze a potential calendar change for conflicts and fairness.
+    Payload: { "date": "YYYY-MM-DD" }
+    """
+    try:
+        family, family_ids = _get_family_for_user(current_user)
+        
+        target_date_str = payload.get("date")
+        if not target_date_str:
+            raise HTTPException(status_code=400, detail="Date is required")
+            
+        target_date = _ensure_datetime(target_date_str)
+        
+        # Fetch relevant events (surrounding month)
+        start_date = target_date.replace(day=1)
+        # Simple end date calc
+        if start_date.month == 12:
+            end_date = start_date.replace(year=start_date.year + 1, month=1)
+        else:
+            end_date = start_date.replace(month=start_date.month + 1)
+            
+        events_cursor = db.events.find({
+            "family_id": {"$in": family_ids},
+            "date": {"$gte": start_date, "$lt": end_date}
+        })
+        
+        events = []
+        for doc in events_cursor:
+            # Serialize for AI service (needs simple dicts with date objects)
+            events.append({
+                "title": doc.get("title"),
+                "type": doc.get("type"),
+                "parent": doc.get("parent"),
+                "date": doc.get("date")
+            })
+            
+        # Determine user role
+        user_role = _get_user_role(family, current_user.email)
+        
+        assistant = CalendarAssistant()
+        analysis = await assistant.analyze_conflict(events, target_date, user_role)
+        
+        return analysis
+        
+    except Exception as e:
+        print(f"[ERROR] Analyze conflict: {e}")
+        # Fallback response
+        return {
+            "conflict_level": "unknown",
+            "message": "Unable to analyze at this time.",
+            "recommendation": "caution"
+        }
+
+
+@router.post("/ai/suggest", response_model=dict)
+async def suggest_calendar_alternatives(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Suggest alternatives for a schedule change.
+    Payload: { "request_id": "...", "context": {...} }
+    """
+    try:
+        family, family_ids = _get_family_for_user(current_user)
+        
+        request_id = payload.get("request_id")
+        change_request = None
+        
+        if request_id:
+            change_request_doc = _find_change_request_for_family(request_id, family_ids)
+            # Convert to dict for service
+            change_request = {
+                "requestType": change_request_doc.get("requestType"),
+                "eventDate": change_request_doc.get("eventDate"),
+                "reason": change_request_doc.get("reason"),
+                "requestedBy_email": change_request_doc.get("requestedBy_email")
+            }
+        else:
+            # Maybe passing raw params if not persisted yet
+            change_request = payload.get("change_request")
+            
+        if not change_request:
+             raise HTTPException(status_code=400, detail="Change request details required")
+
+        # Fetch recent events for context
+        now = datetime.utcnow()
+        start_date = now - timedelta(days=30)
+        end_date = now + timedelta(days=60)
+        
+        events_cursor = db.events.find({
+            "family_id": {"$in": family_ids},
+            "date": {"$gte": start_date, "$lt": end_date}
+        })
+        
+        events = []
+        for doc in events_cursor:
+            events.append({
+                "title": doc.get("title"),
+                "type": doc.get("type"),
+                "parent": doc.get("parent"),
+                "date": doc.get("date")
+            })
+            
+        calendar_context = {
+            "custody_schedule": family.get("custodyArrangement", "Unknown"),
+        }
+        
+        assistant = CalendarAssistant()
+        alternatives = await assistant.suggest_alternatives(events, change_request, calendar_context)
+        
+        return {"alternatives": alternatives}
+        
+    except Exception as e:
+        print(f"[ERROR] Suggest alternatives: {e}")
+        # Fallback
+        return {"alternatives": []}
 
 
 @router.put("/change-requests/{request_id}", response_model=ChangeRequest)

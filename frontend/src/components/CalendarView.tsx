@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
+  Lightbulb,
 } from 'lucide-react';
 import { calendarAPI, familyAPI } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -112,6 +113,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [isMaterializing, setIsMaterializing] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<{ message: string; recommendation: string } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
@@ -259,6 +262,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const [emailHistory, setEmailHistory] = useState<EmailNotification[]>([]);
+
+  // AI Analysis Effect
+  useEffect(() => {
+    if (showChangeRequest && ((changeType === 'swap' && swapDate) || (changeType === 'modify' && newDate))) {
+        const dateToAnalyze = changeType === 'swap' ? swapDate : newDate;
+        if (dateToAnalyze) {
+            setIsAnalyzing(true);
+            const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dateToAnalyze);
+            const dateStr = formatDateInputValue(dateObj);
+            
+            calendarAPI.analyzeConflict(dateStr)
+                .then(analysis => {
+                    setAiAnalysis(analysis);
+                })
+                .catch(err => console.error(err))
+                .finally(() => setIsAnalyzing(false));
+        }
+    } else {
+        setAiAnalysis(null);
+    }
+  }, [showChangeRequest, changeType, swapDate, newDate, currentMonth]);
 
   // Load events immediately
   useEffect(() => {
@@ -601,6 +625,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const day = parsedDate.getDate();
     const isSameMonth = parsedDate.getMonth() === currentMonth.getMonth() &&
                         parsedDate.getFullYear() === currentMonth.getFullYear();
+
+    // AI Conflict Analysis
+    if (newEventType === 'custody' || newEventType === 'holiday') {
+      try {
+        const dateStr = formatDateInputValue(parsedDate);
+        // Don't await strictly if we want UI to be snappy, but here we want to warn before submission logic completes
+        // We'll show a quick toast to indicate checking
+        const analysis = await calendarAPI.analyzeConflict(dateStr);
+        
+        if (analysis && analysis.recommendation === 'avoid') {
+           toast({
+             title: "Conflict Detected",
+             description: analysis.message || "This date has a high potential for conflict.",
+             variant: "destructive"
+           });
+           // We rely on the user to heed the warning for now
+        } else if (analysis && analysis.recommendation === 'caution') {
+           toast({
+             title: "Schedule Caution",
+             description: analysis.message || "Please check existing commitments on this date.",
+           });
+        }
+      } catch (e) {
+        console.error("AI analysis failed", e);
+      }
+    }
     
     if (isSameMonth) {
       const dayEvents = getEventsForDay(day);
@@ -771,18 +821,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         consequences.push(`${originalEvent.title} moves from ${originalEvent.date} to ${swapEvent.date}`);
         consequences.push(`${swapEvent.title} moves from ${swapEvent.date} to ${originalEvent.date}`);
         
-        const isSchoolWeek = (date: number) => {
-          const dayOfWeek = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), date).getDay();
-          return dayOfWeek >= 1 && dayOfWeek <= 5;
-        };
-        
-        if (isSchoolWeek(swapWithDate) && originalEvent.type === 'custody') {
-          consequences.push('⚠️ This change affects school week custody - pickup/dropoff responsibilities will change');
-        }
-        
-        if (Math.abs(swapWithDate - originalEvent.date) > 7) {
-          consequences.push('⚠️ This is a significant schedule change - consider impact on Emma\'s routine');
-        }
+        // Hardcoded school week and routine impact warnings removed per user request.
+        // Insights should be driven by AI analysis.
 
         const eventsOnSwapDate = events.filter(e =>
           e.date === swapWithDate &&
@@ -827,14 +867,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       }
     } else if (type === 'cancel') {
       consequences.push(`${originalEvent.title} on ${originalEvent.date} will be cancelled`);
-      consequences.push('⚠️ This may affect the overall custody balance for the month');
+      // Hardcoded warning removed.
     }
 
     return consequences;
   };
 
   const submitChangeRequest = async () => {
-    if (!selectedEvent || !changeReason.trim()) return;
+    if (!selectedEvent) return;
+    
+    if (!changeReason.trim()) {
+      toast({
+        title: "Reason required",
+        description: "Please share a reason for this change so your co-parent understands.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const payload: {
       event_id?: string;
@@ -881,6 +930,20 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         });
         return;
       }
+
+      // AI Conflict Check for Swap
+      try {
+          const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), swapDate);
+          const dateStr = formatDateInputValue(dateObj);
+          const analysis = await calendarAPI.analyzeConflict(dateStr);
+          if (analysis && analysis.recommendation === 'avoid') {
+             toast({
+                 title: "Swap Conflict Detected",
+                 description: analysis.message,
+                 variant: "destructive"
+             });
+          }
+      } catch (e) { console.error(e); }
       
       const existingSwapEvent = events.find(e => e.date === swapDate && e.type === 'custody');
       
@@ -890,6 +953,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), swapDate);
         payload.swapDate = dateObj.toISOString();
       }
+    } else if (changeType === 'modify') {
+       // AI Conflict Check for Modify
+       if (newDate) {
+         try {
+            const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), newDate);
+            const dateStr = formatDateInputValue(dateObj);
+            const analysis = await calendarAPI.analyzeConflict(dateStr);
+            if (analysis && analysis.recommendation === 'avoid') {
+               toast({
+                   title: "Move Conflict Detected",
+                   description: analysis.message,
+                   variant: "destructive"
+               });
+            }
+         } catch (e) { console.error(e); }
+       }
     }
 
     setIsMaterializing(true);
@@ -981,10 +1060,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         approvedRequest.consequences = getDynamicConsequences(approvedRequest, true);
         
         const email = generateApprovalEmail(
-          approvedRequest, 
-          currentMonth, 
-          familyProfile, 
-          currentUser, 
+          approvedRequest,
+          currentMonth,
+          familyProfile,
+          currentUser,
           selectedTimeZone
         );
         setGeneratedEmail(email);
@@ -997,7 +1076,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         });
       } else {
         setDeclinedRequest(existingRequest);
-        const alternatives = generateBridgetteAlternatives(existingRequest, currentMonth);
+        
+        // Try AI generation first, fallback to local logic
+        let alternatives: BridgetteAlternative[] = [];
+        try {
+          const aiAlternatives = await calendarAPI.suggestAlternatives(requestId);
+          if (aiAlternatives && aiAlternatives.length > 0) {
+             alternatives = aiAlternatives.map((alt: any, index: number) => ({
+                id: `ai-${index}`,
+                type: alt.type || 'different-date',
+                title: alt.title,
+                description: alt.description,
+                impact: alt.impact || 'medium',
+                suggestion: alt.rationale || "This suggestion is based on AI analysis of your calendar availability and fairness balance.",
+                actionText: "Propose This",
+                originalRequestId: requestId
+             }));
+          }
+        } catch (err) {
+          console.error("AI alternatives failed, using fallback", err);
+        }
+
+        // If AI returns nothing, use fallback
+        if (alternatives.length === 0) {
+           alternatives = generateBridgetteAlternatives(existingRequest, currentMonth);
+        }
+
         setBridgetteAlternatives(alternatives);
         
         setShowBridgetteAlternatives(true);
@@ -1736,7 +1840,33 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                     <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
                     <h3 className="font-medium text-yellow-800">Consequences of This Change</h3>
                   </div>
-                  <ul className="space-y-1 text-sm text-yellow-700">
+                  {/* AI Suggestion Section if creating new request */}
+                  {((changeType === 'swap' && swapDate) || (changeType === 'modify' && newDate)) && (
+                     <div className="mt-4 pt-3 border-t border-yellow-200">
+                        <div className="flex items-center gap-2 mb-2">
+                           <Lightbulb className="w-4 h-4 text-yellow-600" />
+                           <span className="text-sm font-medium text-yellow-800">Bridgette's Insight</span>
+                        </div>
+                        {isAnalyzing ? (
+                           <div className="flex items-center gap-2 text-xs text-yellow-700 italic">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Checking schedule for conflicts and alternatives...
+                           </div>
+                        ) : aiAnalysis ? (
+                           <div className="space-y-2">
+                             <p className="text-xs text-yellow-700 italic">
+                                "{aiAnalysis.message}"
+                             </p>
+                           </div>
+                        ) : (
+                           <p className="text-xs text-yellow-700 italic">
+                              "I'll check this date against your co-parent's schedule and suggest the best way to frame this request!"
+                           </p>
+                        )}
+                     </div>
+                  )}
+
+                  <ul className="space-y-1 text-sm text-yellow-700 mt-2">
                     {calculateConsequences().map((consequence, index) => (
                       <li key={index} className="flex items-start">
                         <span className="mr-2">•</span>
@@ -1756,16 +1886,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="flex space-x-3">
                 <Button
                   onClick={submitChangeRequest}
-                  disabled={isMaterializing || !changeReason.trim() ||
+                  disabled={isMaterializing || isAnalyzing ||
                     (changeType === 'swap' && !swapDate) ||
                     (changeType === 'modify' && !newDate)}
                   className="flex-1"
                 >
                   {isMaterializing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Send Request to Co-Parent
+                  {isAnalyzing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isAnalyzing ? "Checking Calendar..." : "Send Request to Co-Parent"}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setShowChangeRequest(false)}
                 >
                   Cancel
