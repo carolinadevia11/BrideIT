@@ -122,11 +122,19 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'minimal',
         suggestion: 'This keeps the custody balance almost identical and reduces disruption to the routine.',
         actionText: 'Suggest Partial Swap',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+          requestType: 'swap',
+          date: request.originalDate, // Simplified: defaulting to trying a swap on the same day if applicable, or logic can be refined
+          message: 'Suggesting a partial swap instead of the full weekend.'
+        }
       });
 
       // Alternative 2: Different weekend entirely
-      const alternativeDate = request.originalDate + 7; // Next weekend
+      // Ensure we don't suggest a date outside the month (simplified check)
+      let alternativeDate = request.originalDate + 7;
+      if (alternativeDate > 28) alternativeDate = Math.max(1, request.originalDate - 7);
+      
       alternatives.push({
         id: '2',
         type: 'different-date',
@@ -135,7 +143,12 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'low',
         suggestion: 'This option keeps all existing arrangements intact while still helping with the schedule challenge.',
         actionText: 'Suggest Alternative Date',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+          requestType: 'swap',
+          date: alternativeDate,
+          message: `Suggesting ${currentMonthName} ${alternativeDate}th as an alternative.`
+        }
       });
 
       // Alternative 3: Makeup time
@@ -147,7 +160,11 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'low',
         suggestion: 'This approach preserves weekend plans while ensuring fair custody time distribution.',
         actionText: 'Suggest Makeup Time',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+          requestType: 'modify', // "Modify" the schedule to add a day? Or swap? Using modify to pick a date.
+          message: 'Proposing makeup time to maintain balance.'
+        }
       });
     } else if (request.type === 'modify') {
       // Alternative 1: Split the appointment
@@ -159,11 +176,16 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'minimal',
         suggestion: 'Joint attendance at medical appointments demonstrates unified parenting and is often appreciated by healthcare providers.',
         actionText: 'Suggest Joint Attendance',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+           message: 'I suggest we both attend this appointment together.'
+        }
       });
 
       // Alternative 2: Different day that works for both
-      const betterDate = request.originalDate - 1; // Day before
+      let betterDate = request.originalDate - 1;
+      if (betterDate < 1) betterDate = request.originalDate + 1;
+
       alternatives.push({
         id: '5',
         type: 'different-date',
@@ -172,7 +194,12 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'minimal',
         suggestion: 'This timing works better with your custody schedule and avoids holiday conflicts.',
         actionText: 'Suggest Better Date',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+          requestType: 'modify',
+          date: betterDate,
+          message: `How about moving this to ${currentMonthName} ${betterDate}th?`
+        }
       });
 
       // Alternative 3: Communication help
@@ -184,7 +211,10 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'minimal',
         suggestion: 'Clear, respectful communication often resolves scheduling conflicts without changing custody arrangements.',
         actionText: 'Get Communication Help',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+           message: 'I would like to discuss this further to find a solution.'
+        }
       });
     } else if (request.type === 'cancel') {
       // Alternative 1: Reschedule instead of cancel
@@ -196,7 +226,11 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'low',
         suggestion: 'Rescheduling maintains the custody balance and ensures Emma doesn\'t miss important activities.',
         actionText: 'Help Reschedule',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+          requestType: 'modify',
+          message: 'Let\'s reschedule this instead of canceling.'
+        }
       });
 
       // Alternative 2: Makeup time
@@ -208,7 +242,11 @@ export const generateBridgetteAlternatives = (request: ChangeRequest, currentMon
         impact: 'low',
         suggestion: 'Makeup time preserves the legal custody arrangement and shows good faith co-parenting.',
         actionText: 'Calculate Makeup Time',
-        originalRequestId: request.id
+        originalRequestId: request.id,
+        data: {
+           requestType: 'swap',
+           message: 'I propose we schedule makeup time.'
+        }
       });
     }
 

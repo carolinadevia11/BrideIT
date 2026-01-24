@@ -238,7 +238,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       requestedByEmail: apiRequest.requestedBy_email,
       originalDate: originalEvent.date,
       newDate: newDateObj?.getDate(),
+      newDateFull: newDateObj,
       swapWithDate: swapEvent?.date,
+      swapWithDateFull: swapEvent?.fullDate,
       swapEventId: apiRequest.swapEventId,
       reason: apiRequest.reason || '',
       status: apiRequest.status || 'pending',
@@ -386,10 +388,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const getPendingRequestsForDay = (day: number) => {
-    return changeRequests.filter(req => 
-      req.status === 'pending' && 
-      (req.originalDate === day || req.newDate === day || req.swapWithDate === day)
-    );
+    const isSameMonth = (date: Date) =>
+      date.getMonth() === currentMonth.getMonth() &&
+      date.getFullYear() === currentMonth.getFullYear();
+
+    return changeRequests.filter(req => {
+      if (req.status !== 'pending') return false;
+
+      const matchesOriginal = isSameMonth(req.originalEvent.fullDate) && req.originalEvent.date === day;
+      const matchesNew = req.newDateFull && isSameMonth(req.newDateFull) && req.newDateFull.getDate() === day;
+      const matchesSwap = req.swapWithDateFull && isSameMonth(req.swapWithDateFull) && req.swapWithDateFull.getDate() === day;
+
+      return matchesOriginal || matchesNew || matchesSwap;
+    });
   };
 
   useEffect(() => {
@@ -1020,8 +1031,52 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleAlternativeAction = (alternative: BridgetteAlternative) => {
-    console.log('Implementing alternative:', alternative);
     setShowBridgetteAlternatives(false);
+
+    // Handle communication-based alternatives
+    if (alternative.type === 'communication-help' || alternative.type === 'split-event') {
+      if (onNavigateToMessages) {
+        toast({
+          title: "Opening Messages",
+          description: "You can discuss this suggestion with your co-parent.",
+        });
+        onNavigateToMessages();
+      } else {
+        toast({
+          title: "Suggestion",
+          description: alternative.suggestion,
+        });
+      }
+      return;
+    }
+
+    // Handle schedule-change alternatives (counter-offers)
+    if (declinedRequest && alternative.data) {
+      // Set the event context to the original event from the declined request
+      setSelectedEvent(declinedRequest.originalEvent);
+
+      // Configure the change request dialog based on the alternative's data
+      if (alternative.data.requestType) {
+        setChangeType(alternative.data.requestType);
+      }
+
+      if (alternative.data.date) {
+        if (alternative.data.requestType === 'swap') {
+          setSwapDate(alternative.data.date);
+          setNewDate(null);
+        } else {
+          setNewDate(alternative.data.date);
+          setSwapDate(null);
+        }
+      }
+
+      if (alternative.data.message) {
+        setChangeReason(alternative.data.message);
+      }
+
+      // Open the dialog for the user to review and submit
+      setShowChangeRequest(true);
+    }
   };
 
   const confirmDeleteEvent = async () => {

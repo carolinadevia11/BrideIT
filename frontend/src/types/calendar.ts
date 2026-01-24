@@ -35,7 +35,9 @@ export interface ChangeRequest {
   requestedByEmail: string;
   originalDate: number;
   newDate?: number;
+  newDateFull?: Date;
   swapWithDate?: number;
+  swapWithDateFull?: Date;
   swapEventId?: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -56,6 +58,11 @@ export interface BridgetteAlternative {
   suggestion: string;
   actionText: string;
   originalRequestId: string;
+  data?: {
+    date?: number;
+    requestType?: 'swap' | 'modify' | 'cancel';
+    message?: string;
+  };
 }
 
 export interface EmailNotification {
