@@ -959,7 +959,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleRequestResponse = async (requestId: string, response: 'approved' | 'rejected') => {
-    setProcessingRequestId(requestId);
+    setProcessingRequestId(`${requestId}:${response}`);
     const existingRequest = changeRequests.find(r => r.id === requestId);
     if (!existingRequest) {
       setProcessingRequestId(null);
@@ -1710,8 +1710,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       );
                     })}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Red dates have existing events (conflicts possible)
+                  <div className="flex gap-4 mt-2 text-xs text-gray-500 justify-center">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-red-100 border border-red-200"></span>
+                      <span>Occupied (At least one event)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-gray-100 border border-gray-200"></span>
+                      <span>Empty</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 text-center">
+                    You can select any date. Conflicts will be reviewed by your co-parent.
                   </p>
                 </div>
               )}

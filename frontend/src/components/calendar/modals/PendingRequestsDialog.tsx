@@ -89,6 +89,10 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
               const canApproveReject =
                 !isCurrentUserRequester && !!currentUserEmail;
 
+              const isProcessingThis = processingRequestId?.startsWith(`${request.id}:`) ?? false;
+              const isProcessingApprove = processingRequestId === `${request.id}:approved`;
+              const isProcessingReject = processingRequestId === `${request.id}:rejected`;
+
               return (
                 <Card key={request.id} className="border-orange-200">
                   <CardHeader className="pb-3">
@@ -153,10 +157,10 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
                       <div className="flex space-x-3">
                         <Button
                           onClick={() => onApprove(request.id)}
-                          disabled={processingRequestId === request.id}
+                          disabled={isProcessingThis}
                           className="flex-1 bg-green-600 hover:bg-green-700"
                         >
-                          {processingRequestId === request.id ? (
+                          {isProcessingApprove ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           ) : (
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -166,10 +170,10 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
                         <Button
                           variant="outline"
                           onClick={() => onReject(request.id)}
-                          disabled={processingRequestId === request.id}
+                          disabled={isProcessingThis}
                           className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
                         >
-                          {processingRequestId === request.id ? (
+                          {isProcessingReject ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           ) : (
                             <XCircle className="w-4 h-4 mr-2" />
@@ -189,11 +193,11 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
                         </div>
                         <Button
                           variant="outline"
-                          disabled={processingRequestId === request.id}
+                          disabled={isProcessingThis}
                           onClick={() => onReject(request.id)}
                           className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
                         >
-                          {processingRequestId === request.id ? (
+                          {isProcessingReject ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           ) : (
                             <XCircle className="w-4 h-4 mr-2" />

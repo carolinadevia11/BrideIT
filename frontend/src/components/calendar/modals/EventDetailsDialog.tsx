@@ -176,6 +176,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                   Pending Change Requests ({pendingRequestsForEvent.length})
                 </h4>
                 {pendingRequestsForEvent.map((request) => {
+                  const isProcessingThis = processingRequestId?.startsWith(`${request.id}:`) ?? false;
+                  const isProcessingApprove = processingRequestId === `${request.id}:approved`;
+                  const isProcessingReject = processingRequestId === `${request.id}:rejected`;
+
                   // Check if current user is the requester
                   // Only the non-requester can approve/reject change requests
                   const currentUserEmail = currentUser?.email
@@ -243,11 +247,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              disabled={processingRequestId === request.id}
+                              disabled={isProcessingThis}
                               onClick={() => onApproveRequest(request.id)}
                               className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                             >
-                              {processingRequestId === request.id ? (
+                              {isProcessingApprove ? (
                                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               ) : (
                                 <CheckCircle className="w-3 h-3 mr-1" />
@@ -257,11 +261,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={processingRequestId === request.id}
+                              disabled={isProcessingThis}
                               onClick={() => onRejectRequest(request.id)}
                               className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
                             >
-                              {processingRequestId === request.id ? (
+                              {isProcessingReject ? (
                                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               ) : (
                                 <XCircle className="w-3 h-3 mr-1" />
@@ -285,11 +289,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={processingRequestId === request.id}
+                              disabled={isProcessingThis}
                               onClick={() => onRejectRequest(request.id)}
                               className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
                             >
-                              {processingRequestId === request.id ? (
+                              {isProcessingReject ? (
                                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               ) : (
                                 <XCircle className="w-3 h-3 mr-1" />

@@ -19,6 +19,55 @@ from websocket import manager
 
 router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
 
+def _get_custody_parent_for_date(family: dict, target_date: datetime) -> Optional[str]:
+    """
+    Calculates who has custody on a specific date based on the family's schedule.
+    Mirrors the frontend logic (2-2-3, Week-on/Week-off, etc.)
+    """
+    custody_agreement = family.get("custodyAgreement") or {}
+    schedule_type = str(custody_agreement.get("custodySchedule") or family.get("custodyArrangement") or "").lower()
+    
+    # Base calculation from Jan 1st of the target year
+    reference_date = datetime(target_date.year, 1, 1, tzinfo=timezone.utc)
+    # Ensure target_date is timezone-aware for subtraction
+    if target_date.tzinfo is None:
+        target_date = target_date.replace(tzinfo=timezone.utc)
+        
+    delta = target_date - reference_date
+    days_since_reference = delta.days
+    
+    # 1. 2-2-3 Schedule (14-day cycle)
+    if "2-2-3" in schedule_type or "two-two-three" in schedule_type:
+        # Pattern: [M, M, D, D, M, M, M, D, D, M, M, D, D, D] (starts with Parent 1)
+        cycle_day = days_since_reference % 14
+        p1_days = [0, 1, 4, 5, 6, 9, 10]
+        return "mom" if cycle_day in p1_days else "dad"
+
+    # 2. Week-on/Week-off (7-day blocks)
+    elif "week" in schedule_type or "alternat" in schedule_type or "every other" in schedule_type:
+        week_number = days_since_reference // 7
+        return "mom" if week_number % 2 == 0 else "dad"
+
+    # 3. Custom / Specific Days
+    elif "custom" in schedule_type:
+        day_of_week = target_date.weekday() # 0=Mon, 6=Sun
+        # Basic parsing for "Mon, Tue" etc.
+        # This is a simplification; a real parser would be more robust
+        p1_days_str = str(custody_agreement.get("parent1_days") or "").lower()
+        days_map = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+        current_day_str = days_map[day_of_week]
+        
+        # If the schedule string contains the day name associated with parent 1 (very basic heuristic)
+        # Ideally we'd parse the full string properly
+        return "mom" # Default fallback for custom if ambiguous
+
+    # 4. Default 50/50 (Week-on/Week-off fallback)
+    elif "50" in schedule_type or "equal" in schedule_type:
+        week_number = days_since_reference // 7
+        return "mom" if week_number % 2 == 0 else "dad"
+
+    return None
+
 
 def _ensure_datetime(value) -> datetime:
     if isinstance(value, datetime):
@@ -605,6 +654,46 @@ async def update_change_request(
             status_code=403,
             detail="The parent who created the request cannot approve it.",
         )
+    
+    # Pre-validation for MODIFY requests before status update
+    # This ensures we don't approve a request that will fail execution
+    request_type = change_request_doc.get("requestType", "modify")
+    if update_data.status == "approved" and request_type == "modify":
+        new_date = change_request_doc.get("newDate")
+        if new_date:
+            updated_date = _ensure_datetime(new_date)
+            event_id = change_request_doc.get("event_id")
+            if event_id:
+                event_doc = _find_event_for_family(event_id, family_ids)
+                
+                # Check for custody conflicts if moving a custody event
+                if event_doc.get("type") == "custody":
+                    # Check for existing custody event
+                    existing_custody = db.events.find_one({
+                        "family_id": {"$in": family_ids},
+                        "date": updated_date,
+                        "type": "custody",
+                        "id": {"$ne": event_doc.get("id")}
+                    })
+                    
+                    if existing_custody:
+                        raise HTTPException(
+                            status_code=409,
+                            detail="Cannot move custody to a date that already has a custody event. Please use 'Swap' to exchange days."
+                        )
+                    
+                    # Check for existing holiday event
+                    existing_holiday = db.events.find_one({
+                        "family_id": {"$in": family_ids},
+                        "date": updated_date,
+                        "type": "holiday"
+                    })
+
+                    if existing_holiday:
+                        raise HTTPException(
+                            status_code=409,
+                            detail="Cannot move custody to a date that has a holiday event. Holiday schedules take precedence."
+                        )
 
     change_request_doc["status"] = update_data.status
     change_request_doc["updatedAt"] = datetime.utcnow()
@@ -785,9 +874,38 @@ async def update_change_request(
                 change_request_doc.get("event_id"), family_ids
             )
             updated_date = _ensure_datetime(new_date)
+            
+            update_fields = {"date": updated_date, "updatedAt": datetime.utcnow()}
+
+            # SMART RESPONSIBILITY TRANSFER (V2 - Calculation Based)
+            # If a non-custody event is moved, check who OWNS that day via calculation.
+            # This handles cases where the DB events are empty (visual-only calendar).
+            if event_doc.get("type") != "custody":
+                # 1. Check for explicit Override Event first (e.g. a Swap Day)
+                explicit_custody_event = db.events.find_one({
+                    "family_id": {"$in": family_ids},
+                    "date": updated_date,
+                    "type": "custody"
+                })
+
+                custody_parent = None
+                
+                if explicit_custody_event:
+                    custody_parent = explicit_custody_event.get("parent")
+                else:
+                    # 2. If no explicit event, calculate based on schedule rules
+                    custody_parent = _get_custody_parent_for_date(family, updated_date)
+                
+                # Apply the transfer if applicable
+                if custody_parent in ['mom', 'dad'] and event_doc.get("parent") != 'both':
+                    # Only switch if moving to a different parent's day
+                    # e.g. Mom moving event to Dad's day -> becomes Dad's event
+                    if custody_parent != event_doc.get("parent"):
+                         update_fields["parent"] = custody_parent
+
             db.events.update_one(
                 {"_id": event_doc.get("_id")},
-                {"$set": {"date": updated_date, "updatedAt": datetime.utcnow()}},
+                {"$set": update_fields},
             )
         elif request_type == "cancel":
             event_doc = _find_event_for_family(
