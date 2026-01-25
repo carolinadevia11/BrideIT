@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -71,7 +71,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { lastMessage } = useWebSocket();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Use a simple object state for year/month to avoid Date object mutation/rollover issues
+  const [viewState, setViewState] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  // Derive the Date object from stable state
+  // We use 12:00 PM to ensure we're safely in the middle of the day for any timezone/DST logic
+  // This Date object is primarily for API calls and passing to children
+  const currentMonth = useMemo(() => {
+    return new Date(viewState.year, viewState.month, 1, 12, 0, 0, 0);
+  }, [viewState.year, viewState.month]);
   const [showChangeRequest, setShowChangeRequest] = useState(false);
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -303,7 +314,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   }, [lastMessage, currentMonth]);
 
   const loadEvents = async (background = false) => {
-    if (!background) setIsLoadingEvents(true);
+    if (!background) {
+        setIsLoadingEvents(true);
+        // Clear events only when explicitly navigating (not background refresh)
+        // This prevents showing stale events from the previous month while loading
+        setEvents([]);
+    }
     try {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
@@ -342,7 +358,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const loadChangeRequests = async (background = false) => {
-    if (!background) setIsLoadingRequests(true);
+    if (!background) {
+        setIsLoadingRequests(true);
+        setChangeRequests([]); // Clear requests on navigation to avoid stale data
+    }
     try {
       const response = await calendarAPI.getChangeRequests();
       const mapped: ChangeRequest[] = response.map((req: any) =>
@@ -366,10 +385,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const pendingRequestsCount = changeRequests.filter(r => r.status === 'pending').length;
 
   const getDaysInMonth = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    // Calculate strictly from viewState to avoid any Date object ambiguity
+    const { year, month } = viewState;
+    
+    // Use noon to avoid DST/timezone midnight anomalies
+    const firstDay = new Date(year, month, 1, 12, 0, 0, 0);
+    const lastDay = new Date(year, month + 1, 0, 12, 0, 0, 0);
+    
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
@@ -512,13 +534,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = new Date(currentMonth);
-    if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1);
-    } else {
-      newMonth.setMonth(newMonth.getMonth() + 1);
-    }
-    setCurrentMonth(newMonth);
+    setViewState(prev => {
+      // Create a date object for the 1st of the current view month
+      // Use noon to avoid timezone issues
+      const current = new Date(prev.year, prev.month, 1, 12, 0, 0, 0);
+      
+      // Use setMonth to navigate - let JS handle the year rollover automatically
+      current.setMonth(current.getMonth() + (direction === 'prev' ? -1 : 1));
+      
+      return { year: current.getFullYear(), month: current.getMonth() };
+    });
   };
 
   const openCreateEventModal = (dateOverride?: Date) => {
@@ -1166,7 +1191,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              {monthNames[viewState.month]} {viewState.year}
             </h2>
             <p className="text-gray-500">Shared Family Calendar</p>
             <p className="mt-2 text-xs text-gray-500 flex items-center gap-2">
@@ -1248,10 +1273,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-2 auto-rows-fr">
+        <div key={currentMonth.toISOString()} className="grid grid-cols-7 gap-1 sm:gap-2 auto-rows-fr">
           {getDaysInMonth().map((day, index) => {
             if (day === null) {
-              return <div key={index} className="min-h-[80px] sm:min-h-[120px]"></div>;
+              return <div key={`empty-${index}`} className="min-h-[80px] sm:min-h-[120px]"></div>;
             }
 
             const dayEvents = getEventsForDay(day);
@@ -1298,7 +1323,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 } ${isToday ? 'ring-2 ring-[hsl(217,92%,39%)] shadow-md' : ''}`}
                 onClick={() =>
                   handleDayClick(
-                    new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+                    new Date(viewState.year, viewState.month, day, 12, 0, 0, 0)
                   )
                 }
               >

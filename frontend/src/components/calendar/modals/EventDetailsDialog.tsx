@@ -80,6 +80,13 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     (r) => r.originalEvent.id === selectedEvent.id && r.status === 'pending'
   );
 
+  const getDayKey = (date: Date) => {
+    // Standardize date to noon to avoid timezone boundary issues when comparing
+    const standardizedDate = new Date(date);
+    standardizedDate.setHours(12, 0, 0, 0);
+    return standardizedDate.toDateString();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
@@ -109,8 +116,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               <CalendarIcon className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">
                 <strong>Date:</strong>{' '}
-                {monthNames[currentMonth.getMonth()]} {selectedEvent.date},{' '}
-                {currentMonth.getFullYear()}
+                {monthNames[selectedEvent.fullDate.getMonth()]} {selectedEvent.date},{' '}
+                {selectedEvent.fullDate.getFullYear()}
               </span>
             </div>
             {selectedEvent.hasTime && (
