@@ -703,12 +703,12 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                     ) : custodyAgreement ? (
                       <>
                         <div className="bg-white rounded-lg p-4 border border-blue-200">
-                          <div className="flex items-start justify-between mb-4">
+                          <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-4">
                             <div className="flex items-center space-x-3">
-                              <CheckCircle className="w-6 h-6 text-green-600" />
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Agreement Uploaded</h4>
-                                <p className="text-sm text-gray-600">
+                              <CheckCircle className="w-6 h-6 text-green-600 shrink-0" />
+                              <div className="min-w-0">
+                                <h4 className="font-semibold text-gray-900 truncate">Agreement Uploaded</h4>
+                                <p className="text-sm text-gray-600 truncate max-w-[200px] sm:max-w-xs">
                                   {custodyAgreement.fileName || 'Custody Agreement'}
                                 </p>
                                 {custodyAgreement.uploadDate && (
@@ -718,7 +718,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                               {custodyAgreement.fileType !== 'manual' && (
                                 <Button
                                   size="sm"
@@ -816,13 +816,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                             No custody agreement configured yet. You can either upload your divorce agreement for automatic parsing or enter the information manually.
                           </AlertDescription>
                         </Alert>
-                        <div className="flex justify-center space-x-3">
+                        <div className="flex flex-col sm:flex-row justify-center gap-3">
                           <Button
                             onClick={() => {
                               setEntryMode('upload');
                               setShowUploadAgreement(true);
                             }}
-                            className="bg-gradient-to-r from-blue-500 to-purple-600"
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 w-full sm:w-auto"
                           >
                             <Upload className="w-4 h-4 mr-2" />
                             Upload Agreement
@@ -833,7 +833,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                               setShowManualEntry(true);
                             }}
                             variant="outline"
-                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50 w-full sm:w-auto"
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Enter Manually
@@ -914,11 +914,22 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                             )}
                           </div>
 
-                          <div className="flex space-x-3">
+                          <div className="flex flex-col-reverse sm:flex-row gap-3">
+                            <Button
+                              onClick={() => {
+                                setShowUploadAgreement(false);
+                                clearAgreementFile();
+                              }}
+                              variant="outline"
+                              disabled={uploadingAgreement}
+                              className="w-full sm:w-auto"
+                            >
+                              Cancel
+                            </Button>
                             <Button
                               onClick={handleUploadAgreement}
                               disabled={!agreementFile || uploadingAgreement}
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 w-full sm:w-auto"
                             >
                               {uploadingAgreement ? (
                                 <>
@@ -931,16 +942,6 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                   Upload & Parse
                                 </>
                               )}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setShowUploadAgreement(false);
-                                clearAgreementFile();
-                              }}
-                              variant="outline"
-                              disabled={uploadingAgreement}
-                            >
-                              Cancel
                             </Button>
                           </div>
 
@@ -1014,7 +1015,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                 <Label className="text-sm font-semibold text-gray-800 mb-3 block">
                                   {familyProfile?.parent1?.firstName || 'Parent 1'}'s Custody Days
                                 </Label>
-                                <div className="grid grid-cols-7 gap-2">
+                                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                                     <div key={`p1-${day}`} className="flex items-center space-x-2">
                                       <Checkbox
@@ -1022,7 +1023,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                         checked={manualData.customDays.parent1.includes(day)}
                                         onCheckedChange={() => handleCustomDayToggle('parent1', day)}
                                       />
-                                      <Label 
+                                      <Label
                                         htmlFor={`parent1-${day}`}
                                         className="text-xs font-medium cursor-pointer"
                                       >
@@ -1037,7 +1038,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                 <Label className="text-sm font-semibold text-gray-800 mb-3 block">
                                   {familyProfile?.parent2?.firstName || 'Parent 2'}'s Custody Days
                                 </Label>
-                                <div className="grid grid-cols-7 gap-2">
+                                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                                     <div key={`p2-${day}`} className="flex items-center space-x-2">
                                       <Checkbox
@@ -1045,7 +1046,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                         checked={manualData.customDays.parent2.includes(day)}
                                         onCheckedChange={() => handleCustomDayToggle('parent2', day)}
                                       />
-                                      <Label 
+                                      <Label
                                         htmlFor={`parent2-${day}`}
                                         className="text-xs font-medium cursor-pointer"
                                       >
@@ -1123,7 +1124,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
 
                           {/* Custom Expense Split */}
                           {manualData.expenseSplitType === 'custom' && (
-                            <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                               <div>
                                 <Label htmlFor="expenseParent1" className="text-sm font-medium">
                                   {familyProfile?.parent1?.firstName || 'Parent 1'} %
@@ -1166,20 +1167,30 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                   className="mt-1"
                                 />
                               </div>
-                              <p className="text-xs text-gray-500 col-span-2">
-                                Total: {manualData.expenseParent1 + manualData.expenseParent2}% 
-                                {Math.abs((manualData.expenseParent1 + manualData.expenseParent2) - 100) > 0.01 && 
+                              <p className="text-xs text-gray-500 col-span-1 sm:col-span-2">
+                                Total: {manualData.expenseParent1 + manualData.expenseParent2}%
+                                {Math.abs((manualData.expenseParent1 + manualData.expenseParent2) - 100) > 0.01 &&
                                   <span className="text-red-600 ml-1">(Must equal 100%)</span>
                                 }
                               </p>
                             </div>
                           )}
 
-                          <div className="flex space-x-3">
+                          <div className="flex flex-col-reverse sm:flex-row gap-3">
+                            <Button
+                              onClick={() => {
+                                setShowManualEntry(false);
+                              }}
+                              variant="outline"
+                              disabled={savingManualEntry}
+                              className="w-full sm:w-auto"
+                            >
+                              Cancel
+                            </Button>
                             <Button
                               onClick={handleSaveManualEntry}
                               disabled={savingManualEntry}
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600"
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 w-full sm:w-auto"
                             >
                               {savingManualEntry ? (
                                 <>
@@ -1192,15 +1203,6 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                   Save Custody Information
                                 </>
                               )}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setShowManualEntry(false);
-                              }}
-                              variant="outline"
-                              disabled={savingManualEntry}
-                            >
-                              Cancel
                             </Button>
                           </div>
 
@@ -1227,9 +1229,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       <>
                         {/* Family Summary Banner */}
                         <div className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <Users className="w-8 h-8 text-green-600" />
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center space-x-4 w-full sm:w-auto">
+                              <Users className="w-8 h-8 text-green-600 shrink-0" />
                               <div>
                                 <h3 className="font-semibold text-gray-800">{familyProfile.familyName || 'Your Family'}</h3>
                                 <p className="text-sm text-gray-600">
@@ -1241,7 +1243,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                                 </p>
                               </div>
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="flex flex-wrap justify-center gap-2">
                               {familyProfile.children.map((child) => (
                                 <div key={child.id} className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                                   {child.firstName && child.firstName[0] ? child.firstName[0] : '?'}
@@ -1312,7 +1314,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                           </div>
                         ) : custodyDistribution ? (
                           <div className="space-y-4 pt-4">
-                            <div className="flex justify-around text-center">
+                            <div className="grid grid-cols-2 gap-4 text-center">
                               <div>
                                 <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
                                 <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
@@ -1340,7 +1342,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                           </div>
                         ) : custodyDistribution ? (
                           <div className="space-y-4 pt-4">
-                            <div className="flex justify-around text-center">
+                            <div className="grid grid-cols-2 gap-4 text-center">
                               <div>
                                 <p className="font-bold text-2xl text-purple-800">{custodyDistribution.parent1.days}</p>
                                 <p className="text-sm text-gray-600">{custodyDistribution.parent1.name} Days</p>
@@ -1366,7 +1368,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
               </TabsContent>
 
               <TabsContent value="profile" className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 fill-mode-backwards">
-                <div className="flex items-center space-x-4 mb-6">
+                <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
                   <div className="relative">
                     <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
                       {profileInitials}
@@ -1375,7 +1377,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       <Camera className="w-4 h-4" />
                     </Button>
                   </div>
-                  <div>
+                  <div className="text-center sm:text-left">
                     <h3 className="text-lg font-semibold text-gray-800">
                       {[settings.profile.firstName, settings.profile.lastName].filter(Boolean).join(' ') || 'Your name'}
                     </h3>
@@ -1536,12 +1538,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       { key: 'productUpdates', label: 'Product Updates', desc: 'New features and improvements to Bridge-it' },
                       { key: 'emergencyAlerts', label: 'Emergency Alerts', desc: 'Important urgent notifications only' }
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
+                      <div key={item.key} className="flex items-start space-x-3">
                         <Checkbox
                           checked={settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn]}
                           onCheckedChange={(checked) => updateNestedSetting('preferences', 'notificationOptIn', item.key, checked)}
+                          className="mt-1"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer" onClick={() => updateNestedSetting('preferences', 'notificationOptIn', item.key, !settings.preferences.notificationOptIn[item.key as keyof typeof settings.preferences.notificationOptIn])}>
                           <Label className="font-medium">{item.label}</Label>
                           <p className="text-sm text-gray-600">{item.desc}</p>
                         </div>
@@ -1565,12 +1568,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       { key: 'children', label: 'Children & Family', desc: 'Supporting your children through transitions' },
                       { key: 'financial', label: 'Financial Planning', desc: 'Managing shared expenses and budgeting' }
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
+                      <div key={item.key} className="flex items-start space-x-3">
                         <Checkbox
                           checked={settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes]}
                           onCheckedChange={(checked) => updateNestedSetting('preferences', 'articleTypes', item.key, checked)}
+                          className="mt-1"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer" onClick={() => updateNestedSetting('preferences', 'articleTypes', item.key, !settings.preferences.articleTypes[item.key as keyof typeof settings.preferences.articleTypes])}>
                           <Label className="font-medium">{item.label}</Label>
                           <p className="text-sm text-gray-600">{item.desc}</p>
                         </div>
@@ -1585,10 +1589,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Methods</h3>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">Email Notifications</Label>
-                        <p className="text-sm text-gray-600">Receive updates via email</p>
+                        <p className="text-sm text-gray-600 truncate">Receive updates via email</p>
                       </div>
                       <Switch
                         checked={settings.notifications.email}
@@ -1596,10 +1600,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">SMS Notifications</Label>
-                        <p className="text-sm text-gray-600">Urgent updates via text</p>
+                        <p className="text-sm text-gray-600 truncate">Urgent updates via text</p>
                       </div>
                       <Switch
                         checked={settings.notifications.sms}
@@ -1607,10 +1611,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">Push Notifications</Label>
-                        <p className="text-sm text-gray-600">Real-time alerts on your device</p>
+                        <p className="text-sm text-gray-600 truncate">Real-time alerts on your device</p>
                       </div>
                       <Switch
                         checked={settings.notifications.push}
@@ -1630,12 +1634,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       { key: 'expenses', label: 'Expense Updates', desc: 'New expenses and payment requests' },
                       { key: 'documents', label: 'Document Changes', desc: 'New documents and updates' }
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center space-x-3">
+                      <div key={item.key} className="flex items-start space-x-3">
                         <Checkbox
                           checked={settings.notifications[item.key as keyof typeof settings.notifications] as boolean}
                           onCheckedChange={(checked) => updateSetting('notifications', item.key, checked)}
+                          className="mt-1"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer" onClick={() => updateSetting('notifications', item.key, !settings.notifications[item.key as keyof typeof settings.notifications])}>
                           <Label className="font-medium">{item.label}</Label>
                           <p className="text-sm text-gray-600">{item.desc}</p>
                         </div>
@@ -1664,10 +1669,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       </Select>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">Activity Sharing</Label>
-                        <p className="text-sm text-gray-600">Share activity status with co-parent</p>
+                        <p className="text-sm text-gray-600 truncate">Share activity status with co-parent</p>
                       </div>
                       <Switch
                         checked={settings.privacy.activitySharing}
@@ -1722,10 +1727,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       </Select>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">Proactive Help</Label>
-                        <p className="text-sm text-gray-600">Let Bridge-it offer suggestions proactively</p>
+                        <p className="text-sm text-gray-600 truncate">Let Bridge-it offer suggestions proactively</p>
                       </div>
                       <Switch
                         checked={settings.bridgette.proactiveHelp}
@@ -1733,10 +1738,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ initialProfile, familyProfi
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                      <div className="min-w-0">
                         <Label className="font-medium">Daily Tips</Label>
-                        <p className="text-sm text-gray-600">Receive daily co-parenting tips</p>
+                        <p className="text-sm text-gray-600 truncate">Receive daily co-parenting tips</p>
                       </div>
                       <Switch
                         checked={settings.bridgette.dailyTips}

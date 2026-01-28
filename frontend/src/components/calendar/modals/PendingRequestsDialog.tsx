@@ -1,10 +1,11 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+} from '@/components/ui/responsive-modal';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,13 +51,16 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
   getDynamicConsequences,
 }) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="text-lg sm:text-xl">
             Pending Schedule Change Requests
-          </DialogTitle>
-        </DialogHeader>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
+            Review and respond to schedule change requests from your co-parent.
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {isLoading ? (
@@ -216,8 +220,8 @@ const PendingRequestsDialog: React.FC<PendingRequestsDialogProps> = ({
             })
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 };
 

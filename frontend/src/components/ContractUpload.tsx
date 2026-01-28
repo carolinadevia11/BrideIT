@@ -229,9 +229,9 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                   </div>
 
                   <div className={`
-                    border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200
-                    ${file 
-                      ? 'border-blue-400 bg-blue-50/50' 
+                    border-2 border-dashed rounded-xl p-4 sm:p-8 text-center transition-all duration-200
+                    ${file
+                      ? 'border-blue-400 bg-blue-50/50'
                       : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
                     }
                   `}>
@@ -296,12 +296,12 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                     )}
                   </div>
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                     {onSkip && (
                       <Button
                         onClick={onSkip}
                         variant="ghost"
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 hover:text-gray-700 w-full sm:w-auto"
                         disabled={isUploading}
                       >
                         Skip for now
@@ -310,7 +310,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ onComplete, onSkip, onB
                     <Button
                       onClick={handleUpload}
                       disabled={!file || isUploading}
-                      className="flex-1 h-12 text-lg bg-bridge-blue hover:bg-bridge-blue/90 shadow-lg transition-all"
+                      className="flex-1 h-12 text-lg bg-bridge-blue hover:bg-bridge-blue/90 shadow-lg transition-all w-full sm:w-auto"
                     >
                       {isUploading ? (
                         <>

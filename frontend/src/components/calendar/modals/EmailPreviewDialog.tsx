@@ -1,10 +1,11 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Mail, FileText } from 'lucide-react';
 import { EmailNotification } from '@/types/calendar';
@@ -97,14 +98,17 @@ const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center text-lg sm:text-xl">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-auto">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="flex items-center text-lg sm:text-xl">
             <Mail className="w-5 h-5 mr-2 text-green-600" />
             Automated Documentation Email
-          </DialogTitle>
-        </DialogHeader>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
+            Preview the automated email that will be sent to both parents.
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         {generatedEmail && (
           <div className="space-y-4">
@@ -148,8 +152,8 @@ const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 };
 

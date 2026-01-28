@@ -257,7 +257,7 @@ const DashboardShell = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      data-tour-button
+                      data-tour-button="true"
                       className="text-slate-600 hover:text-blue-700 h-8 w-8 sm:h-9 sm:w-9"
                       onClick={() => onStartTour()}
                     >

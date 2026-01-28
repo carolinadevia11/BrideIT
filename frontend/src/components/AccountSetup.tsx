@@ -299,7 +299,7 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
             <div>
               <h3 className="font-medium text-gray-800 mb-4">How would you like to receive notifications?</h3>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <Checkbox
                     id="email-notifications"
                     checked={formData.notifications.email}
@@ -307,14 +307,15 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.notifications,
                       email: checked
                     })}
+                    className="mt-1"
                   />
-                  <Label htmlFor="email-notifications" className="flex-1">
+                  <Label htmlFor="email-notifications" className="flex-1 cursor-pointer">
                     <div className="font-medium">Email Notifications</div>
                     <div className="text-sm text-gray-500">Get updates about messages, calendar changes, and expenses</div>
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <Checkbox
                     id="sms-notifications"
                     checked={formData.notifications.sms}
@@ -322,14 +323,15 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.notifications,
                       sms: checked
                     })}
+                    className="mt-1"
                   />
-                  <Label htmlFor="sms-notifications" className="flex-1">
+                  <Label htmlFor="sms-notifications" className="flex-1 cursor-pointer">
                     <div className="font-medium">SMS Notifications</div>
                     <div className="text-sm text-gray-500">Urgent updates via text message</div>
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <Checkbox
                     id="push-notifications"
                     checked={formData.notifications.push}
@@ -337,8 +339,9 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.notifications,
                       push: checked
                     })}
+                    className="mt-1"
                   />
-                  <Label htmlFor="push-notifications" className="flex-1">
+                  <Label htmlFor="push-notifications" className="flex-1 cursor-pointer">
                     <div className="font-medium">Push Notifications</div>
                     <div className="text-sm text-gray-500">Real-time alerts on your device</div>
                   </Label>
@@ -362,8 +365,9 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.privacy,
                       terms: checked
                     })}
+                    className="mt-0.5"
                   />
-                  <Label htmlFor="terms" className="flex-1 text-sm">
+                  <Label htmlFor="terms" className="flex-1 text-sm leading-tight cursor-pointer">
                     I agree to the <a href="#" className="text-blue-600 hover:underline">Terms of Service</a>
                   </Label>
                 </div>
@@ -376,8 +380,9 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.privacy,
                       privacy: checked
                     })}
+                    className="mt-0.5"
                   />
-                  <Label htmlFor="privacy" className="flex-1 text-sm">
+                  <Label htmlFor="privacy" className="flex-1 text-sm leading-tight cursor-pointer">
                     I agree to the <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
                   </Label>
                 </div>
@@ -390,8 +395,9 @@ const AccountSetup: React.FC<AccountSetupProps> = ({ onComplete }) => {
                       ...formData.privacy,
                       marketing: checked
                     })}
+                    className="mt-0.5"
                   />
-                  <Label htmlFor="marketing" className="flex-1 text-sm">
+                  <Label htmlFor="marketing" className="flex-1 text-sm leading-tight cursor-pointer">
                     I'd like to receive helpful co-parenting tips and updates (optional)
                   </Label>
                 </div>

@@ -502,7 +502,7 @@ const DocumentManager: React.FC = () => {
         <div className="space-y-6">
           <Card className="border-2 border-blue-200 bg-blue-50">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                 <BridgetteAvatar size="md" expression="encouraging" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800">
@@ -593,29 +593,31 @@ const DocumentManager: React.FC = () => {
           {newFolderName && (
             <div className="bg-gray-50 p-4 rounded-lg">
               <Label className="text-sm font-medium text-gray-700 mb-2 block">Preview:</Label>
-              <div className={`inline-flex items-center space-x-3 p-3 rounded-lg ${availableColors.find(c => c.name === selectedColor)?.bg}`}>
-                {React.createElement(availableIcons.find(i => i.name === selectedIcon)?.icon || Folder, {
-                  className: `w-6 h-6 ${availableColors.find(c => c.name === selectedColor)?.class}`
-                })}
-                <div>
-                  <div className="font-medium text-gray-800">{newFolderName}</div>
-                  <div className="text-sm text-gray-600">{newFolderDescription || `Custom folder for ${newFolderName.toLowerCase()}`}</div>
+              <div className={`flex items-start sm:items-center space-x-3 p-3 rounded-lg ${availableColors.find(c => c.name === selectedColor)?.bg}`}>
+                <div className="flex-shrink-0 mt-1 sm:mt-0">
+                  {React.createElement(availableIcons.find(i => i.name === selectedIcon)?.icon || Folder, {
+                    className: `w-6 h-6 ${availableColors.find(c => c.name === selectedColor)?.class}`
+                  })}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-800 break-words">{newFolderName}</div>
+                  <div className="text-sm text-gray-600 break-words">{newFolderDescription || `Custom folder for ${newFolderName.toLowerCase()}`}</div>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="flex space-x-3">
-            <Button 
+          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:space-x-3">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowCreateFolder(false)}>
+              Cancel
+            </Button>
+            <Button
               onClick={createCustomFolder}
               disabled={!newFolderName.trim()}
-              className="flex-1"
+              className="flex-1 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Folder
-            </Button>
-            <Button variant="outline" onClick={() => setShowCreateFolder(false)}>
-              Cancel
             </Button>
           </div>
         </div>
@@ -632,7 +634,7 @@ const DocumentManager: React.FC = () => {
       <div className="space-y-6">
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
               <BridgetteAvatar size="md" expression="encouraging" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-800">
@@ -669,22 +671,22 @@ const DocumentManager: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-              isMemoriesFolder 
-                ? 'border-pink-300 hover:border-pink-400 bg-pink-50' 
+            <div className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center transition-colors cursor-pointer ${
+              isMemoriesFolder
+                ? 'border-pink-300 hover:border-pink-400 bg-pink-50'
                 : isCustomFolder
                   ? `${folder?.bgColor} border-opacity-50 hover:border-opacity-75`
                   : 'border-gray-300 hover:border-blue-400'
             }`}>
               {isMemoriesFolder ? (
-                <Camera className="w-12 h-12 text-pink-400 mx-auto mb-4" />
+                <Camera className="w-8 h-8 sm:w-12 sm:h-12 text-pink-400 mx-auto mb-3 sm:mb-4" />
               ) : isCustomFolder && folder ? (
                 (() => {
                   const IconComponent = getIconComponent(folder.icon);
-                  return <IconComponent className={`w-12 h-12 ${folder.color} mx-auto mb-4`} />;
+                  return <IconComponent className={`w-8 h-8 sm:w-12 sm:h-12 ${folder.color} mx-auto mb-3 sm:mb-4`} />;
                 })()
               ) : (
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
               )}
               <h3 className="text-lg font-medium text-gray-800 mb-2">
                 {isMemoriesFolder ? 'Add Photos & Videos' : 
@@ -791,22 +793,22 @@ const DocumentManager: React.FC = () => {
               </div>
             )}
 
-            <div className="flex space-x-3">
-              <Button 
-                className="flex-1"
-                onClick={handleFileUpload}
-                disabled={!uploadFile || uploading}
-              >
-                {uploading ? 'Uploading...' : 
-                 isMemoriesFolder ? 'Add to Memories' : 
-                 isCustomFolder ? `Add to ${folder?.name}` :
-                 'Upload Document'}
-              </Button>
-              <Button variant="outline" onClick={() => {
+            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:space-x-3">
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => {
                 setShowUpload(false);
                 setUploadFile(null);
                 setUploadDescription('');
               }}>Cancel</Button>
+              <Button
+                className="flex-1 w-full sm:w-auto"
+                onClick={handleFileUpload}
+                disabled={!uploadFile || uploading}
+              >
+                {uploading ? 'Uploading...' :
+                 isMemoriesFolder ? 'Add to Memories' :
+                 isCustomFolder ? `Add to ${folder?.name}` :
+                 'Upload Document'}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -831,7 +833,7 @@ const DocumentManager: React.FC = () => {
           {/* Bridgette Helper */}
           <Card className="border-2 border-blue-200 bg-blue-50">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                 <BridgetteAvatar size="md" expression="encouraging" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800">
@@ -848,7 +850,7 @@ const DocumentManager: React.FC = () => {
           {/* Header */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center">
                     <FolderOpen className="w-6 h-6 mr-2 text-blue-600" />
@@ -856,7 +858,7 @@ const DocumentManager: React.FC = () => {
                   </CardTitle>
                   <p className="text-gray-600 mt-1">Organized storage for all your co-parenting documents and memories</p>
                 </div>
-                <Button onClick={() => setShowCreateFolder(true)} variant="outline">
+                <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Custom Folder
                 </Button>
@@ -866,9 +868,9 @@ const DocumentManager: React.FC = () => {
 
           {/* Folders Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {folders.map((folder) => (
-              <Card 
-                key={folder.id} 
+            {folders.map((folder, index) => (
+              <Card
+                key={`${folder.id}-${index}`}
                 className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${folder.bgColor} ${
                   folder.isSpecial ? 'hover:scale-105' : 'hover:scale-102'
                 } relative group`}
@@ -1040,7 +1042,7 @@ const DocumentManager: React.FC = () => {
         {/* Bridgette Helper */}
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
               <BridgetteAvatar size="md" expression="encouraging" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-800">
@@ -1067,10 +1069,10 @@ const DocumentManager: React.FC = () => {
         {/* Folder Header */}
         <Card className={`border-2 ${folder?.bgColor}`}>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between w-full">
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setCurrentFolder(null)}
                   className="flex items-center"
@@ -1078,34 +1080,47 @@ const DocumentManager: React.FC = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Folders
                 </Button>
+                <Button
+                  onClick={() => {
+                    setUploadFolder(currentFolder!);
+                    setShowUpload(true);
+                  }}
+                  className={`${currentFolder === 'memories' ? 'bg-pink-500 hover:bg-pink-600' : ''} sm:hidden`}
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center space-x-3">
                   {folder && (() => {
                     const IconComponent = getIconComponent(folder.icon);
                     return <IconComponent className={`w-6 h-6 ${folder.color}`} />;
                   })()}
                   <div>
-                    <CardTitle className="flex items-center">
+                    <CardTitle className="flex items-center flex-wrap gap-2">
                       {folder?.name}
                       {folder?.isCustom && (
-                        <Badge variant="outline" className="ml-2">Custom</Badge>
+                        <Badge variant="outline">Custom</Badge>
                       )}
                     </CardTitle>
                     <p className="text-gray-600 text-sm">{folder?.description}</p>
                   </div>
                 </div>
+                <Button
+                  onClick={() => {
+                    setUploadFolder(currentFolder!);
+                    setShowUpload(true);
+                  }}
+                  className={`${currentFolder === 'memories' ? 'bg-pink-500 hover:bg-pink-600' : ''} hidden sm:flex`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {currentFolder === 'memories' ? 'Add Memory' :
+                   folder?.isCustom ? `Add to ${folder.name}` :
+                   'Add Document'}
+                </Button>
               </div>
-              <Button 
-                onClick={() => {
-                  setUploadFolder(currentFolder!);
-                  setShowUpload(true);
-                }}
-                className={currentFolder === 'memories' ? 'bg-pink-500 hover:bg-pink-600' : ''}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {currentFolder === 'memories' ? 'Add Memory' : 
-                 folder?.isCustom ? `Add to ${folder.name}` :
-                 'Add Document'}
-              </Button>
             </div>
           </CardHeader>
         </Card>
@@ -1164,44 +1179,46 @@ const DocumentManager: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            folderDocuments.map((doc) => (
-              <Card key={doc.id} className={`hover:shadow-md transition-shadow ${
+            folderDocuments.map((doc, index) => (
+              <Card key={`${doc.id}-${index}`} className={`hover:shadow-md transition-shadow ${
                 doc.isProtected ? 'border-2 border-yellow-200 bg-yellow-50' : 
                 currentFolder === 'memories' ? 'border-pink-100 bg-pink-50' :
                 folder?.isCustom ? `${folder.bgColor} border-opacity-50` : ''
               }`}>
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         {getFileIcon(doc)}
-                        <h3 className="font-medium text-gray-800">{doc.name}</h3>
-                        <Badge className={documentTypes[doc.type].color}>
-                          {doc.type === 'custom' ? folder?.name : documentTypes[doc.type].label}
-                        </Badge>
-                        <Badge className={statusColors[doc.status]}>
-                          {doc.status.replace('-', ' ')}
-                        </Badge>
-                        {doc.isProtected && (
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                <Lock className="w-3 h-3 mr-1" />
-                                Protected
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p className="text-sm">{doc.protectionReason}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+                        <h3 className="font-medium text-gray-800 truncate max-w-[200px] sm:max-w-none">{doc.name}</h3>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className={documentTypes[doc.type].color}>
+                            {doc.type === 'custom' ? folder?.name : documentTypes[doc.type].label}
+                          </Badge>
+                          <Badge className={statusColors[doc.status]}>
+                            {doc.status.replace('-', ' ')}
+                          </Badge>
+                          {doc.isProtected && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  Protected
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm">{doc.protectionReason}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                       </div>
                       
                       {doc.description && (
-                        <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">{doc.description}</p>
                       )}
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center">
                           <Calendar className="w-4 h-4 mr-1" />
                           {new Date(doc.uploadDate).toLocaleDateString()}
@@ -1214,8 +1231,8 @@ const DocumentManager: React.FC = () => {
                       
                       {doc.tags && doc.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {doc.tags.map((tag) => (
-                            <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          {doc.tags.map((tag, index) => (
+                            <span key={`${tag}-${index}`} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
                               {tag}
                             </span>
                           ))}
@@ -1223,7 +1240,7 @@ const DocumentManager: React.FC = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-2 ml-4">
+                    <div className="flex items-center justify-end space-x-2 w-full sm:w-auto mt-2 sm:mt-0">
                       <Button 
                         variant="outline" 
                         size="sm"

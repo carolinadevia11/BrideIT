@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical, Loader2, Check, CheckCheck, Video, Phone, PhoneOff, PhoneMissed } from 'lucide-react';
+import { Send, Smile, FileText, AlertCircle, CheckCircle, Search, Filter, Plus, MessageSquare, Calendar, User, Clock, Star, Archive, MoreVertical, Loader2, Check, CheckCheck, Video, Phone, PhoneOff, PhoneMissed, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BridgetteAvatar from './BridgetteAvatar';
 import { messagingAPI, authAPI } from '@/lib/api';
 import { useWebSocket } from '@/contexts/WebSocketContext';
@@ -51,6 +52,7 @@ interface CurrentUser {
 
 const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, activeConversationId }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
@@ -147,8 +149,8 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
       const data = await messagingAPI.getConversations();
       setConversations(data);
       
-      // Select first conversation if none is selected
-      if (data.length > 0 && !activeConversationRef.current) {
+      // Select first conversation if none is selected, but only on desktop
+      if (data.length > 0 && !activeConversationRef.current && !isMobile) {
         setActiveConversation(data[0].id);
       }
     } catch (error: any) {
@@ -167,7 +169,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
         setLoading(false);
       }
     }
-  }, []);
+  }, [isMobile]);
 
   const fetchMessages = useCallback(async (conversationId: string, pageNum: number = 1, options: { silent?: boolean; append?: boolean } = {}) => {
     const { silent = false, append = false } = options;
@@ -482,9 +484,9 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
         </CardContent>
       </Card>
 
-      <div className="bg-white rounded-2xl shadow-lg h-[600px] sm:h-[700px] flex flex-col sm:flex-row">
+      <div className="bg-white rounded-2xl shadow-lg h-[calc(100vh-14rem)] min-h-[500px] flex overflow-hidden">
         {/* Conversations Sidebar */}
-        <div className="w-full sm:w-1/3 border-r-0 sm:border-r border-gray-200 border-b sm:border-b-0 flex flex-col h-1/2 sm:h-auto">
+        <div className={`w-full sm:w-1/3 border-r border-gray-200 flex flex-col h-full ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
           {/* Header */}
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -667,13 +669,21 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col h-1/2 sm:h-auto">
+        <div className={`flex-1 flex flex-col h-full ${activeConversation ? 'flex' : 'hidden sm:flex'}`}>
           {activeConv ? (
             <>
               {/* Chat Header */}
               <div className="p-3 sm:p-4 border-b border-gray-200 bg-bridge-blue/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="sm:hidden -ml-2 h-8 w-8"
+                      onClick={() => setActiveConversation(null)}
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-base sm:text-lg font-bold text-gray-800 truncate">{activeConv.subject}</h2>
                       <div className="flex items-center space-x-2 mt-1 flex-wrap">
@@ -868,7 +878,7 @@ const MessagingInterface: React.FC<MessagingInterfaceProps> = ({ onStartCall, ac
                 <div className="mb-3">
                   <Select
                     value={selectedTone}
-                    onValueChange={(value) => setSelectedTone(value as Message['tone'])}
+                    onValueChange={(value) => setSelectedTone(value as Exclude<Message['tone'], 'system'>)}
                   >
                     <SelectTrigger>
                       <SelectValue />

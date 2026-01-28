@@ -170,12 +170,12 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Manage Children</h2>
           <p className="text-gray-600">Add or edit information about your children</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
+        <Button onClick={() => setShowAddDialog(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Child
         </Button>
@@ -470,22 +470,23 @@ const ChildManagement: React.FC<ChildManagementProps> = ({
               />
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               <Button
-                onClick={handleSave}
-                disabled={!formData.firstName || !formData.dateOfBirth || isSubmitting}
-                className="flex-1"
-              >
-                {isSubmitting ? 'Saving...' : (editingChild ? 'Update Child' : 'Add Child')}
-              </Button>
-              <Button 
-                variant="outline" 
+                variant="outline"
                 onClick={() => {
                   setShowAddDialog(false);
                   resetForm();
                 }}
+                className="w-full sm:w-auto"
               >
                 Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={!formData.firstName || !formData.dateOfBirth || isSubmitting}
+                className="flex-1 w-full sm:w-auto"
+              >
+                {isSubmitting ? 'Saving...' : (editingChild ? 'Update Child' : 'Add Child')}
               </Button>
             </div>
           </div>

@@ -1,10 +1,11 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -88,11 +89,14 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Event Details</DialogTitle>
-        </DialogHeader>
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto mx-4 sm:mx-auto">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="text-lg sm:text-xl">Event Details</ResponsiveModalTitle>
+          <ResponsiveModalDescription>
+            View and manage details for this event.
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <div className="space-y-3 sm:space-y-4">
           {/* Event Title and Type */}
@@ -371,8 +375,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 };
 

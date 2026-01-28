@@ -15,9 +15,9 @@ const BridgetteAvatar: React.FC<BridgetteAvatarProps> = ({
   message = "I'm here to help keep things fair and balanced!"
 }) => {
   const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-20 h-20',
-    lg: 'w-32 h-32'
+    sm: 'w-10 h-10 sm:w-12 sm:h-12',
+    md: 'w-16 h-16 sm:w-20 sm:h-20',
+    lg: 'w-24 h-24 sm:w-32 sm:h-32'
   };
 
   const animationClasses = {

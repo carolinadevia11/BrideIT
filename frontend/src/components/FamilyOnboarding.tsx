@@ -523,16 +523,16 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                 {familyData.children?.map((child) => (
                   <Card key={child.id} className="border-2 border-green-200">
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-bridge-green rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center space-x-3 overflow-hidden">
+                          <div className="w-12 h-12 bg-bridge-green rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold">
                             {child.firstName[0]}
                           </div>
-                          <div>
-                            <h4 className="font-medium text-gray-800">{child.firstName} {child.lastName}</h4>
+                          <div className="min-w-0">
+                            <h4 className="font-medium text-gray-800 truncate">{child.firstName} {child.lastName}</h4>
                             <p className="text-sm text-gray-600">Age {child.age}</p>
                             {child.specialNeeds && child.specialNeeds.length > 0 && (
-                              <p className="text-xs text-gray-500">Special needs: {child.specialNeeds.join(', ')}</p>
+                              <p className="text-xs text-gray-500 truncate">Special needs: {child.specialNeeds.join(', ')}</p>
                             )}
                           </div>
                         </div>
@@ -540,7 +540,7 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                           variant="ghost"
                           size="sm"
                           onClick={() => removeChild(child.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -665,33 +665,33 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
             
             <div>
               <Label>What type of custody arrangement do you have?</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-3 mt-2">
                 <Card
-                  className={`cursor-pointer transition-all ${familyData.custodyArrangement === '50-50' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
+                  className={`cursor-pointer transition-all h-full ${familyData.custodyArrangement === '50-50' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: '50-50' }))}
                 >
-                  <CardContent className="p-4 text-center">
-                    <h4 className="font-medium text-gray-800">50/50 Split</h4>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <h4 className="font-medium text-gray-800 text-sm sm:text-base">50/50 Split</h4>
                     <p className="text-xs text-gray-600 mt-1">Equal time with both parents</p>
                   </CardContent>
                 </Card>
 
                 <Card
-                  className={`cursor-pointer transition-all ${familyData.custodyArrangement === 'primary-secondary' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
+                  className={`cursor-pointer transition-all h-full ${familyData.custodyArrangement === 'primary-secondary' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: 'primary-secondary' }))}
                 >
-                  <CardContent className="p-4 text-center">
-                    <h4 className="font-medium text-gray-800">Primary/Secondary</h4>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <h4 className="font-medium text-gray-800 text-sm sm:text-base break-words">Primary / Secondary</h4>
                     <p className="text-xs text-gray-600 mt-1">One primary custodian</p>
                   </CardContent>
                 </Card>
 
                 <Card
-                  className={`cursor-pointer transition-all ${familyData.custodyArrangement === 'custom' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
+                  className={`cursor-pointer transition-all h-full ${familyData.custodyArrangement === 'custom' ? 'border-2 border-blue-500 bg-blue-50' : 'border-2 border-gray-200'}`}
                   onClick={() => setFamilyData(prev => ({ ...prev, custodyArrangement: 'custom' }))}
                 >
-                  <CardContent className="p-4 text-center">
-                    <h4 className="font-medium text-gray-800">Custom</h4>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <h4 className="font-medium text-gray-800 text-sm sm:text-base">Custom</h4>
                     <p className="text-xs text-gray-600 mt-1">Unique arrangement</p>
                   </CardContent>
                 </Card>
@@ -712,8 +712,9 @@ const FamilyOnboarding: React.FC<FamilyOnboardingProps> = ({ onComplete, initial
                   'Cultural considerations',
                   'Religious observances'
                 ].map((accommodation) => (
-                  <div key={accommodation} className="flex items-center space-x-3">
+                  <div key={accommodation} className="flex items-start space-x-3">
                     <Checkbox
+                      className="mt-0.5"
                       checked={familyData.specialAccommodations?.includes(accommodation)}
                       onCheckedChange={(checked) => {
                         if (checked) {

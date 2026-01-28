@@ -254,10 +254,14 @@ async def create_folder(
         folder_id = folder_data.name.lower().replace(" ", "-").replace("&", "and")
         custom_category = folder_id
         
-        # Check if folder with same name already exists
+        # Check if folder ID conflicts with default folders
+        if any(f["id"] == folder_id for f in DEFAULT_FOLDERS):
+            raise HTTPException(status_code=400, detail="This is a reserved folder name. Please choose a different name.")
+
+        # Check if folder with same ID already exists (handles case-insensitive duplicates)
         existing = db.document_folders.find_one({
             "family_id": family_id,
-            "name": folder_data.name
+            "id": folder_id
         })
         if existing:
             raise HTTPException(status_code=400, detail="Folder with this name already exists")
